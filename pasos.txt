@@ -1,0 +1,348 @@
+================================================================================
+  BIOPATTERNSG-UI — GUÍA DE INICIALIZACIÓN CRONOLÓGICA
+  Proyecto: React + TypeScript + Vite + Tailwind CSS v3 + Shadcn UI (manual)
+  Sistema de Diseño: "The Clinical Lens"
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+PASO 1 — INICIALIZACIÓN DEL PROYECTO Y DEPENDENCIAS
+────────────────────────────────────────────────────────────────────────────────
+
+1.1 — Crear el proyecto Vite con template React + TypeScript
+---------------------------------------------------------------
+  npm create vite@latest biopatternsg-ui -- --template react-ts
+  cd biopatternsg-ui
+  npm install
+
+1.2 — Instalar Tailwind CSS v3 + PostCSS + Autoprefixer
+---------------------------------------------------------------
+  npm install -D tailwindcss@3 postcss autoprefixer
+  npx tailwindcss init -p --ts
+    (genera: tailwind.config.ts y postcss.config.js)
+
+1.3 — Instalar librerías de UI y utilidades
+---------------------------------------------------------------
+  npm install lucide-react class-variance-authority clsx tailwind-merge
+
+  # Radix UI primitives (base manual de Shadcn UI)
+  npm install @radix-ui/react-slot \
+               @radix-ui/react-label \
+               @radix-ui/react-checkbox \
+               @radix-ui/react-dialog \
+               @radix-ui/react-dropdown-menu \
+               @radix-ui/react-navigation-menu \
+               @radix-ui/react-form
+
+  # Tipos de Node para vite.config.ts
+  npm install -D @types/node
+
+NOTA SOBRE SHADCN UI:
+  En este proyecto se instalaron los primitivos de Radix UI manualmente y se
+  codificaron los componentes de Shadcn UI directamente en la estructura
+  Atomic Design. Esto es equivalente a ejecutar:
+    npx shadcn-ui@latest init
+    npx shadcn-ui@latest add button input label card form
+  ...pero con clasificación manual en atoms/molecules/organisms en lugar de
+  la carpeta genérica components/ui/.
+
+  Si se prefiere usar el CLI de Shadcn, ejecutar:
+    npx shadcn-ui@latest init
+  Y luego mover los archivos generados en src/components/ui/ a:
+    src/components/atoms/    → Button, Input, Label
+    src/components/molecules/ → Card, FormField
+    src/components/organisms/ → LoginForm
+
+1.4 — Crear la estructura de carpetas src/
+---------------------------------------------------------------
+  mkdir src/adapters
+  mkdir src/services
+  mkdir src/domain/models
+  mkdir src/domain/enums
+  mkdir src/components/atoms
+  mkdir src/components/molecules
+  mkdir src/components/organisms
+  mkdir src/modules/public/landing
+  mkdir src/modules/public/about
+  mkdir src/modules/public/contact
+  mkdir src/modules/authenticator/login
+  mkdir src/modules/authenticator/register
+  mkdir src/modules/authenticator/recovery
+  mkdir src/modules/dashboard/networks
+  mkdir src/modules/dashboard/pipeline
+  mkdir src/assets/logos
+  mkdir src/assets/static
+  mkdir src/hooks
+  mkdir src/redux
+
+1.5 — Configurar alias de rutas en vite.config.ts y tsconfig.app.json
+---------------------------------------------------------------
+  vite.config.ts:
+    resolve: { alias: { "@": path.resolve(__dirname, "./src") } }
+
+  tsconfig.app.json (dentro de compilerOptions):
+    "baseUrl": ".",
+    "paths": { "@/*": ["./src/*"] },
+    "ignoreDeprecations": "6.0"
+
+1.6 — Crear src/lib/utils.ts (helper cn para Tailwind Merge)
+---------------------------------------------------------------
+  import { clsx, type ClassValue } from "clsx";
+  import { twMerge } from "tailwind-merge";
+  export function cn(...inputs: ClassValue[]) {
+    return twMerge(clsx(inputs));
+  }
+
+
+────────────────────────────────────────────────────────────────────────────────
+PASO 2 — SISTEMA DE DISEÑO: tailwind.config.ts + index.css
+────────────────────────────────────────────────────────────────────────────────
+
+ARCHIVO: tailwind.config.ts
+  - darkMode: "class"
+  - content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"]
+  - Colores Brand: primary (#0050cb), primary-container (#0066ff),
+                   secondary (#425ca0), tertiary (#a33200)
+  - Superficies (Tonal Architecture):
+      surface-base (#f8f9ff), surface-section (#eff4ff), surface-card (#ffffff)
+  - Tokens extraídos del HTML original (sistema Material Color):
+      inverse-on-surface, surface-container-low, surface-container-high,
+      on-surface, on-surface-variant, outline, outline-variant, etc.
+  - Fuentes: headline/body → Inter, label → Space Grotesk
+  - Border radius personalizado (sin defaults agresivos de Tailwind)
+  - Sombras ambientales teñidas con #0d1c2e (NO sombras grises):
+      shadow-sm, shadow-md, shadow-lg, shadow-xl, shadow-primary-glow, shadow-nav
+
+ARCHIVO: src/index.css
+  - Import de Google Fonts (Inter + Space Grotesk)
+  - @tailwind base / components / utilities
+  - CSS Custom Properties (variables Shadcn UI bridge):
+      --background, --foreground, --primary, --secondary, --muted,
+      --accent, --border, --input, --ring, --radius, etc.
+  - Variables dark mode bajo .dark {}
+  - Base reset: html → font-feature-settings, -webkit-font-smoothing
+  - ::selection con primary-fixed / on-primary-fixed
+  - Scrollbar personalizado (width 6px, track #f4f2fd, thumb #ccc3d8)
+  - Utilidades @layer utilities:
+      .pulse-gradient  → linear-gradient(135deg, #0066FF, #0052cc)
+      .glass-panel     → rgba(255,255,255,0.8) + backdrop-blur(20px)
+      .glass-nav       → rgba(251,248,255,0.80) + backdrop-blur(20px)
+      .ghost-border    → outline 1px rgba(204,195,216,0.15) [regla No-Line]
+      .shadow-ambient  → box-shadow teñida con #0d1c2e
+      .shadow-primary-glow → box-shadow azul primario
+
+REGLAS DE DISEÑO APLICADAS:
+  - "No-Line" Rule: PROHIBIDO border de 1px para separar secciones/cards.
+    Se usa diferencia de color de fondo (bg-surface vs bg-surface-container-low)
+    o ghost-border (outline-variant al 15%) si es estrictamente necesario.
+  - "Glass & Gradient" Rule: botones primarios usan pulse-gradient.
+    Navbar y modales usan backdrop-blur-xl + fondo semi-transparente.
+  - Tipografía: exclusivamente Inter (headline/body), Space Grotesk (label).
+    Headings: tracking-tighter (-0.02em).
+  - Sombras: solo sombras personalizadas teñidas, nunca grises de Tailwind.
+
+
+────────────────────────────────────────────────────────────────────────────────
+PASO 3 — COMPONENTES (ATOMIC DESIGN)
+────────────────────────────────────────────────────────────────────────────────
+
+━━━ ÁTOMOS (src/components/atoms/) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Button.tsx
+    Variantes: primary (pulse-gradient), ghost, surface, outline (glass),
+               link, destructive
+    Tamaños: sm, md, lg, xl, icon
+    Usa: class-variance-authority (cva), @radix-ui/react-slot (asChild)
+    Iconos: via lucide-react (no Material Symbols)
+
+  Input.tsx
+    "No-Line" rule: sin border, usa bg-surface-container-high
+    Focus: ring-2 ring-primary/30 + bg-surface-container-lowest
+
+  Label.tsx
+    Basado en @radix-ui/react-label
+    Variantes de tamaño: xs (default, uppercase tracking-widest), sm, md
+
+  Badge.tsx
+    Variantes: success (tertiary-fixed), neutral, primary, live
+    Todos usan rounded-full y font-label uppercase
+
+  NavLink.tsx
+    active prop → borde inferior azul (active indicator)
+    hover: text-primary con transition
+
+━━━ MOLÉCULAS (src/components/molecules/) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  FormField.tsx
+    Composición: Label + Input
+    Props: label, labelRight (para el link "Forgot?"), containerClassName
+
+  StatCard.tsx
+    Muestra: valor grande + acento de color + etiqueta en mayúsculas
+
+  BentoFeatureCard.tsx
+    Card grande del bento grid (Sequence Mapping)
+    Props: icon, iconBg, title, subtitle, badgesTop, children
+    "No-Line" rule: shadow-ambient en lugar de border
+
+  BentoSideCard.tsx
+    Cards pequeñas del bento grid (Variant Discovery, Audit Logs)
+    Props: icon, iconColor, title, description, footer
+
+  BenefitCard.tsx
+    Cards de la sección de beneficios (3 columnas)
+    Usa bg-surface-container-high/30 para separación visual
+
+━━━ ORGANISMOS (src/components/organisms/) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Header.tsx
+    Componente: fixed nav con glass-nav + shadow-nav
+    Contiene: logo, NavLinks, botones Sign In / Register
+    "No-Line": separador como div con bg-surface-container-low
+
+  LoginForm.tsx
+    Glassmorphism: glass-panel + border border-outline-variant/15
+    Contiene: FormField (email + password), Button submit, link registro
+    Orb decorativo: blur-3xl bg-primary/5
+
+  HeroSection.tsx
+    Grid asimétrico: lg:col-span-7 (copy) + lg:col-span-5 (LoginForm)
+    Íconos: ArrowRight de lucide-react (migrado de material-symbols)
+    Badge "Live Sequencing Active" con animate-pulse
+
+  BentoSection.tsx
+    Sección bg-surface-container-low (separación por color, no borde)
+    BentoFeatureCard (8 cols) + 2x BentoSideCard (4 cols)
+    Íconos: Microscope, Dna, FileText, ArrowRight, Expand (lucide-react)
+
+  StatsSection.tsx
+    4 StatCards en grid + 3 BenefitCards
+    Separador: border-y border-outline-variant/15
+
+  CTASection.tsx
+    Bloque pulse-gradient con dot-grid decorativo (radial-gradient CSS)
+    Dos botones: Register (bg-white text-primary) + Request Demo (outline glass)
+
+  Footer.tsx
+    bg-on-background (dark) con columnas de links
+    Íconos: Globe, Terminal (lucide-react, migrados de Material Symbols)
+    Separador bottom: border-t border-surface-variant/10
+
+
+────────────────────────────────────────────────────────────────────────────────
+PASO 4 — LANDING PAGE ENSAMBLADA
+────────────────────────────────────────────────────────────────────────────────
+
+ARCHIVO: src/modules/public/landing/Landing.tsx
+  Ensambla en orden:
+    1. <Header />      → fixed top nav
+    2. <main pt-24>    → offset para nav fija
+       a. <HeroSection />     → hero + login form
+       b. <BentoSection />    → analytics suite preview
+       c. <StatsSection />    → métricas + beneficios
+       d. <CTASection />      → llamada a la acción
+    3. <Footer />      → pie de página oscuro
+
+ARCHIVO: src/App.tsx
+  import Landing from "@/modules/public/landing/Landing";
+  export default function App() { return <Landing />; }
+
+
+────────────────────────────────────────────────────────────────────────────────
+MIGRACIÓN DE ICONOS: Material Symbols → lucide-react
+────────────────────────────────────────────────────────────────────────────────
+
+  Material Symbol          → lucide-react
+  ─────────────────────────────────────────
+  arrow_forward            → ArrowRight
+  arrow_forward_ios        → ArrowRight (small)
+  biotech                  → Microscope
+  genetics                 → Dna
+  description              → FileText
+  open_in_full             → Expand
+  public                   → Globe
+  terminal                 → Terminal
+
+
+────────────────────────────────────────────────────────────────────────────────
+ESTRUCTURA FINAL DE ARCHIVOS RELEVANTES
+────────────────────────────────────────────────────────────────────────────────
+
+  biopatternsg-ui/
+  ├── index.html
+  ├── vite.config.ts             ← alias @/ → src/
+  ├── tailwind.config.ts         ← tokens completos del sistema de diseño
+  ├── tsconfig.app.json          ← paths para @/ alias
+  ├── postcss.config.js
+  ├── pasos.txt                  ← este archivo
+  └── src/
+      ├── index.css              ← CSS global + variables + utilidades
+      ├── main.tsx
+      ├── App.tsx                ← entry point → Landing
+      ├── lib/
+      │   └── utils.ts           ← cn() helper
+      ├── adapters/
+      ├── services/
+      ├── domain/
+      │   ├── models/
+      │   └── enums/
+      ├── components/
+      │   ├── atoms/
+      │   │   ├── Button.tsx
+      │   │   ├── Input.tsx
+      │   │   ├── Label.tsx
+      │   │   ├── Badge.tsx
+      │   │   └── NavLink.tsx
+      │   ├── molecules/
+      │   │   ├── FormField.tsx
+      │   │   ├── StatCard.tsx
+      │   │   ├── BentoFeatureCard.tsx
+      │   │   ├── BentoSideCard.tsx
+      │   │   └── BenefitCard.tsx
+      │   └── organisms/
+      │       ├── Header.tsx
+      │       ├── LoginForm.tsx
+      │       ├── HeroSection.tsx
+      │       ├── BentoSection.tsx
+      │       ├── StatsSection.tsx
+      │       ├── CTASection.tsx
+      │       └── Footer.tsx
+      ├── modules/
+      │   ├── public/
+      │   │   ├── landing/
+      │   │   │   └── Landing.tsx  ← PÁGINA PRINCIPAL
+      │   │   ├── about/
+      │   │   └── contact/
+      │   ├── authenticator/
+      │   │   ├── login/
+      │   │   ├── register/
+      │   │   └── recovery/
+      │   └── dashboard/
+      │       ├── networks/
+      │       └── pipeline/
+      ├── assets/
+      │   ├── logos/
+      │   └── static/
+      ├── hooks/
+      └── redux/
+
+
+────────────────────────────────────────────────────────────────────────────────
+COMANDOS PARA DESARROLLO
+────────────────────────────────────────────────────────────────────────────────
+
+  # Servidor de desarrollo
+  npm run dev
+
+  # Type-check
+  npx tsc --noEmit
+
+  # Build de producción
+  npm run build
+
+  # Preview del build
+  npm run preview
+
+================================================================================
+  Build verificado: ✓ 1756 modules | CSS: 22.40 kB | JS: 243.58 kB
+  Estado: COMPILACIÓN EXITOSA SIN ERRORES
+================================================================================
