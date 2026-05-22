@@ -80,13 +80,11 @@ const Header = () => {
           >
             Sign In
           </Button>     
-          <Button
-            variant="primary"
-            size="md"
-            onClick={() => navigate("/register")}
-          >
-            Register
-          </Button>
+          <div aria-hidden="true" className="invisible">
+            <Button variant="primary" size="md">
+              Register
+            </Button>
+          </div>
         </div>
       </div>
 

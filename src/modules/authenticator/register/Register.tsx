@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Header } from "@/components/organisms/Header";
+import { Header } from "./Header";
 import { Footer } from "@/components/organisms/Footer";
 import { RegisterForm } from "@/components/organisms/RegisterForm";
 
