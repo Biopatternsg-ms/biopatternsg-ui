@@ -16,25 +16,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Landing from "@/modules/public/landing/Landing";
-import Register from "@/modules/authenticator/register/Register";
 
 /**
- * App Root Component.
- * Configures the BrowserRouter and defines key public and authenticator routes:
- *   - /         → Public Landing page
- *   - /register → Researcher registration portal
+ * Domain model: User
+ * Interfaces representing user entities and registration payloads.
  */
-function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/register" element={<Register />} />
-      </Routes>
-    </BrowserRouter>
-  );
+
+/**
+ * Payload sent to the register endpoint POST /config-and-control/users.
+ *
+ * NOTE: The backend expects "username" (not "email") as the unique identifier
+ * for the account. The UI still asks the user for an email address, and the
+ * adapter (userAdapter.ts) maps that email value into this `username` field.
+ */
+export interface RegisterPayload {
+  username: string;
+  firstName: string;
+  lastName: string;
+  password: string;
 }
 
-export default App;
+/** Internal authenticated user representation */
+export interface User {
+  id: string;
+  username: string;
+  firstName: string;
+  lastName: string;
+}

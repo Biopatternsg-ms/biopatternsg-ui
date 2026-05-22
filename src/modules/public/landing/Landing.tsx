@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Header } from "@/components/organisms/Header";
+import { Header } from "./Header";
 import { HeroSection } from "@/components/organisms/HeroSection";
 import { BentoSection } from "@/components/organisms/BentoSection";
 import { StatsSection } from "@/components/organisms/StatsSection";

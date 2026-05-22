@@ -28,4 +28,26 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  /**
+   * Dev server proxy — resolves CORS in development.
+   *
+   * Why: The browser blocks cross-origin requests from http://localhost:5173
+   * (Vite dev server) to http://localhost:8081 (Spring Boot backend) because
+   * the ports differ. By proxying through Vite, the browser sees same-origin
+   * requests and never triggers a CORS preflight.
+   *
+   * Flow:
+   *   Browser → http://localhost:5173/config-and-control/users
+   *                ↓ (Vite proxies transparently)
+   *             http://localhost:8081/config-and-control/users
+   */
+  server: {
+    proxy: {
+      "/config-and-control": {
+        target: "http://localhost:8081",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 });

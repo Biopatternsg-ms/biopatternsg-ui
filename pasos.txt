@@ -327,8 +327,71 @@ ESTRUCTURA FINAL DE ARCHIVOS RELEVANTES
 
 
 ────────────────────────────────────────────────────────────────────────────────
+PASO 5 — VISTA DE REGISTRO (modules/authenticator/register)
+────────────────────────────────────────────────────────────────────────────────
+
+5.1 — Instalar dependencias adicionales de navegación y validación
+-----------------------------------------------------------------
+  # Router de React
+  npm install react-router-dom
+
+  # Formularios y validaciones tipadas
+  npm install react-hook-form zod @hookform/resolvers
+
+5.2 — Configurar variable de entorno para URL base del API
+-----------------------------------------------------------------
+  Crear un archivo `.env` en la raíz del proyecto para definir la URL del API:
+    VITE_API_URL=http://localhost:8080
+
+  También se crea un `.env.example` como plantilla para control de versiones.
+  Nota: Las variables en Vite deben empezar por VITE_ para exponerse al cliente.
+
+5.3 — Constantes de URL y endpoints divididos en 2 partes
+-----------------------------------------------------------------
+  En `src/services/apiConfig.ts`:
+  - Parte 1: URL base como constante principal `CONFIG_AND_CONTROL` (de .env)
+  - Parte 2: Path del recurso como constante de ruta `REGISTER_PATH` ("api/config-and-control/users")
+  - Se concatenan dinámicamente en: `USERS_ENDPOINT = `${CONFIG_AND_CONTROL}/${REGISTER_PATH}``
+
+5.4 — Nuevos archivos de la arquitectura del registro
+-----------------------------------------------------------------
+  DOMAIN:
+    · src/domain/models/User.ts: Define interfaces RegisterPayload y User.
+  SERVICES:
+    · src/services/apiConfig.ts: Configuración de constantes del API.
+    · src/services/userService.ts: Función `registerUser` que hace Fetch POST.
+  ADAPTERS:
+    · src/adapters/userAdapter.ts: Adapta inputs de formulario a payloads del API.
+  ATOMS:
+    · src/components/atoms/SuccessModal.tsx: Modal custom con fondo glass-panel,
+      backdrop blur, ícono CheckCircle, y controles de cierre (back, Esc, clic).
+  MOLECULES:
+    · src/components/molecules/RegisterFormFields.tsx: Estructura Email (Full),
+      FirstName y LastName (2 columnas), y Password (Full) con sus errores.
+  ORGANISMS:
+    · src/components/organisms/RegisterForm.tsx: Form completo con resolver Zod,
+      mensajes de error locales y API, animaciones y modal de éxito integrado.
+  MODULES:
+    · src/modules/authenticator/register/Register.tsx: Módulo completo (vista)
+      que acopla Header, RegisterForm centrado sobre bg-surface-section y Footer.
+
+5.5 — Configurar rutas en la aplicación
+-----------------------------------------------------------------
+  En `src/App.tsx`:
+    Configura <BrowserRouter> y <Routes> para enlazar:
+      - "/"        → <Landing /> (landing page)
+      - "/register" → <Register /> (portal de registro de investigadores)
+
+
+────────────────────────────────────────────────────────────────────────────────
 COMANDOS PARA DESARROLLO
 ────────────────────────────────────────────────────────────────────────────────
+
+  # Clonar e instalar dependencias (primera vez)
+  git clone <repo-url>
+  cd biopatternsg-ui
+  cp .env.example .env
+  npm install
 
   # Servidor de desarrollo
   npm run dev
@@ -343,6 +406,6 @@ COMANDOS PARA DESARROLLO
   npm run preview
 
 ================================================================================
-  Build verificado: ✓ 1756 modules | CSS: 22.40 kB | JS: 243.58 kB
-  Estado: COMPILACIÓN EXITOSA SIN ERRORES
+  Build verificado: ✓ 1853 modules | CSS: 25.69 kB | JS: 380.43 kB
+  Estado: COMPILACIÓN EXITOSA SIN ERRORES (0 ADVERTENCIAS)
 ================================================================================
