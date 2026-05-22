@@ -16,25 +16,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Landing from "@/modules/public/landing/Landing";
-import Register from "@/modules/authenticator/register/Register";
+import { USERS_ENDPOINT } from "@/services/apiConfig";
+import type { RegisterPayload } from "@/domain/models/User";
 
 /**
- * App Root Component.
- * Configures the BrowserRouter and defines key public and authenticator routes:
- *   - /         → Public Landing page
- *   - /register → Researcher registration portal
+ * Registers a new user/researcher in the platform.
+ * Returns the raw Fetch Response so the calling component can inspect the status code
+ * (e.g., 2101, 201, 400, etc.).
+ *
+ * @param payload The registration payload containing email, firstName, lastName, and password.
+ * @throws {Error} If a network-level error occurs.
  */
-function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/register" element={<Register />} />
-      </Routes>
-    </BrowserRouter>
-  );
+export async function registerUser(payload: RegisterPayload): Promise<Response> {
+  return fetch(USERS_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
 }
-
-export default App;
