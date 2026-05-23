@@ -10,22 +10,11 @@ pipeline {
     }
 
     stages {
-
         // Stage: Instalar dependencias del proyecto
         stage('Install Dependencies') {
             steps {
                 echo "--- Installing Node.js Dependencies ---"
                 sh 'npm ci'
-            }
-        }
-
-        // Stage A: Run unit tests.
-        stage('Test') {
-            steps {
-                echo "--- Running Unit Tests ---"
-                // Nota: Si no hay pruebas unitarias configuradas en package.json, se puede omitir o configurar aquí.
-                // sh 'npm test || true'
-                echo "No tests configured in package.json yet."
             }
         }
 
