@@ -1,0 +1,122 @@
+pipeline {
+    // Agent setup using the designated Node.js 24 agent
+    agent {
+        label 'jenkins-agent-node-24'
+    }
+
+    environment {
+        CONTAINER_NAME = "${env.JOB_NAME.toLowerCase().replaceAll('[^a-z0-9-]', '-').replaceAll('^[^a-z0-9]+|[^a-z0-9]+$', '')}"
+        PORT = '80' // Puerto estándar para servir la aplicación web (Nginx)
+    }
+
+    stages {
+
+        // Stage: Instalar dependencias del proyecto
+        stage('Install Dependencies') {
+            steps {
+                echo "--- Installing Node.js Dependencies ---"
+                sh 'npm ci'
+            }
+        }
+
+        // Stage A: Run unit tests.
+        stage('Test') {
+            steps {
+                echo "--- Running Unit Tests ---"
+                // Nota: Si no hay pruebas unitarias configuradas en package.json, se puede omitir o configurar aquí.
+                // sh 'npm test || true'
+                echo "No tests configured in package.json yet."
+            }
+        }
+
+        // NUEVA ETAPA: Análisis de Calidad de Código (ESLint)
+        stage('Code Quality Analysis') {
+            steps {
+                echo "--- Running Static Code Analysis with ESLint ---"
+                // Ejecuta ESLint exportando en formato checkstyle para el plugin Warnings NG.
+                // Se añade '|| true' para que el pipeline no falle en caso de advertencias de estilo.
+                sh 'npx eslint . -f checkstyle -o eslint-report.xml || true'
+
+                echo "--- Recording issues with Warnings NG Plugin ---"
+                recordIssues(
+                    tools: [
+                        // Indica la herramienta (ESLint) y la ubicación del archivo de reporte.
+                        esLint(pattern: 'eslint-report.xml')
+                    ],
+                    // Opcional: Define "Quality Gates" para controlar el estado del build.
+                    // Si hay 1 o más advertencias, el build se marcará como "inestable".
+                    qualityGates: [
+                        [threshold: 1, type: 'TOTAL', unstable: true]
+                    ]
+                )
+            }
+        }
+
+        // Stage B: Package the application and archive the results.
+        stage('Package & Archive') {
+            steps {
+                echo "--- Compiling and Packaging the Application ---"
+                sh 'npm run build'
+
+                echo "--- Stashing artifacts for the next stage ---"
+                stash name: 'dist-app', includes: 'dist/**'
+
+                echo "--- Archiving build artifacts ---"
+                archiveArtifacts artifacts: 'dist/**', fingerprint: true
+            }
+        }
+
+        // Stage C: Build the Docker image.
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    echo "--- Unstashing artifacts ---"
+                    unstash 'dist-app'
+
+                    def localImageName = "${CONTAINER_NAME}:latest"
+
+                    echo "--- Building Local Docker Image: ${localImageName} ---"
+                    sh "docker build -t ${localImageName} ."
+                    echo "--- Docker image built successfully! ---"
+                }
+            }
+        }
+
+        // Stage D: Deploy the application as a Docker container.
+        stage('Deploy Application') {
+            steps {
+                script {
+                    def imageName = "${CONTAINER_NAME}:latest"
+
+                    echo "--- Deploying container: ${CONTAINER_NAME} ---"
+                    // Crear red general si no existe
+                    sh "docker network create general-network || true"
+                    
+                    // Detener y eliminar el contenedor viejo si existe para evitar conflictos
+                    sh "docker stop ${CONTAINER_NAME} || true"
+                    sh "docker rm ${CONTAINER_NAME} || true"
+
+                    // Correr el nuevo contenedor de la UI (servidor Nginx sirviendo la carpeta dist)
+                    sh """
+                    docker run -d \\
+                        --name ${CONTAINER_NAME} \\
+                        -p ${PORT}:80 \\
+                        --network general-network \\
+                        --restart always \\
+                        ${imageName}
+                    """
+                    echo "--- Deployment completed! ---"
+                }
+            }
+        }
+    }
+
+    // Acciones post-construcción que se ejecutan al finalizar.
+    post {
+        // Este bloque se ejecuta siempre, independientemente del éxito o fallo del pipeline.
+        always {
+            echo "--- Cleaning up the workspace ---"
+            deleteDir()
+        }
+    }
+}
