@@ -16,38 +16,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
-  },
-  /**
-   * Dev server proxy — resolves CORS in development.
-   *
-   * Why: The browser blocks cross-origin requests from http://localhost:5173
-   * (Vite dev server) to http://localhost:8081 (Spring Boot backend) because
-   * the ports differ. By proxying through Vite, the browser sees same-origin
-   * requests and never triggers a CORS preflight.
-   *
-   * Flow:
-   *   Browser → http://localhost:5173/config-and-control/users
-   *                ↓ (Vite proxies transparently)
-   *             http://localhost:8081/config-and-control/users
-   */
-  server: {
-    proxy: {
-      "/config-and-control": {
-        target: "http://localhost:8081",
-        changeOrigin: true,
-        secure: false,
+export default defineConfig(({ mode }) => {
+  // Carga el archivo .env correspondiente según el "modo" (ej. development o production)
+  const env = loadEnv(mode, process.cwd(), "");
+
+  return {
+    plugins: [react()],
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
       },
     },
-  },
+    server: {
+      proxy: {
+        "/config-and-control": {
+          target: env.VITE_API_URL || "http://localhost:8081",
+          changeOrigin: true,
+          secure: false,
+        },
+      },
+    },
+  };
 });

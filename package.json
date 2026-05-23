@@ -5,7 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "local": "vite --mode development",
+    "prod": "vite --mode production",
     "build": "tsc -b && vite build",
+    "build:local": "tsc -b && vite build --mode development",
+    "build:prod": "tsc -b && vite build --mode production",
     "lint": "eslint .",
     "preview": "vite preview",
     "license:format": "node scripts/add-license.js"
