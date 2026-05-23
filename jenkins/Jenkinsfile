@@ -1,7 +1,11 @@
 pipeline {
-    // Agent setup using the designated Node.js 24 agent
+    // Agent setup using a custom Docker image containing Node.js 24 and Docker CLI.
+    // The Docker socket is mounted to allow the agent to run Docker commands on the host.
     agent {
-        label 'jenkins-agent-node-24'
+        docker {
+            image 'jenkins-agent-node-24' // O 'agent-jenkins-node-24' según la nomenclatura de tu servidor
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
     }
 
     environment {
