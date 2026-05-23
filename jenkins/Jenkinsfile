@@ -10,7 +10,7 @@ pipeline {
 
     environment {
         CONTAINER_NAME = "${env.JOB_NAME.toLowerCase().replaceAll('[^a-z0-9-]', '-').replaceAll('^[^a-z0-9]+|[^a-z0-9]+$', '')}"
-        PORT = '80' // Puerto estándar para servir la aplicación web (Nginx)
+        PORT = '80:81' // Puerto estándar para servir la aplicación web (Nginx)
     }
 
     stages {
