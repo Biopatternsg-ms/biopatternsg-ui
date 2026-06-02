@@ -29,6 +29,7 @@
  *
  *   - In PROD → reads VITE_API_URL from the environment (e.g. https://api.biopatternsg.com).
  */
+
 export const CONFIG_AND_CONTROL: string = import.meta.env.DEV
   ? ""
   : (import.meta.env.VITE_API_URL ?? "http://localhost:8081");
@@ -42,3 +43,6 @@ export const REGISTER_PATH = "config-and-control/users";
  *   - PROD: "https://<host>/config-and-control/users" (absolute)
  */
 export const USERS_ENDPOINT = `${CONFIG_AND_CONTROL}/${REGISTER_PATH}`;
+
+export const LOGIN_PATH = "config-and-control/users/login";
+export const LOGIN_ENDPOINT = `${CONFIG_AND_CONTROL}/${LOGIN_PATH}`;

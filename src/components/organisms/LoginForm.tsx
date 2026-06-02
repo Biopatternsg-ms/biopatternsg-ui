@@ -1,91 +1,132 @@
-/*
- * Copyright © 2026 biopatternsg (biopatternsg@gmail.com)
- *
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+import * as React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { useNavigate } from "react-router-dom";
-import { FormField } from "@/components/molecules/FormField";
-import { Button } from "@/components/atoms/Button";
+import { Loader2 } from "lucide-react";
 
-/**
- * LoginForm Organism.
- * Glassmorphism card ("Glass & Gradient" rule).
- * "No-Line" rule: ghost-border at outline-variant/15 opacity.
- * 
- * Navigation: useNavigate of react-router-dom used to redirect the user to "/register"
- * when they click "Create an institutional account".
- */
+import { Button } from "@/components/atoms/Button";
+import { ErrorModal } from "@/components/atoms/ErrorModal";
+import { LoginFormFields } from "@/components/molecules/LoginFormFields";
+import {
+  toLoginPayload,
+  type LoginFormValues,
+} from "@/adapters/authAdapter";
+import { loginUser, saveSession } from "@/services/authService";
+
+const loginSchema = z.object({
+  username: z
+    .string()
+    .min(1, "El usuario es requerido.")
+    .email("Ingresa un correo electrónico válido."),
+  password: z.string().min(1, "La contraseña es requerida."),
+});
+
 const LoginForm = () => {
   const navigate = useNavigate();
+  const [errorModalOpen, setErrorModalOpen] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState("");
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    mode: "onTouched",
+  });
+
+  const onSubmit = async (values: LoginFormValues) => {
+    try {
+      const payload = toLoginPayload(values);
+      const response = await loginUser(payload);
+
+      if (response.status === 200) {
+        const data = await response.json();
+        saveSession(data);
+        navigate("/dashboard");
+        return;
+      }
+
+      if (response.status === 401) {
+        let msg = "Credenciales inválidas.";
+        try {
+          const resJson = await response.json();
+          if (resJson && typeof resJson.message === "string") {
+            msg = resJson.message;
+          }
+        } catch {
+          // Response is not JSON
+        }
+        setErrorMessage(msg);
+        setErrorModalOpen(true);
+        return;
+      }
+
+      setErrorMessage("Ocurrió un error al momento de iniciar sesión.");
+      setErrorModalOpen(true);
+    } catch {
+      setErrorMessage("Ocurrió un error al momento de iniciar sesión.");
+      setErrorModalOpen(true);
+    }
+  };
 
   return (
-    <div className="glass-panel p-8 rounded-2xl border border-outline-variant/15 shadow-xl relative overflow-hidden">
-      {/* Decorative blur orb */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
+    <>
+      <div className="glass-panel p-8 rounded-2xl border border-outline-variant/15 shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
 
-      <div className="relative z-10">
-        <h2 className="text-2xl font-black font-headline tracking-tight text-on-surface mb-2">
-          Access Lab Portal
-        </h2>
-        <p className="text-sm text-on-surface-variant font-label uppercase tracking-wider mb-8">
-          Node-04 Secure Entrance
-        </p>
-
-        <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-          <FormField
-            label="Researcher Email"
-            type="email"
-            placeholder="name@institute.edu"
-          />
-
-          <FormField
-            label="Security Key"
-            type="password"
-            placeholder="••••••••"
-            labelRight={
-              <a
-                href="#"
-                className="text-[10px] text-primary font-bold uppercase tracking-widest hover:underline"
-              >
-                Forgot?
-              </a>
-            }
-          />
-
-          <Button variant="primary" size="lg" className="w-full py-4" type="submit">
-            Initialize Session
-          </Button>
-        </form>
-
-        {/* Footer divider — "No-Line": outline-variant at 10% */}
-        <div className="mt-8 pt-8 border-t border-outline-variant/10 text-center">
-          <p className="text-sm text-on-surface-variant">
-            New researcher on the team?
+        <div className="relative z-10">
+          <h2 className="text-2xl font-black font-headline tracking-tight text-on-surface mb-2">
+            Access Lab Portal
+          </h2>
+          <p className="text-sm text-on-surface-variant font-label uppercase tracking-wider mb-8">
+            Node-04 Secure Entrance
           </p>
-          <Button
-            variant="link"
-            className="mt-2"
-            type="button"
-            onClick={() => navigate("/register")}
-          >
-            Create an institutional account
-          </Button>
+
+          <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
+            <LoginFormFields register={register} errors={errors} />
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              className="w-full flex items-center justify-center gap-2"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Iniciando sesión...
+                </>
+              ) : (
+                "Initialize Session"
+              )}
+            </Button>
+          </form>
+
+          <div className="mt-8 pt-8 border-t border-outline-variant/10 text-center">
+            <p className="text-sm text-on-surface-variant">
+              New researcher on the team?
+            </p>
+            <Button
+              variant="link"
+              className="mt-2"
+              type="button"
+              onClick={() => navigate("/register")}
+            >
+              Create an institutional account
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+
+      <ErrorModal
+        open={errorModalOpen}
+        message={errorMessage}
+        onClose={() => setErrorModalOpen(false)}
+      />
+    </>
   );
 };
 

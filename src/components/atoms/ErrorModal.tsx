@@ -1,0 +1,106 @@
+import * as React from "react";
+import { AlertTriangle, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/atoms/Button";
+
+export interface ErrorModalProps {
+  open: boolean;
+  message: string;
+  onClose: () => void;
+  title?: string;
+}
+
+const ErrorModal = React.forwardRef<HTMLDivElement, ErrorModalProps>(
+  ({ open, message, onClose, title = "Error de autenticación" }, ref) => {
+    React.useEffect(() => {
+      if (open) {
+        document.body.style.overflow = "hidden";
+      } else {
+        document.body.style.overflow = "";
+      }
+      return () => {
+        document.body.style.overflow = "";
+      };
+    }, [open]);
+
+    React.useEffect(() => {
+      if (!open) return;
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") onClose();
+      };
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [open, onClose]);
+
+    if (!open) return null;
+
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        role="presentation"
+        onClick={onClose}
+      >
+        <div className="absolute inset-0 bg-on-background/40 backdrop-blur-sm transition-opacity duration-300" />
+
+        <div
+          ref={ref}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="error-modal-heading"
+          onClick={(e) => e.stopPropagation()}
+          className={cn(
+            "relative z-10 w-full max-w-md",
+            "glass-panel rounded-2xl p-8",
+            "border border-outline-variant/15",
+            "shadow-xl",
+            "transition-all duration-300 transform scale-100",
+            "animate-in fade-in zoom-in-95 duration-200"
+          )}
+        >
+          <button
+            onClick={onClose}
+            aria-label="Cerrar modal"
+            className="absolute top-4 right-4 text-on-surface-variant hover:text-on-surface transition-colors rounded-lg p-1 hover:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            <X className="w-4 h-4" />
+          </button>
+
+          <div className="absolute top-0 right-0 w-32 h-32 bg-error/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col items-center text-center gap-6">
+            <div className="w-16 h-16 rounded-full bg-error-container flex items-center justify-center shadow-ambient">
+              <AlertTriangle className="w-8 h-8 text-error" strokeWidth={2} />
+            </div>
+
+            <div className="space-y-2">
+              <h2
+                id="error-modal-heading"
+                className="text-xl font-black font-headline tracking-tight text-on-surface"
+              >
+                {title}
+              </h2>
+              <p className="text-sm text-on-surface-variant leading-relaxed">
+                {message}
+              </p>
+            </div>
+
+            <div className="w-full border-t border-outline-variant/10" />
+
+            <Button
+              variant="primary"
+              size="lg"
+              className="w-full shadow-lg"
+              onClick={onClose}
+            >
+              Entendido
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+);
+
+ErrorModal.displayName = "ErrorModal";
+
+export { ErrorModal };

@@ -19,12 +19,16 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Landing from "@/modules/public/landing/Landing";
 import Register from "@/modules/authenticator/register/Register";
+import Login from "@/modules/authenticator/login/Login";
+import Dashboard from "@/modules/dashboard/dashboard/Dashboard";
 
 /**
  * App Root Component.
  * Configures the BrowserRouter and defines key public and authenticator routes:
- *   - /         → Public Landing page
- *   - /register → Researcher registration portal
+ *   - /           → Public Landing page
+ *   - /register   → Researcher registration portal
+ *   - /login      → Researcher login portal
+ *   - /dashboard  → Post-login dashboard
  */
 function App() {
   return (
@@ -32,6 +36,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </BrowserRouter>
   );
