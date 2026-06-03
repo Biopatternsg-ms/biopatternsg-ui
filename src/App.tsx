@@ -20,15 +20,22 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Landing from "@/modules/public/landing/Landing";
 import Register from "@/modules/authenticator/register/Register";
 import Login from "@/modules/authenticator/login/Login";
+import RecoveryPassword from "@/modules/authenticator/recovery/RecoveryPassword";
 import Dashboard from "@/modules/dashboard/dashboard/Dashboard";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 /**
  * App Root Component.
  * Configures the BrowserRouter and defines key public and authenticator routes:
- *   - /           → Public Landing page
- *   - /register   → Researcher registration portal
- *   - /login      → Researcher login portal
- *   - /dashboard  → Post-login dashboard
+ *   - /                  → Public Landing page
+ *   - /register          → Researcher registration portal
+ *   - /login             → Researcher login portal
+ *   - /recovery-password → Password recovery portal (public)
+ *   - /dashboard         → Post-login dashboard (protected — requires access_token)
+ *
+ * The dashboard route is nested under <ProtectedRoute />, which consults
+ * `src/routes/protectedRoutes.ts` to decide whether the current path needs
+ * an authenticated session. Unauthenticated users are redirected to /login.
  */
 function App() {
   return (
@@ -37,7 +44,11 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/recovery-password" element={<RecoveryPassword />} />
+
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );

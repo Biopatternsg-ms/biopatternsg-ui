@@ -16,28 +16,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { useNavigate } from "react-router-dom";
-import { Avatar } from "@/components/atoms/Avatar";
-import { Button } from "@/components/atoms/Button";
-import { useAuth } from "@/context/AuthContext";
 
-const UserMenu = () => {
-  const navigate = useNavigate();
-  const { logout } = useAuth();
+/**
+ * Protected routes registry.
+ *
+ * Single source of truth that lists every URL prefix which requires an
+ * authenticated session. The route guard (`ProtectedRoute`) consults this
+ * module to decide whether the current path is protected.
+ *
+ * Convention: anything under `/dashboard` is protected.
+ */
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
+export const PROTECTED_ROUTES: readonly string[] = [
+  "/dashboard",
+] as const;
 
-  return (
-    <div className="flex items-center gap-3">
-      <Avatar />
-      <Button variant="ghost" size="md" onClick={handleLogout}>
-        Cerrar sesión
-      </Button>
-    </div>
+export function isProtectedRoute(path: string): boolean {
+  return PROTECTED_ROUTES.some(
+    (route) => path === route || path.startsWith(`${route}/`)
   );
-};
-
-export { UserMenu };
+}

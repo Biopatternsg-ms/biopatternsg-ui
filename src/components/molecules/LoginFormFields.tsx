@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useNavigate } from "react-router-dom";
 import type { UseFormRegister, FieldErrors } from "react-hook-form";
 import type { LoginFormValues } from "@/adapters/authAdapter";
 import { Label } from "@/components/atoms/Label";
@@ -10,6 +11,7 @@ export interface LoginFormFieldsProps {
 }
 
 const LoginFormFields = ({ register, errors }: LoginFormFieldsProps) => {
+  const navigate = useNavigate();
   return (
     <div className="space-y-5">
       <div className="space-y-2">
@@ -39,12 +41,13 @@ const LoginFormFields = ({ register, errors }: LoginFormFieldsProps) => {
           {...register("password")}
         />
         <div className="flex justify-end">
-          <a
-            href="#"
-            className="text-[11px] text-primary font-bold uppercase tracking-widest hover:underline"
+          <button
+            type="button"
+            onClick={() => navigate("/recovery-password")}
+            className="text-[11px] text-primary font-bold uppercase tracking-widest hover:underline focus:outline-none focus:ring-2 focus:ring-primary/30 rounded"
           >
             ¿Olvidaste tu contraseña?
-          </a>
+          </button>
         </div>
         {errors.password && (
           <ErrorMessage>{errors.password.message}</ErrorMessage>

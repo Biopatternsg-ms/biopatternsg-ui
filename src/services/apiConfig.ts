@@ -46,3 +46,11 @@ export const USERS_ENDPOINT = `${CONFIG_AND_CONTROL}/${REGISTER_PATH}`;
 
 export const LOGIN_PATH = "config-and-control/users/login";
 export const LOGIN_ENDPOINT = `${CONFIG_AND_CONTROL}/${LOGIN_PATH}`;
+
+/** Endpoint path for refreshing the access token. */
+export const REFRESH_PATH = "config-and-control/users/refresh-token";
+export const REFRESH_ENDPOINT = `${CONFIG_AND_CONTROL}/${REFRESH_PATH}`;
+
+/** Endpoint path for requesting a password recovery email. */
+export const RECOVERY_PASSWORD_PATH = "config-and-control/users/recovery-password";
+export const RECOVERY_PASSWORD_ENDPOINT = `${CONFIG_AND_CONTROL}/${RECOVERY_PASSWORD_PATH}`;

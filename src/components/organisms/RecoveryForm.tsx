@@ -20,80 +20,70 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/atoms/Button";
 import { ErrorModal } from "@/components/atoms/ErrorModal";
-import { LoginFormFields } from "@/components/molecules/LoginFormFields";
+import { SuccessModal } from "@/components/atoms/SuccessModal";
+import { FormField } from "@/components/molecules/FormField";
 import {
-  toLoginPayload,
-  type LoginFormValues,
+  toRecoveryPayload,
+  type RecoveryFormValues,
 } from "@/adapters/authAdapter";
-import { loginUser } from "@/services/authService";
-import { useAuth } from "@/context/AuthContext";
-import type { TokenPair } from "@/domain/models/Auth";
+import { recoverPassword } from "@/services/authService";
 
-const loginSchema = z.object({
-  username: z
+const recoverySchema = z.object({
+  email: z
     .string()
-    .min(1, "El usuario es requerido.")
+    .min(1, "El correo electrónico es requerido.")
     .email("Ingresa un correo electrónico válido."),
-  password: z.string().min(1, "La contraseña es requerida."),
 });
 
-const LoginForm = () => {
+/**
+ * Organism: RecoveryForm
+ * Single-field password recovery form. Posts the email to
+ * POST /config-and-control/users/recovery-password and shows a success or
+ * error modal. Either modal closes by redirecting the user to /dashboard.
+ */
+const RecoveryForm = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { login } = useAuth();
-  const [errorModalOpen, setErrorModalOpen] = React.useState(false);
-  const [errorMessage, setErrorMessage] = React.useState("");
+  const [successOpen, setSuccessOpen] = React.useState(false);
+  const [errorOpen, setErrorOpen] = React.useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<RecoveryFormValues>({
+    resolver: zodResolver(recoverySchema),
     mode: "onTouched",
   });
 
-  const onSubmit = async (values: LoginFormValues) => {
+  const onSubmit = async (values: RecoveryFormValues) => {
     try {
-      const payload = toLoginPayload(values);
-      const response = await loginUser(payload);
+      const payload = toRecoveryPayload(values);
+      const response = await recoverPassword(payload);
 
-      if (response.status === 200) {
-        const data = (await response.json()) as TokenPair;
-        login(data);
-
-        const fromState = location.state as { from?: string } | null;
-        const redirectTo = fromState?.from ?? "/dashboard";
-        navigate(redirectTo, { replace: true });
+      if (response.ok) {
+        setSuccessOpen(true);
         return;
       }
 
-      if (response.status === 401) {
-        let msg = "Credenciales inválidas.";
-        try {
-          const resJson = await response.json();
-          if (resJson && typeof resJson.message === "string") {
-            msg = resJson.message;
-          }
-        } catch {
-          // Response is not JSON
-        }
-        setErrorMessage(msg);
-        setErrorModalOpen(true);
-        return;
-      }
-
-      setErrorMessage("Ocurrió un error al momento de iniciar sesión.");
-      setErrorModalOpen(true);
+      setErrorOpen(true);
     } catch {
-      setErrorMessage("Ocurrió un error al momento de iniciar sesión.");
-      setErrorModalOpen(true);
+      setErrorOpen(true);
     }
+  };
+
+  const handleSuccessClose = () => {
+    setSuccessOpen(false);
+    navigate("/dashboard");
+  };
+
+  const handleErrorClose = () => {
+    setErrorOpen(false);
+    navigate("/dashboard");
   };
 
   return (
@@ -103,14 +93,29 @@ const LoginForm = () => {
 
         <div className="relative z-10">
           <h2 className="text-2xl font-black font-headline tracking-tight text-on-surface mb-2">
-            Access Lab Portal
+            Recover Access
           </h2>
           <p className="text-sm text-on-surface-variant font-label uppercase tracking-wider mb-8">
-            Node-04 Secure Entrance
+            Node-04 Password Recovery
           </p>
 
           <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
-            <LoginFormFields register={register} errors={errors} />
+            <FormField
+              label="Institutional Email"
+              type="email"
+              placeholder="name@institute.edu"
+              autoComplete="email"
+              aria-invalid={!!errors.email}
+              {...register("email")}
+            />
+            {errors.email && (
+              <p
+                role="alert"
+                className="text-[11px] text-error font-label font-medium tracking-wide -mt-4"
+              >
+                {errors.email.message}
+              </p>
+            )}
 
             <Button
               type="submit"
@@ -122,37 +127,44 @@ const LoginForm = () => {
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Iniciando sesión...
+                  Enviando...
                 </>
               ) : (
-                "Initialize Session"
+                "Send Recovery Link"
               )}
             </Button>
           </form>
 
           <div className="mt-8 pt-8 border-t border-outline-variant/10 text-center">
             <p className="text-sm text-on-surface-variant">
-              New researcher on the team?
+              Remembered your password?
             </p>
             <Button
               variant="link"
               className="mt-2"
               type="button"
-              onClick={() => navigate("/register")}
+              onClick={() => navigate("/login")}
             >
-              Create an institutional account
+              Back to the access portal
             </Button>
           </div>
         </div>
       </div>
 
+      <SuccessModal
+        open={successOpen}
+        title="¡Revisa tu correo!"
+        message="Te hemos enviado un email, revisa tu correo electrónico"
+        onClose={handleSuccessClose}
+      />
       <ErrorModal
-        open={errorModalOpen}
-        message={errorMessage}
-        onClose={() => setErrorModalOpen(false)}
+        open={errorOpen}
+        title="Error de recuperación"
+        message="Ocurrió un problema para recuperar tu contraseña"
+        onClose={handleErrorClose}
       />
     </>
   );
 };
 
-export { LoginForm };
+export { RecoveryForm };
