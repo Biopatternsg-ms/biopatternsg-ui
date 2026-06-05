@@ -21,8 +21,8 @@ import {
   hasAccessToken,
   clearTokens,
   setTokens,
-} from "@/services/tokenStorage";
-import { SESSION_EXPIRED_EVENT } from "@/services/httpClient";
+} from "@/core/http/tokenStorage";
+import { SESSION_EXPIRED_EVENT } from "@/core/http/httpClient";
 import type { TokenPair } from "@/domain/models/Auth";
 
 /**

@@ -22,7 +22,7 @@ import Register from "@/modules/authenticator/register/Register";
 import Login from "@/modules/authenticator/login/Login";
 import RecoveryPassword from "@/modules/authenticator/recovery/RecoveryPassword";
 import Dashboard from "@/modules/dashboard/dashboard/Dashboard";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { ProtectedRoute } from "@/core/router/ProtectedRoute";
 
 /**
  * App Root Component.

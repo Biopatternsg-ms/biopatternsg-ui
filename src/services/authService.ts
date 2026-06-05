@@ -20,7 +20,7 @@ import {
   clearTokens,
   getRefreshToken,
   setTokens,
-} from "@/services/tokenStorage";
+} from "@/core/http/tokenStorage";
 import type {
   LoginPayload,
   RecoveryPasswordPayload,

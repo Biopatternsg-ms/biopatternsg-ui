@@ -24,7 +24,7 @@ import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/atoms/Button";
-import { ErrorModal } from "@/components/atoms/ErrorModal";
+import { ErrorModal } from "@/components/molecules/ErrorModal";
 import { SuccessModal } from "@/components/atoms/SuccessModal";
 import { FormField } from "@/components/molecules/FormField";
 import {

@@ -16,8 +16,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { getAccessToken } from "@/services/tokenStorage";
-import { logout, refreshAccessToken } from "@/services/authService";
+import { withAuthHeader } from "./requestInterceptors";
+import {
+  performRefresh,
+  SESSION_EXPIRED_EVENT,
+} from "./responseInterceptors";
+
+export { SESSION_EXPIRED_EVENT };
 
 /**
  * HTTP client with automatic Bearer injection and transparent token refresh.
@@ -35,51 +40,9 @@ import { logout, refreshAccessToken } from "@/services/authService";
  *      AuthContext can react (logout + redirect to /login).
  *
  * Usage:
- *   import { authFetch } from "@/services/httpClient";
+ *   import { authFetch } from "@/core/http/httpClient";
  *   const res = await authFetch("/config-and-control/users/me");
  */
-
-let refreshInFlight: Promise<string> | null = null;
-
-const SESSION_EXPIRED_EVENT = "biopatternsg:session-expired";
-
-function dispatchSessionExpired(): void {
-  window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT));
-}
-
-/**
- * Returns a promise that resolves to a fresh access_token.
- * If a refresh is already in progress, returns the same promise (single-flight).
- * On failure, clears the session and notifies the app.
- */
-function performRefresh(): Promise<string> {
-  if (refreshInFlight) {
-    return refreshInFlight;
-  }
-  refreshInFlight = refreshAccessToken()
-    .then((pair) => {
-      refreshInFlight = null;
-      return pair.access_token;
-    })
-    .catch((err) => {
-      refreshInFlight = null;
-      logout();
-      dispatchSessionExpired();
-      throw err;
-    });
-  return refreshInFlight;
-}
-
-/** Adds (or replaces) the Authorization header with the current access token. */
-function withAuthHeader(init: RequestInit | undefined): RequestInit {
-  const headers = new Headers(init?.headers);
-  const token = getAccessToken();
-  if (token && !headers.has("Authorization")) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
-  return { ...init, headers };
-}
-
 export async function authFetch(
   input: RequestInfo | URL,
   init?: RequestInit
@@ -90,7 +53,6 @@ export async function authFetch(
     return firstResponse;
   }
 
-  // 401 → try to refresh once
   let freshToken: string;
   try {
     freshToken = await performRefresh();
@@ -98,10 +60,7 @@ export async function authFetch(
     return firstResponse;
   }
 
-  // Retry the original request with the new token
   const retryHeaders = new Headers(init?.headers);
   retryHeaders.set("Authorization", `Bearer ${freshToken}`);
   return fetch(input, { ...init, headers: retryHeaders });
 }
-
-export { SESSION_EXPIRED_EVENT };
