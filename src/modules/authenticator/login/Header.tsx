@@ -50,6 +50,7 @@ const Header = () => {
             variant="ghost"
             size="md"
             onClick={() => navigate("/login")}
+            className="invisible"
           >
             Sign In
           </Button>

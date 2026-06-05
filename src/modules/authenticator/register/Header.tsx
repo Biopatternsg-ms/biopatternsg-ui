@@ -79,12 +79,15 @@ const Header = () => {
             onClick={() => navigate("/login")}
           >
             Sign In
-          </Button>     
-          <div aria-hidden="true" className="invisible">
-            <Button variant="primary" size="md">
-              Register
-            </Button>
-          </div>
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => navigate("/register")}
+            className="invisible"
+          >
+            Register
+          </Button>
         </div>
       </div>
 
