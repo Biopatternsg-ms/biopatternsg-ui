@@ -22,12 +22,12 @@ import { RegisterForm } from "@/components/organisms/RegisterForm";
 
 /**
  * Register Page — Authenticator module.
- * 
+ *
  * Layout:
  *   - Shared fixed TopNavBar (Header).
  *   - Centered RegisterForm within a full-height body minus the header offset.
  *   - Shared Footer.
- * 
+ *
  * Rules Adhered:
  *   - "Clinical Lens" aesthetics: body container uses .bg-surface-section for depth transition.
  *   - Offset padding-top adjusted to pt-28 to allow for the logo protruding 50% below the header.
@@ -35,7 +35,7 @@ import { RegisterForm } from "@/components/organisms/RegisterForm";
 const Register = () => {
   return (
     <div className="bg-background text-on-background font-body min-h-screen flex flex-col">
-      {/* Shared Header (TopNavBar) */}
+      {/* Shared TopNavBar */}
       <Header />
 
       {/* Main layout wrapper */}
