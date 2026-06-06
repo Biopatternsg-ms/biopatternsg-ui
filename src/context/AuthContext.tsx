@@ -35,10 +35,11 @@ import type { TokenPair } from "@/domain/models/Auth";
  *   - login(tokens)    : persists the tokens and flips the flag to true.
  *   - logout()         : clears the tokens and flips the flag to false.
  *
- * On mount the provider rehydrates the flag from localStorage, so a page
- * reload does not log the user out. It also subscribes to the
- * "session-expired" event fired by the httpClient when a refresh fails, so
- * the app reacts globally without each component having to listen.
+ * On mount the provider reads the flag from localStorage via a lazy state
+ * initializer, so a page reload does not log the user out. It also
+ * subscribes to the "session-expired" event fired by the httpClient when a
+ * refresh fails, so the app reacts globally without each component having
+ * to listen.
  */
 
 interface AuthContextValue {
@@ -50,11 +51,9 @@ interface AuthContextValue {
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = React.useState<boolean>(false);
-
-  React.useEffect(() => {
-    setIsAuthenticated(hasAccessToken());
-  }, []);
+  const [isAuthenticated, setIsAuthenticated] = React.useState<boolean>(
+    () => hasAccessToken()
+  );
 
   React.useEffect(() => {
     const handler = () => {
