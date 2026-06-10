@@ -37,6 +37,15 @@ const badgeVariants = cva(
         // Live pulse badge
         live:
           "px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed text-[10px] tracking-[0.3em]",
+        // Experiment status — Nuevo
+        new:
+          "px-3 py-1 bg-secondary-fixed text-on-secondary-fixed-variant text-[10px] tracking-widest",
+        // Experiment status — En progreso
+        inProgress:
+          "px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed-variant text-[10px] tracking-widest",
+        // Experiment status — Completado
+        completed:
+          "px-3 py-1 bg-surface-section text-primary-container text-[10px] tracking-widest border border-primary-fixed-dim",
       },
     },
     defaultVariants: {

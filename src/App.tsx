@@ -21,7 +21,8 @@ import Landing from "@/modules/public/landing/Landing";
 import Register from "@/modules/authenticator/register/Register";
 import Login from "@/modules/authenticator/login/Login";
 import RecoveryPassword from "@/modules/authenticator/recovery/RecoveryPassword";
-import Dashboard from "@/modules/dashboard/dashboard/Dashboard";
+import Dashboard from "@/modules/session/dashboard/Dashboard";
+import Network from "@/modules/session/network/Dashboard";
 import { ProtectedRoute } from "@/core/router/ProtectedRoute";
 
 /**
@@ -47,6 +48,7 @@ function App() {
         <Route path="/recovery-password" element={<RecoveryPassword />} />
 
         <Route element={<ProtectedRoute />}>
+          <Route path="/network" element={<Network />} />
           <Route path="/dashboard" element={<Dashboard />} />
         </Route>
       </Routes>

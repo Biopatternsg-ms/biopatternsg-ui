@@ -58,7 +58,7 @@ const Dashboard = () => {
             <div className="text-center mb-8">
               <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label text-[10px] uppercase tracking-widest font-bold">
                 <span className="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse" />
-                Researcher
+                Researcher Dashboard
               </span>
             </div>
 

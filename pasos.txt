@@ -67,8 +67,8 @@ NOTA SOBRE SHADCN UI:
   mkdir src/modules/authenticator/login
   mkdir src/modules/authenticator/register
   mkdir src/modules/authenticator/recovery
-  mkdir src/modules/dashboard/networks
-  mkdir src/modules/dashboard/pipeline
+  mkdir src/modules/session/networks
+  mkdir src/modules/session/pipeline
   mkdir src/assets/logos
   mkdir src/assets/static
   mkdir src/hooks
