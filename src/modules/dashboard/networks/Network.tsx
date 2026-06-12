@@ -16,20 +16,109 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Network as NetworkIcon, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Network as NetworkIcon, Plus, FolderOpen, Pencil, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/atoms/Button";
 import { Sidebar } from "@/components/organisms/Sidebar";
 import { DashboardTopBar } from "@/components/organisms/DashboardTopBar";
-import { NetworksTable } from "@/components/organisms/NetworksTable";
+import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
+import { networkService, type Network as NetworkModel } from "@/services/networkService";
+import { cn } from "@/lib/utils";
 
-/**
- * Network management view.
- *
- * Displays a list of biological neural networks with options to
- * integrate or create new ones. Follows the "Clinical Lens" design
- * system with sidebar + top bar layout.
- */
+const formatUnixTime = (unixSeconds: number) => {
+  const date = new Date(unixSeconds * 1000);
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+const getStatusColor = (index: number): string => {
+  if (index % 3 === 2) return "bg-tertiary";
+  return "bg-primary-container";
+};
+
 const Network = () => {
+  const [networks, setNetworks] = useState<NetworkModel[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchNetworks = async () => {
+      try {
+        setLoading(true);
+        const data = await networkService.getNetworks();
+        setNetworks(data);
+      } catch (err) {
+        setError("Error al cargar las redes");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNetworks();
+  }, []);
+
+  const columns: ColumnDef<NetworkModel>[] = [
+    {
+      header: "Nombre",
+      className: "col-span-3",
+      render: (item, index) => (
+        <div className="flex items-center gap-3">
+          <span
+            className={cn(
+              "w-2 h-2 rounded-full shrink-0",
+              getStatusColor(index)
+            )}
+          />
+          <span className="font-semibold text-on-surface truncate">
+            {item.name}
+          </span>
+        </div>
+      ),
+    },
+    {
+      header: "Descripción",
+      className: "col-span-5 text-on-surface-variant truncate",
+      accessor: "description",
+    },
+    {
+      header: "Fecha de creación",
+      className: "col-span-2 text-on-surface-variant",
+      render: (item) => formatUnixTime(item.createdAt),
+    },
+    {
+      header: "Opciones",
+      className: "col-span-2 text-right",
+      render: (item) => (
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={() => navigate(`/dashboard/experiments/${item.id}`)}
+            className="text-outline hover:text-primary transition-colors duration-300 p-1.5 rounded-lg hover:bg-surface-container-low"
+            title="Abrir"
+          >
+            <FolderOpen className="w-[18px] h-[18px]" />
+          </button>
+          <button
+            className="text-outline hover:text-primary transition-colors duration-300 p-1.5 rounded-lg hover:bg-surface-container-low"
+            title="Editar"
+          >
+            <Pencil className="w-[18px] h-[18px]" />
+          </button>
+          <button
+            className="text-outline hover:text-error transition-colors duration-300 p-1.5 rounded-lg hover:bg-surface-container-low"
+            title="Eliminar"
+          >
+            <Trash2 className="w-[18px] h-[18px]" />
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="bg-surface text-on-surface font-body min-h-screen flex overflow-x-hidden">
       {/* Side Navigation */}
@@ -80,7 +169,14 @@ const Network = () => {
           </div>
 
           {/* Networks Data Table */}
-          <NetworksTable />
+          <DataTable
+            data={networks}
+            columns={columns}
+            loading={loading}
+            error={error}
+            emptyMessage="No hay redes disponibles."
+            keyExtractor={(item) => item.id}
+          />
         </div>
       </main>
     </div>

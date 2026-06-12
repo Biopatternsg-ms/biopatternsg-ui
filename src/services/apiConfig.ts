@@ -58,3 +58,7 @@ export const RECOVERY_PASSWORD_ENDPOINT = `${CONFIG_AND_CONTROL}/${RECOVERY_PASS
 /** Endpoint path for networks. */
 export const NETWORKS_PATH = "config-and-control/networks";
 export const NETWORKS_ENDPOINT = `${CONFIG_AND_CONTROL}/${NETWORKS_PATH}`;
+
+/** Endpoint path for pipelines (experiments). */
+export const PIPELINES_PATH = "config-and-control/pipelines";
+export const PIPELINES_ENDPOINT = `${CONFIG_AND_CONTROL}/${PIPELINES_PATH}`;

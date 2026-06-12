@@ -21,6 +21,7 @@ import Landing from "@/modules/public/Landing";
 import Register from "@/modules/public/Register";
 import RecoveryPassword from "@/modules/public/RecoveryPassword";
 import Network from "@/modules/dashboard/networks/Network";
+import Experiments from "@/modules/experiments/Experiments";
 import { ProtectedRoute } from "@/core/router/ProtectedRoute";
 import { PublicRoute } from "@/core/router/PublicRoute";
 
@@ -44,6 +45,7 @@ function App() {
 
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard/network" element={<Network />} />
+          <Route path="/dashboard/experiments/:networkId?" element={<Experiments />} />
         </Route>
       </Routes>
     </BrowserRouter>

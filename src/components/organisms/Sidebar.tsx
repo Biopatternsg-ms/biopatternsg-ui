@@ -25,11 +25,12 @@ interface NavItem {
   label: string;
   href: string;
   icon: React.ElementType;
+  matchPath?: string;
 }
 
 const navItems: NavItem[] = [
   { label: "Redes", href: "/dashboard/network", icon: Network },
-  { label: "Experimentos", href: "#", icon: Microscope },
+  { label: "Experimentos", href: "/dashboard/experiments", matchPath: "/dashboard/experiments", icon: Microscope },
 ];
 
 const Sidebar = () => {
@@ -59,7 +60,8 @@ const Sidebar = () => {
       <div className="flex flex-col gap-1.5 flex-1">
         {navItems.map((item) => {
           const isActive =
-            item.href !== "#" && location.pathname.startsWith(item.href);
+            (item.href !== "#" && location.pathname.startsWith(item.href)) ||
+            (!!item.matchPath && location.pathname.startsWith(item.matchPath));
           const Icon = item.icon;
           return (
             <button
