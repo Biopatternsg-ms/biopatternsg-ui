@@ -16,68 +16,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { NavLink } from "@/components/atoms/NavLink";
-
-const navItems = [
-  { label: "Home", href: "/" },
-  { label: "Research", href: "#" },
-  { label: "Sequencing", href: "#" },
-  { label: "Datasets", href: "#" },
-];
+import { publicNavItems } from "@/config/navigation";
 
 /**
  * PublicHeader Organism.
  *
  * Shared top navigation bar for all public views (landing, login, register,
- * recovery). The right-side action area is provided by the caller through
- * the `actions` slot, so each view can plug in its own buttons (or wrap
- * them in an `invisible` placeholder when the current page already exposes
- * that action).
+ * recovery). Displays only the brand logo and centered navigation links.
  *
+ * Rules:
  *   - "Glass & Gradient" rule: backdrop-blur-xl + semi-transparent bg.
  *   - "No-Line" rule: separator done via a surface-colored 1px div.
  *   - Active state indicator: Home is marked active only when on "/".
- *
- * Usage:
- *   <PublicHeader
- *     actions={
- *       <>
- *         <Button variant="ghost" onClick={() => navigate("/login")}>Sign In</Button>
- *         <Button variant="primary" onClick={() => navigate("/register")}>Register</Button>
- *       </>
- *     }
- *   />
  */
-export interface PublicHeaderProps {
-  /** Right-side actions (buttons, menus, user widget, etc.). */
-  actions: React.ReactNode;
-}
-
-const PublicHeader = ({ actions }: PublicHeaderProps) => {
+const PublicHeader = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const pathname = location.pathname;
 
   return (
     <nav className="fixed top-0 w-full z-50 glass-nav shadow-nav">
-      <div className="flex items-center justify-between px-8 py-4 max-w-screen-2xl mx-auto">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center px-8 py-4 max-w-screen-2xl mx-auto">
         {/* Logo — behaves as an interactive home trigger */}
         <button
           onClick={() => navigate("/")}
-          className="text-2xl font-black tracking-tighter text-primary hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary/40 rounded-lg px-1.5"
+          className="justify-self-start text-2xl font-black tracking-tighter text-primary hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary/40 rounded-lg px-1.5"
           aria-label="Ir a la página de inicio"
         >
           Biopatternsg
         </button>
 
-        {/* Desktop nav links */}
+        {/* Desktop nav links — centered */}
         <div className="hidden md:flex items-center space-x-8 font-headline tracking-tight font-medium text-sm">
-          {navItems.map((item) => (
+          {publicNavItems.map((item) => (
             <NavLink
               key={item.label}
               href={item.href}
-              active={item.href === "/" && location.pathname === "/"}
+              active={item.href === "/" && pathname === "/"}
               onClick={(e) => {
                 if (item.href === "/") {
                   e.preventDefault();
@@ -90,8 +67,8 @@ const PublicHeader = ({ actions }: PublicHeaderProps) => {
           ))}
         </div>
 
-        {/* Actions (caller-provided slot) */}
-        <div className="flex items-center space-x-4">{actions}</div>
+        {/* Spacer — keeps the nav links centered by balancing the logo width */}
+        <div aria-hidden="true" />
       </div>
 
       {/* "No-Line" separator: bg change instead of border */}

@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 import { useLocation, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Network, Microscope } from "lucide-react";
+import { Network, Microscope } from "lucide-react";
 import { cn } from "@/lib/utils";
 import biologo from "@/assets/biologo.png";
 
@@ -28,8 +28,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Redes", href: "/network", icon: Network },
+  { label: "Redes", href: "/dashboard/network", icon: Network },
   { label: "Experimentos", href: "#", icon: Microscope },
 ];
 
@@ -38,24 +37,29 @@ const Sidebar = () => {
   const navigate = useNavigate();
 
   return (
-    <nav className="hidden md:flex flex-col w-64 h-screen fixed left-0 top-0 bg-surface p-6 gap-8 shadow-nav z-50 border-r border-outline-variant/15">
+    <nav className="hidden md:flex flex-col w-64 h-screen fixed left-0 top-0 bg-surface-section p-6 gap-8 shadow-nav z-50">
       {/* Brand Header */}
-      <div className="flex items-center gap-3 mb-6 pb-6 border-b border-outline-variant/15 w-full">
-        <img 
-          src={biologo} 
-          alt="Biopatternsg Logo" 
-          className="w-10 h-10 object-contain drop-shadow-md" 
+      <div className="flex items-center gap-3 mb-4 pb-4 w-full">
+        <img
+          src={biologo}
+          alt="Biopatternsg Logo"
+          className="w-10 h-10 object-contain drop-shadow-md"
         />
-        <h1 className="font-headline text-[20px] font-bold text-primary tracking-tight">
-          Biopatternsg
-        </h1>
+        <div className="flex flex-col">
+          <h1 className="font-headline text-[18px] font-bold text-on-surface tracking-tighter leading-tight">
+            Biopatterns
+          </h1>
+          <span className="font-label text-[10px] text-on-surface-variant tracking-widest uppercase">
+            Clinical Lens
+          </span>
+        </div>
       </div>
 
       {/* Navigation Links */}
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5 flex-1">
         {navItems.map((item) => {
           const isActive =
-            item.href !== "#" && location.pathname === item.href;
+            item.href !== "#" && location.pathname.startsWith(item.href);
           const Icon = item.icon;
           return (
             <button
@@ -64,24 +68,37 @@ const Sidebar = () => {
                 if (item.href !== "#") navigate(item.href);
               }}
               className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant transition-all group",
+                "flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant transition-all duration-300 group",
                 isActive
-                  ? "text-primary-container font-bold bg-surface-container-highest scale-[0.98]"
-                  : "hover:bg-surface-container hover:text-primary"
+                  ? "text-primary font-bold bg-primary-fixed/40"
+                  : "hover:bg-surface-container/70 hover:text-primary"
               )}
             >
               <Icon
                 className={cn(
-                  "w-5 h-5 transition-colors",
-                  isActive ? "text-primary-container" : "group-hover:text-primary"
+                  "w-5 h-5 transition-colors duration-300",
+                  isActive ? "text-primary" : "group-hover:text-primary"
                 )}
               />
-              <span className="font-label text-[12px] tracking-widest uppercase">
+              <span className="font-body text-[14px] font-medium">
                 {item.label}
               </span>
             </button>
           );
         })}
+      </div>
+
+      {/* System Status */}
+      <div className="bg-surface-container-lowest rounded-xl p-4">
+        <span className="font-label text-[10px] tracking-widest uppercase text-on-surface-variant font-bold block mb-2">
+          System Status
+        </span>
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-tertiary-container animate-pulse" />
+          <span className="font-body text-[13px] text-on-surface font-medium">
+            Core API: Stable
+          </span>
+        </div>
       </div>
     </nav>
   );

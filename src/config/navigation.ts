@@ -16,40 +16,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { useNavigate } from "react-router-dom";
-import { PublicHeader } from "@/components/organisms/PublicHeader";
-import { Button } from "@/components/atoms/Button";
+
+export interface NavItem {
+  label: string;
+  href: string;
+}
 
 /**
- * View-specific Header for /recovery-password.
- * Thin wrapper around PublicHeader that injects the action buttons for this
- * route. Both "Sign In" and "Register" are visible.
+ * Public navigation items shared across all public-facing headers.
  */
-const Header = () => {
-  const navigate = useNavigate();
-
-  return (
-    <PublicHeader
-      actions={
-        <>
-          <Button
-            variant="ghost"
-            size="md"
-            onClick={() => navigate("/login")}
-          >
-            Sign In
-          </Button>
-          <Button
-            variant="primary"
-            size="md"
-            onClick={() => navigate("/register")}
-          >
-            Register
-          </Button>
-        </>
-      }
-    />
-  );
-};
-
-export { Header };
+export const publicNavItems: NavItem[] = [
+  { label: "Home", href: "/" },
+  { label: "Research", href: "#" },
+  { label: "Sequencing", href: "#" },
+  { label: "Datasets", href: "#" },
+];

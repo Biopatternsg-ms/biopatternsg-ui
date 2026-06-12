@@ -17,39 +17,33 @@
  * limitations under the License.
  */
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Landing from "@/modules/public/landing/Landing";
-import Register from "@/modules/authenticator/register/Register";
-import Login from "@/modules/authenticator/login/Login";
-import RecoveryPassword from "@/modules/authenticator/recovery/RecoveryPassword";
-import Dashboard from "@/modules/session/dashboard/Dashboard";
-import Network from "@/modules/session/network/Dashboard";
+import Landing from "@/modules/public/Landing";
+import Register from "@/modules/public/Register";
+import RecoveryPassword from "@/modules/public/RecoveryPassword";
+import Network from "@/modules/dashboard/networks/Network";
 import { ProtectedRoute } from "@/core/router/ProtectedRoute";
+import { PublicRoute } from "@/core/router/PublicRoute";
 
 /**
  * App Root Component.
- * Configures the BrowserRouter and defines key public and authenticator routes:
- *   - /                  → Public Landing page
- *   - /register          → Researcher registration portal
- *   - /login             → Researcher login portal
- *   - /recovery-password → Password recovery portal (public)
- *   - /dashboard         → Post-login dashboard (protected — requires access_token)
- *
- * The dashboard route is nested under <ProtectedRoute />, which consults
- * `src/routes/protectedRoutes.ts` to decide whether the current path needs
- * an authenticated session. Unauthenticated users are redirected to /login.
+ * Configures the BrowserRouter and defines routes:
+ *   - /                  → Public Landing page (blocked if authenticated)
+ *   - /register          → Researcher registration portal (blocked if authenticated)
+ *   - /recovery-password → Password recovery portal (public, blocked if authenticated)
+ *   - /dashboard/network → Network management (protected — requires access_token)
  */
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/recovery-password" element={<RecoveryPassword />} />
+        <Route element={<PublicRoute />}>
+          <Route path="/" element={<Landing />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/recovery-password" element={<RecoveryPassword />} />
+        </Route>
 
         <Route element={<ProtectedRoute />}>
-          <Route path="/network" element={<Network />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard/network" element={<Network />} />
         </Route>
       </Routes>
     </BrowserRouter>

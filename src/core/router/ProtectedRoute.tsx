@@ -24,8 +24,8 @@ import { isProtectedRoute } from "@/routes/protectedRoutes";
  * Route guard component.
  *
  * Wrap any set of routes with `<Route element={<ProtectedRoute />}>` and
- * they will only be reachable when an access token is present. If the user
- * is not authenticated, they are redirected to `/login` and the originally
+  * they will only be reachable when an access token is present. If the user
+ * is not authenticated, they are redirected to `/` (Landing page) and the originally
  * requested path is preserved in the `from` location state so the login
  * flow can return the user to where they were heading.
  *
@@ -43,7 +43,7 @@ export function ProtectedRoute() {
   if (requiresAuth && !isAuthenticated) {
     return (
       <Navigate
-        to="/login"
+        to="/"
         replace
         state={{ from: location.pathname + location.search }}
       />

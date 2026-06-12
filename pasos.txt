@@ -61,12 +61,9 @@ NOTA SOBRE SHADCN UI:
   mkdir src/components/atoms
   mkdir src/components/molecules
   mkdir src/components/organisms
-  mkdir src/modules/public/landing
+  mkdir src/modules/public
   mkdir src/modules/public/about
   mkdir src/modules/public/contact
-  mkdir src/modules/authenticator/login
-  mkdir src/modules/authenticator/register
-  mkdir src/modules/authenticator/recovery
   mkdir src/modules/session/networks
   mkdir src/modules/session/pipeline
   mkdir src/assets/logos

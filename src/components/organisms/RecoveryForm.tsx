@@ -78,12 +78,12 @@ const RecoveryForm = () => {
 
   const handleSuccessClose = () => {
     setSuccessOpen(false);
-    navigate("/dashboard");
+    navigate("/");
   };
 
   const handleErrorClose = () => {
     setErrorOpen(false);
-    navigate("/dashboard");
+    navigate("/");
   };
 
   return (
@@ -143,7 +143,7 @@ const RecoveryForm = () => {
               variant="link"
               className="mt-2"
               type="button"
-              onClick={() => navigate("/login")}
+              onClick={() => navigate("/")}
             >
               Back to the access portal
             </Button>

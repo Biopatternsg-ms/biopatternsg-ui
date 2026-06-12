@@ -18,7 +18,6 @@
  */
 
 import { authFetch } from "@/core/http/httpClient";
-import { getAccessToken } from "@/core/http/tokenStorage";
 import { NETWORKS_ENDPOINT } from "./apiConfig";
 
 export interface Network {
@@ -33,17 +32,9 @@ export const networkService = {
   /**
    * Retrieves the list of networks using authFetch, which automatically
    * injects the Authorization: Bearer token into the headers.
-   * Additionally, injects an explicitly requested 'authentication' header.
    */
   async getNetworks(): Promise<Network[]> {
-    const token = getAccessToken();
-    const response = await authFetch(NETWORKS_ENDPOINT, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { authorization: `Bearer ${token}` } : {}),
-      },
-    });
+    const response = await authFetch(NETWORKS_ENDPOINT);
 
     if (!response.ok) {
       throw new Error("Failed to fetch networks");

@@ -68,7 +68,7 @@ const LoginForm = () => {
         login(data);
 
         const fromState = location.state as { from?: string } | null;
-        const redirectTo = fromState?.from ?? "/dashboard";
+        const redirectTo = fromState?.from ?? "/dashboard/network";
         navigate(redirectTo, { replace: true });
         return;
       }

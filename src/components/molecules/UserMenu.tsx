@@ -16,18 +16,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { useNavigate } from "react-router-dom";
 import { Avatar } from "@/components/atoms/Avatar";
 import { Button } from "@/components/atoms/Button";
 import { useAuth } from "@/context/AuthContext";
 
 const UserMenu = () => {
-  const navigate = useNavigate();
   const { logout } = useAuth();
 
   const handleLogout = () => {
     logout();
-    navigate("/");
+    window.location.href = "/";
   };
 
   return (

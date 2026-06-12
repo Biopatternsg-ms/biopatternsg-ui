@@ -16,38 +16,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { useNavigate } from "react-router-dom";
-import { PublicHeader } from "@/components/organisms/PublicHeader";
-import { Button } from "@/components/atoms/Button";
+import { Navigate, Outlet } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 /**
- * View-specific Header for /login.
- * Thin wrapper around PublicHeader that injects the action buttons for this
- * route. "Sign In" is hidden because the user is already on /login.
+ * Route guard component for public routes.
+ *
+ * If the user is already authenticated, they are redirected to `/dashboard/network`.
+ * Otherwise, it lets the request pass through.
  */
-const Header = () => {
-  const navigate = useNavigate();
+export function PublicRoute() {
+  const { isAuthenticated } = useAuth();
 
-  return (
-    <PublicHeader
-      actions={
-        <>
-          <div aria-hidden="true" className="invisible">
-            <Button variant="ghost" size="md">
-              Sign In
-            </Button>
-          </div>
-          <Button
-            variant="primary"
-            size="md"
-            onClick={() => navigate("/register")}
-          >
-            Register
-          </Button>
-        </>
-      }
-    />
-  );
-};
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard/network" replace />;
+  }
 
-export { Header };
+  return <Outlet />;
+}

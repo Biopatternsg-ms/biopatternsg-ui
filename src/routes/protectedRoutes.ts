@@ -27,9 +27,7 @@
  * Convention: anything under `/dashboard` is protected.
  */
 
-export const PROTECTED_ROUTES: readonly string[] = [
-  "/dashboard",
-] as const;
+export const PROTECTED_ROUTES: readonly string[] = ["/dashboard"] as const;
 
 export function isProtectedRoute(path: string): boolean {
   return PROTECTED_ROUTES.some(
