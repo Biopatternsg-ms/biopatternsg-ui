@@ -59,17 +59,20 @@ export function DataTable<T>({
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Table Container */}
-      <div className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-ambient">
-        {/* Table Header */}
-        <div className="grid grid-cols-12 gap-4 px-8 py-5 bg-surface-container-low font-label text-[11px] tracking-widest uppercase text-on-surface-variant">
+    <div className="flex flex-col">
+      {/* Wrapper to control gap between header and table */}
+      <div className="flex flex-col gap-2">
+        {/* Table Header (Fuera de la tarjeta) */}
+        <div className="grid grid-cols-12 gap-4 px-8 pb-2 pt-4 font-headline text-[13px] font-bold tracking-widest uppercase text-on-surface-variant">
           {columns.map((col, idx) => (
             <div key={idx} className={col.className}>
               {col.header}
             </div>
           ))}
         </div>
+
+        {/* Table Container */}
+        <div className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-ambient">
 
         {/* Table Body */}
         <div className="flex flex-col">
@@ -85,8 +88,8 @@ export function DataTable<T>({
                 <div
                   key={keyExtractor(item)}
                   className={cn(
-                    "grid grid-cols-12 gap-4 px-8 py-5 items-center transition-all duration-300 font-body text-sm",
-                    "hover:bg-surface-container-high"
+                    "grid grid-cols-12 gap-4 px-8 py-6 items-center transition-all duration-300 font-body text-[15px]",
+                    "hover:bg-surface-container-high border-b border-outline-variant/20 last:border-0"
                   )}
                 >
                   {columns.map((col, colIdx) => (
@@ -104,10 +107,11 @@ export function DataTable<T>({
           )}
         </div>
       </div>
+      </div>
 
       {/* Pagination */}
       {data.length > 0 && (
-        <div className="flex items-center justify-between px-2">
+        <div className="flex items-center justify-between px-2 mt-6">
           <span className="font-body text-sm text-on-surface-variant">
             Showing {paginatedData.length} of {data.length} items
           </span>
@@ -144,9 +148,9 @@ export function DataTable<T>({
                   key={page}
                   onClick={() => goToPage(page)}
                   className={cn(
-                    "w-8 h-8 rounded-lg font-body text-sm font-medium transition-all duration-300",
+                    "w-8 h-8 rounded-md font-body text-sm font-medium transition-all duration-300",
                     page === currentPage
-                      ? "bg-primary-container text-on-primary font-bold shadow-sm"
+                      ? "bg-primary text-white font-bold shadow-sm"
                       : "text-on-surface-variant hover:bg-surface-container-low hover:text-primary"
                   )}
                 >

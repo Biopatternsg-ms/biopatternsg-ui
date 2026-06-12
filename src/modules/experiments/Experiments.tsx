@@ -18,13 +18,14 @@
  */
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Microscope, ArrowLeft } from "lucide-react";
+import { Microscope, ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { Sidebar } from "@/components/organisms/Sidebar";
 import { DashboardTopBar } from "@/components/organisms/DashboardTopBar";
 import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
 import { Badge } from "@/components/atoms/Badge";
 import { pipelineService, type Pipeline } from "@/services/pipelineService";
 import { Button } from "@/components/atoms/Button";
+import { cn } from "@/lib/utils";
 
 const formatUnixTime = (unixSeconds: number) => {
   const date = new Date(unixSeconds * 1000);
@@ -81,7 +82,7 @@ const Experiments = () => {
     },
     {
       header: "Descripción",
-      className: "col-span-5 text-on-surface-variant truncate",
+      className: "col-span-3 text-on-surface-variant truncate",
       accessor: "description",
     },
     {
@@ -95,8 +96,28 @@ const Experiments = () => {
     },
     {
       header: "Fecha de creación",
-      className: "col-span-2 text-on-surface-variant",
+      className: "col-span-2 text-on-surface-variant whitespace-nowrap",
       render: (item) => formatUnixTime(item.createdAt),
+    },
+    {
+      header: "Opciones",
+      className: "col-span-2 text-right",
+      render: () => (
+        <div className="flex justify-end gap-2">
+          <button
+            className="text-outline hover:text-primary transition-colors duration-300 p-1.5 rounded-lg hover:bg-surface-container-low"
+            title="Editar"
+          >
+            <Pencil className="w-[18px] h-[18px]" />
+          </button>
+          <button
+            className="text-outline hover:text-error transition-colors duration-300 p-1.5 rounded-lg hover:bg-surface-container-low"
+            title="Eliminar"
+          >
+            <Trash2 className="w-[18px] h-[18px]" />
+          </button>
+        </div>
+      ),
     },
   ];
 
@@ -106,7 +127,7 @@ const Experiments = () => {
       <Sidebar />
 
       {/* Main Content Area */}
-      <main className="flex-1 ml-0 md:ml-64 flex flex-col min-h-screen bg-surface-base">
+      <main className="flex-1 ml-0 md:ml-64 flex flex-col min-h-screen">
         {/* Top Bar */}
         <DashboardTopBar title="Dashboard" />
 
@@ -114,7 +135,7 @@ const Experiments = () => {
         <div className="p-8 max-w-7xl mx-auto w-full flex-1 flex flex-col gap-10">
           
           {/* Back button */}
-          <div>
+          <div className={cn(!networkId && "invisible")}>
             <Button
               variant="ghost"
               size="sm"
@@ -132,7 +153,7 @@ const Experiments = () => {
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-3">
                 <Microscope className="text-primary-container w-7 h-7" />
-                <h2 className="font-headline text-2xl font-semibold text-on-surface tracking-tighter">
+                <h2 className="font-headline text-2xl font-black text-on-surface tracking-tighter">
                   Experimentos
                 </h2>
               </div>

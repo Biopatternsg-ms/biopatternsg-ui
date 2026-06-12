@@ -32,7 +32,7 @@ const DashboardTopBar = ({ title = "Dashboard" }: DashboardTopBarProps) => {
         <button className="text-on-surface-variant hover:text-primary transition-colors p-1">
           <Menu className="w-6 h-6" />
         </button>
-        <span className="font-headline text-[18px] font-bold text-on-surface tracking-tighter">
+        <span className="font-headline text-[18px] font-black text-on-surface tracking-tighter">
           {title}
         </span>
       </div>
@@ -42,7 +42,7 @@ const DashboardTopBar = ({ title = "Dashboard" }: DashboardTopBarProps) => {
         <button className="text-on-surface-variant hover:text-primary transition-colors p-1">
           <Menu className="w-5 h-5" />
         </button>
-        <h2 className="font-headline text-[22px] font-bold text-on-surface tracking-tighter">
+        <h2 className="font-headline text-[22px] font-black text-on-surface tracking-tighter">
           {title}
         </h2>
       </div>

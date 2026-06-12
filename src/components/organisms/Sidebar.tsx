@@ -38,7 +38,7 @@ const Sidebar = () => {
   const navigate = useNavigate();
 
   return (
-    <nav className="hidden md:flex flex-col w-64 h-screen fixed left-0 top-0 bg-surface-section p-6 gap-8 shadow-nav z-50">
+    <nav className="hidden md:flex flex-col w-64 h-screen fixed left-0 top-0 glass-nav border-r border-outline-variant/20 p-6 gap-8 z-50">
       {/* Brand Header */}
       <div className="flex items-center gap-3 mb-4 pb-4 w-full">
         <img
@@ -47,8 +47,8 @@ const Sidebar = () => {
           className="w-10 h-10 object-contain drop-shadow-md"
         />
         <div className="flex flex-col">
-          <h1 className="font-headline text-[18px] font-bold text-on-surface tracking-tighter leading-tight">
-            Biopatterns
+          <h1 className="font-headline text-2xl font-black text-primary tracking-tighter leading-tight">
+            Biopatternsg
           </h1>
           <span className="font-label text-[10px] text-on-surface-variant tracking-widest uppercase">
             Clinical Lens

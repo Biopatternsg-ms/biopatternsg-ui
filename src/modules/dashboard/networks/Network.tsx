@@ -82,12 +82,12 @@ const Network = () => {
     },
     {
       header: "Descripción",
-      className: "col-span-5 text-on-surface-variant truncate",
+      className: "col-span-4 text-on-surface-variant truncate",
       accessor: "description",
     },
     {
       header: "Fecha de creación",
-      className: "col-span-2 text-on-surface-variant",
+      className: "col-span-3 text-on-surface-variant whitespace-nowrap",
       render: (item) => formatUnixTime(item.createdAt),
     },
     {
@@ -125,7 +125,7 @@ const Network = () => {
       <Sidebar />
 
       {/* Main Content Area */}
-      <main className="flex-1 ml-0 md:ml-64 flex flex-col min-h-screen bg-surface-base">
+      <main className="flex-1 ml-0 md:ml-64 flex flex-col min-h-screen">
         {/* Top Bar */}
         <DashboardTopBar title="Dashboard" />
 
@@ -137,7 +137,7 @@ const Network = () => {
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-3">
                 <NetworkIcon className="text-primary-container w-7 h-7" />
-                <h2 className="font-headline text-2xl font-semibold text-on-surface tracking-tighter">
+                <h2 className="font-headline text-2xl font-black text-on-surface tracking-tighter">
                   Redes
                 </h2>
               </div>
@@ -147,12 +147,11 @@ const Network = () => {
               </p>
             </div>
 
-            {/* Right: Action Buttons */}
             <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="md"
-                className="rounded-[1rem] gap-2 text-primary font-semibold hover:bg-primary-fixed/30 transition-all"
+                className="gap-2 text-primary font-semibold hover:bg-primary-fixed/30 transition-all"
               >
                 <NetworkIcon className="w-[18px] h-[18px]" />
                 Integrar red
@@ -160,7 +159,7 @@ const Network = () => {
               <Button
                 variant="primary"
                 size="md"
-                className="rounded-[1rem] hover:shadow-primary-glow transition-all transform hover:-translate-y-0.5"
+                className="hover:shadow-primary-glow transition-all transform hover:-translate-y-0.5"
               >
                 <Plus className="w-[18px] h-[18px]" />
                 Crear red
