@@ -17,21 +17,38 @@
  * limitations under the License.
  */
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Landing from "@/modules/public/landing/Landing";
-import Register from "@/modules/authenticator/register/Register";
+import Landing from "@/modules/public/Landing";
+import Register from "@/modules/public/Register";
+import RecoveryPassword from "@/modules/public/RecoveryPassword";
+import Network from "@/modules/dashboard/networks/Network";
+import Experiments from "@/modules/experiments/Experiments";
+import CreateNetwork from "@/modules/dashboard/networks/CreateNetwork";
+import { ProtectedRoute } from "@/core/router/ProtectedRoute";
+import { PublicRoute } from "@/core/router/PublicRoute";
 
 /**
  * App Root Component.
- * Configures the BrowserRouter and defines key public and authenticator routes:
- *   - /         → Public Landing page
- *   - /register → Researcher registration portal
+ * Configures the BrowserRouter and defines routes:
+ *   - /                  → Public Landing page (blocked if authenticated)
+ *   - /register          → Researcher registration portal (blocked if authenticated)
+ *   - /recovery-password → Password recovery portal (public, blocked if authenticated)
+ *   - /dashboard/network → Network management (protected — requires access_token)
  */
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/register" element={<Register />} />
+        <Route element={<PublicRoute />}>
+          <Route path="/" element={<Landing />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/recovery-password" element={<RecoveryPassword />} />
+        </Route>
+
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard/network" element={<Network />} />
+          <Route path="/dashboard/network/create" element={<CreateNetwork />} />
+          <Route path="/dashboard/experiments/:networkId?" element={<Experiments />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );

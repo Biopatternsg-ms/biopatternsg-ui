@@ -16,16 +16,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
-import { AuthProvider } from '@/context/AuthContext'
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
-  </StrictMode>,
-)
+export interface NavItem {
+  label: string;
+  href: string;
+}
+
+/**
+ * Public navigation items shared across all public-facing headers.
+ */
+export const publicNavItems: NavItem[] = [
+  { label: "Home", href: "/" },
+  { label: "Research", href: "#" },
+  { label: "Sequencing", href: "#" },
+  { label: "Datasets", href: "#" },
+];

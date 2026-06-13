@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Header } from "./Header";
+import { PublicHeader } from "@/components/organisms/PublicHeader";
 import { HeroSection } from "@/components/organisms/HeroSection";
 import { BentoSection } from "@/components/organisms/BentoSection";
 import { StatsSection } from "@/components/organisms/StatsSection";
@@ -30,12 +30,12 @@ import { Footer } from "@/components/organisms/Footer";
  * Atomic Design hierarchy used:
  *   Atoms   → Button, Input, Label, Badge, NavLink
  *   Molecules → FormField, StatCard, BentoFeatureCard, BentoSideCard, BenefitCard
- *   Organisms → Header, LoginForm, HeroSection, BentoSection, StatsSection, CTASection, Footer
+ *   Organisms → PublicHeader, LoginForm, HeroSection, BentoSection, StatsSection, CTASection, Footer
  */
 const Landing = () => (
   <div className="bg-background text-on-background font-body min-h-screen">
     {/* Fixed TopNavBar */}
-    <Header />
+    <PublicHeader />
 
     {/* Page content — offset for fixed nav */}
     <main className="pt-24">

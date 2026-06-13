@@ -16,16 +16,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
-import { AuthProvider } from '@/context/AuthContext'
+import type {
+  LoginPayload,
+  RecoveryPasswordPayload,
+} from "@/domain/models/Auth";
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
-  </StrictMode>,
-)
+export interface LoginFormValues {
+  username: string;
+  password: string;
+}
+
+export function toLoginPayload(formValues: LoginFormValues): LoginPayload {
+  return {
+    username: formValues.username.trim().toLowerCase(),
+    password: formValues.password,
+  };
+}
+
+export interface RecoveryFormValues {
+  email: string;
+}
+
+export function toRecoveryPayload(
+  formValues: RecoveryFormValues
+): RecoveryPasswordPayload {
+  return {
+    username: formValues.email.trim().toLowerCase(),
+  };
+}

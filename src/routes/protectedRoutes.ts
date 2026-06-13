@@ -16,16 +16,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
-import { AuthProvider } from '@/context/AuthContext'
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
-  </StrictMode>,
-)
+/**
+ * Protected routes registry.
+ *
+ * Single source of truth that lists every URL prefix which requires an
+ * authenticated session. The route guard (`ProtectedRoute`) consults this
+ * module to decide whether the current path is protected.
+ *
+ * Convention: anything under `/dashboard` is protected.
+ */
+
+export const PROTECTED_ROUTES: readonly string[] = ["/dashboard"] as const;
+
+export function isProtectedRoute(path: string): boolean {
+  return PROTECTED_ROUTES.some(
+    (route) => path === route || path.startsWith(`${route}/`)
+  );
+}

@@ -16,16 +16,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
-import { AuthProvider } from '@/context/AuthContext'
+import { getAccessToken } from "./tokenStorage";
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
-  </StrictMode>,
-)
+/** Adds (or replaces) the Authorization header with the current access token. */
+export function withAuthHeader(init: RequestInit | undefined): RequestInit {
+  const headers = new Headers(init?.headers);
+  const token = getAccessToken();
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  return { ...init, headers };
+}

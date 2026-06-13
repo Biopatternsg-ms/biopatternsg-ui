@@ -16,16 +16,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
-import { AuthProvider } from '@/context/AuthContext'
+import { Avatar } from "@/components/atoms/Avatar";
+import { Button } from "@/components/atoms/Button";
+import { useAuth } from "@/context/AuthContext";
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
-  </StrictMode>,
-)
+const UserMenu = () => {
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    window.location.href = "/";
+  };
+
+  return (
+    <div className="flex items-center gap-3">
+      <Avatar />
+      <Button variant="ghost" size="md" onClick={handleLogout}>
+        Cerrar sesión
+      </Button>
+    </div>
+  );
+};
+
+export { UserMenu };

@@ -16,16 +16,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
-import { AuthProvider } from '@/context/AuthContext'
+import { Navigate, Outlet } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
-  </StrictMode>,
-)
+/**
+ * Route guard component for public routes.
+ *
+ * If the user is already authenticated, they are redirected to `/dashboard/network`.
+ * Otherwise, it lets the request pass through.
+ */
+export function PublicRoute() {
+  const { isAuthenticated } = useAuth();
+
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard/network" replace />;
+  }
+
+  return <Outlet />;
+}

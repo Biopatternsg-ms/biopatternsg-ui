@@ -29,9 +29,10 @@
  *
  *   - In PROD → reads VITE_API_URL from the environment (e.g. https://api.biopatternsg.com).
  */
+
 export const CONFIG_AND_CONTROL: string = import.meta.env.DEV
   ? ""
-  : (import.meta.env.VITE_API_URL ?? "http://localhost:8081");
+  : (import.meta.env.VITE_API_URL ?? "http://localhost:8008/api");
 
 /** Endpoint path for users (do NOT include a leading slash — it's added below). */
 export const REGISTER_PATH = "config-and-control/users";
@@ -42,3 +43,22 @@ export const REGISTER_PATH = "config-and-control/users";
  *   - PROD: "https://<host>/config-and-control/users" (absolute)
  */
 export const USERS_ENDPOINT = `${CONFIG_AND_CONTROL}/${REGISTER_PATH}`;
+
+export const LOGIN_PATH = "config-and-control/users/login";
+export const LOGIN_ENDPOINT = `${CONFIG_AND_CONTROL}/${LOGIN_PATH}`;
+
+/** Endpoint path for refreshing the access token. */
+export const REFRESH_PATH = "config-and-control/users/refresh-token";
+export const REFRESH_ENDPOINT = `${CONFIG_AND_CONTROL}/${REFRESH_PATH}`;
+
+/** Endpoint path for requesting a password recovery email. */
+export const RECOVERY_PASSWORD_PATH = "config-and-control/users/recovery-password";
+export const RECOVERY_PASSWORD_ENDPOINT = `${CONFIG_AND_CONTROL}/${RECOVERY_PASSWORD_PATH}`;
+
+/** Endpoint path for networks. */
+export const NETWORKS_PATH = "config-and-control/networks";
+export const NETWORKS_ENDPOINT = `${CONFIG_AND_CONTROL}/${NETWORKS_PATH}`;
+
+/** Endpoint path for pipelines (experiments). */
+export const PIPELINES_PATH = "config-and-control/pipelines";
+export const PIPELINES_ENDPOINT = `${CONFIG_AND_CONTROL}/${PIPELINES_PATH}`;
