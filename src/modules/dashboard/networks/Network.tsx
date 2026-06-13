@@ -159,6 +159,7 @@ const Network = () => {
               <Button
                 variant="primary"
                 size="md"
+                onClick={() => navigate("/dashboard/network/create")}
                 className="hover:shadow-primary-glow transition-all transform hover:-translate-y-0.5"
               >
                 <Plus className="w-[18px] h-[18px]" />
