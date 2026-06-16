@@ -21,7 +21,7 @@ import { NavLink } from "@/components/atoms/NavLink";
 import { publicNavItems } from "@/config/navigation";
 
 /**
- * PublicHeader Organism.
+ * Header Organism.
  *
  * Shared top navigation bar for all public views (landing, login, register,
  * recovery). Displays only the brand logo and centered navigation links.
@@ -31,7 +31,7 @@ import { publicNavItems } from "@/config/navigation";
  *   - "No-Line" rule: separator done via a surface-colored 1px div.
  *   - Active state indicator: Home is marked active only when on "/".
  */
-const PublicHeader = () => {
+const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const pathname = location.pathname;
@@ -77,4 +77,4 @@ const PublicHeader = () => {
   );
 };
 
-export { PublicHeader };
+export { Header };

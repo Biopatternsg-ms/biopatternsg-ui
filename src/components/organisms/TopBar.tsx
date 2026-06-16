@@ -19,12 +19,12 @@
 import { Menu, Bell, HelpCircle } from "lucide-react";
 import { UserMenu } from "@/components/molecules/UserMenu";
 
-interface DashboardTopBarProps {
+interface TopBarProps {
   /** The breadcrumb title shown on desktop, e.g. "Dashboard" */
   title?: string;
 }
 
-const DashboardTopBar = ({ title = "Dashboard" }: DashboardTopBarProps) => {
+const TopBar = ({ title = "Dashboard" }: TopBarProps) => {
   return (
     <header className="h-16 w-full sticky top-0 z-40 glass-nav flex justify-between items-center px-8 shadow-nav">
       {/* Mobile hamburger + Brand (Hidden on Desktop) */}
@@ -66,4 +66,4 @@ const DashboardTopBar = ({ title = "Dashboard" }: DashboardTopBarProps) => {
   );
 };
 
-export { DashboardTopBar };
+export { TopBar };

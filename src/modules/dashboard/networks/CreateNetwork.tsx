@@ -21,7 +21,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Share2, ArrowRight, Loader2, ChevronRight } from "lucide-react";
 import { Sidebar } from "@/components/organisms/Sidebar";
-import { DashboardTopBar } from "@/components/organisms/DashboardTopBar";
+import { TopBar } from "@/components/organisms/TopBar";
 import { Button } from "@/components/atoms/Button";
 import { networkService } from "@/services/networkService";
 
@@ -60,7 +60,7 @@ const CreateNetwork = () => {
       {/* Main Content Area */}
       <main className="flex-1 ml-0 md:ml-64 flex flex-col min-h-screen">
         {/* Top Bar */}
-        <DashboardTopBar title="Dashboard" />
+        <TopBar title="Dashboard" />
 
         {/* Content */}
         <div className="flex-1 flex flex-col gap-6 px-8 py-8">

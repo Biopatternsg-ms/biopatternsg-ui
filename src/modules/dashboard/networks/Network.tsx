@@ -21,7 +21,7 @@ import { Network as NetworkIcon, Plus, FolderOpen, Pencil, Trash2 } from "lucide
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/atoms/Button";
 import { Sidebar } from "@/components/organisms/Sidebar";
-import { DashboardTopBar } from "@/components/organisms/DashboardTopBar";
+import { TopBar } from "@/components/organisms/TopBar";
 import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
 import { networkService, type Network as NetworkModel } from "@/services/networkService";
 import { cn } from "@/lib/utils";
@@ -127,7 +127,7 @@ const Network = () => {
       {/* Main Content Area */}
       <main className="flex-1 ml-0 md:ml-64 flex flex-col min-h-screen">
         {/* Top Bar */}
-        <DashboardTopBar title="Dashboard" />
+        <TopBar title="Dashboard" />
 
         {/* Page Canvas */}
         <div className="p-8 max-w-7xl mx-auto w-full flex-1 flex flex-col gap-10">
