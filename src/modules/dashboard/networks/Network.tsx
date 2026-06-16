@@ -95,25 +95,28 @@ const Network = () => {
       className: "col-span-2 text-right",
       render: (item) => (
         <div className="flex justify-end gap-2">
-          <button
+          <Button
+            variant="icon"
+            size="icon"
             onClick={() => navigate(`/dashboard/experiments/${item.id}`)}
-            className="text-outline hover:text-primary transition-colors duration-300 p-1.5 rounded-lg hover:bg-surface-container-low"
             title="Abrir"
           >
             <FolderOpen className="w-[18px] h-[18px]" />
-          </button>
-          <button
-            className="text-outline hover:text-primary transition-colors duration-300 p-1.5 rounded-lg hover:bg-surface-container-low"
+          </Button>
+          <Button
+            variant="icon"
+            size="icon"
             title="Editar"
           >
             <Pencil className="w-[18px] h-[18px]" />
-          </button>
-          <button
-            className="text-outline hover:text-error transition-colors duration-300 p-1.5 rounded-lg hover:bg-surface-container-low"
+          </Button>
+          <Button
+            variant="iconDestructive"
+            size="icon"
             title="Eliminar"
           >
             <Trash2 className="w-[18px] h-[18px]" />
-          </button>
+          </Button>
         </div>
       ),
     },

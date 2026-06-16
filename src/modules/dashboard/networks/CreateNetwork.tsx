@@ -66,12 +66,13 @@ const CreateNetwork = () => {
         <div className="flex-1 flex flex-col gap-6 px-8 py-8">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm font-body">
-            <button
+            <Button
+              variant="ghost"
               onClick={() => navigate("/dashboard/network")}
               className="text-on-surface-variant hover:text-primary transition-colors"
             >
               Networks
-            </button>
+            </Button>
             <ChevronRight className="w-4 h-4 text-on-surface-variant" />
             <span className="text-primary font-semibold">Register Network</span>
           </div>
