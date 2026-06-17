@@ -16,6 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { baseFetch } from "@/core/http/httpClient";
 import {
   clearTokens,
   getRefreshToken,
@@ -41,12 +42,8 @@ import {
  * @throws {Error} If a network-level error occurs.
  */
 export async function loginUser(payload: LoginPayload): Promise<Response> {
-  return fetch(LOGIN_ENDPOINT, {
+  return baseFetch(LOGIN_ENDPOINT, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
     body: JSON.stringify(payload),
   });
 }
@@ -72,12 +69,8 @@ export async function refreshAccessToken(): Promise<TokenPair> {
     throw new Error("No refresh token available");
   }
   const body: RefreshPayload = { refresh_token: refresh };
-  const response = await fetch(REFRESH_ENDPOINT, {
+  const response = await baseFetch(REFRESH_ENDPOINT, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
     body: JSON.stringify(body),
   });
   if (!response.ok) {
@@ -108,12 +101,8 @@ export function logout(): void {
 export async function recoverPassword(
   payload: RecoveryPasswordPayload
 ): Promise<Response> {
-  return fetch(RECOVERY_PASSWORD_ENDPOINT, {
+  return baseFetch(RECOVERY_PASSWORD_ENDPOINT, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
     body: JSON.stringify(payload),
   });
 }

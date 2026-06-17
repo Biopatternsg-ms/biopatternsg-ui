@@ -18,6 +18,7 @@
  */
 import { USERS_ENDPOINT } from "@/services/apiConfig";
 import type { RegisterPayload } from "@/domain/models/User";
+import { baseFetch } from "@/core/http/httpClient";
 
 /**
  * Registers a new user/researcher in the platform.
@@ -28,12 +29,8 @@ import type { RegisterPayload } from "@/domain/models/User";
  * @throws {Error} If a network-level error occurs.
  */
 export async function registerUser(payload: RegisterPayload): Promise<Response> {
-  return fetch(USERS_ENDPOINT, {
+  return baseFetch(USERS_ENDPOINT, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
     body: JSON.stringify(payload),
   });
 }

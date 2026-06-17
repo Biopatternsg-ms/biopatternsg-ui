@@ -50,9 +50,6 @@ export const networkService = {
   async createNetwork(name: string, description: string): Promise<Response> {
     return authFetch(NETWORKS_ENDPOINT, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
       body: JSON.stringify({ name, description }),
     });
   },
