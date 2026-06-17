@@ -23,6 +23,8 @@ import { Share2, ArrowRight, Loader2, ChevronRight } from "lucide-react";
 import { Sidebar } from "@/components/organisms/Sidebar";
 import { TopBar } from "@/components/organisms/TopBar";
 import { Button } from "@/components/atoms/Button";
+import { SuccessModal } from "@/components/atoms/SuccessModal";
+import { ErrorModal } from "@/components/molecules/ErrorModal";
 import { networkService } from "@/services/networkService";
 
 const CreateNetwork = () => {
@@ -31,6 +33,8 @@ const CreateNetwork = () => {
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successOpen, setSuccessOpen] = useState(false);
+  const [errorOpen, setErrorOpen] = useState(false);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,14 +46,31 @@ const CreateNetwork = () => {
     try {
       setIsSubmitting(true);
       setError(null);
-      await networkService.createNetwork(name.trim(), description.trim());
-      navigate("/dashboard/network");
+      const response = await networkService.createNetwork(
+        name.trim(),
+        description.trim()
+      );
+
+      if (response.status === 201) {
+        setSuccessOpen(true);
+      } else {
+        setErrorOpen(true);
+      }
     } catch (err) {
       console.error(err);
-      setError("Error al crear la red. Por favor, inténtalo de nuevo.");
+      setErrorOpen(true);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSuccessClose = () => {
+    setSuccessOpen(false);
+    navigate("/dashboard/network");
+  };
+
+  const handleErrorClose = () => {
+    setErrorOpen(false);
   };
 
   return (
@@ -149,7 +170,7 @@ const CreateNetwork = () => {
                     type="button"
                     onClick={() => navigate("/dashboard/network")}
                     disabled={isSubmitting}
-                    className="text-on-surface hover:text-primary font-semibold px-4 text-[15px]"
+                    className="text-on-surface hover:text-primary font-semibold py-3 text-[15px]"
                   >
                     Cancelar
                   </Button>
@@ -157,7 +178,7 @@ const CreateNetwork = () => {
                     variant="primary"
                     type="submit"
                     disabled={isSubmitting}
-                    className="gap-2 rounded-full px-6 py-3.5 font-bold hover:shadow-primary-glow transition-all transform hover:-translate-y-0.5 flex items-center justify-center min-w-[140px]"
+                    className="gap-2 py-3 font-bold hover:shadow-primary-glow transition-all transform hover:-translate-y-0.5 flex items-center justify-center min-w-[140px]"
                   >
                     {isSubmitting ? (
                       <>
@@ -177,6 +198,20 @@ const CreateNetwork = () => {
           </div>
         </div>
       </main>
+
+      <SuccessModal
+        open={successOpen}
+        title="Creación de red exitosa"
+        message="La red fue creada correctamente."
+        onClose={handleSuccessClose}
+      />
+
+      <ErrorModal
+        open={errorOpen}
+        title="Error"
+        message="No pudo crearse la red"
+        onClose={handleErrorClose}
+      />
     </div>
   );
 };

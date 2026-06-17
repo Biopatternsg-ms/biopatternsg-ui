@@ -45,20 +45,15 @@ export const networkService = {
 
   /**
    * Creates a new network configuration by sending a POST request.
+   * Returns the raw Response so callers can inspect the status code.
    */
-  async createNetwork(name: string, description: string): Promise<Network> {
-    const response = await authFetch(NETWORKS_ENDPOINT, {
+  async createNetwork(name: string, description: string): Promise<Response> {
+    return authFetch(NETWORKS_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ name, description }),
     });
-
-    if (!response.ok) {
-      throw new Error("Failed to create network");
-    }
-
-    return response.json();
   },
 };
