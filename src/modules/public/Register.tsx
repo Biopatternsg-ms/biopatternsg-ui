@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { PublicHeader } from "@/components/organisms/PublicHeader";
+import { Header } from "@/components/organisms/Header";
 import { Footer } from "@/components/organisms/Footer";
 import { RegisterForm } from "@/components/organisms/RegisterForm";
 
@@ -24,7 +24,7 @@ import { RegisterForm } from "@/components/organisms/RegisterForm";
  * Register Page — Authenticator module.
  *
  * Layout:
- *   - Shared fixed TopNavBar (PublicHeader).
+ *   - Shared fixed TopNavBar (Header).
  *   - Centered RegisterForm within a full-height body minus the header offset.
  *   - Shared Footer.
  *
@@ -36,7 +36,7 @@ const Register = () => {
   return (
     <div className="bg-background text-on-background font-body min-h-screen flex flex-col">
       {/* Shared TopNavBar */}
-      <PublicHeader />
+      <Header />
 
       {/* Main layout wrapper */}
       <main className="flex-1 pt-28">

@@ -25,6 +25,21 @@ import {
 export { SESSION_EXPIRED_EVENT };
 
 /**
+ * Base HTTP client that automatically injects default JSON headers.
+ * Use this instead of native `fetch` for unauthenticated endpoints.
+ */
+export function baseFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const headers = new Headers(init?.headers);
+  if (!headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+  if (!headers.has("Accept")) {
+    headers.set("Accept", "application/json");
+  }
+  return fetch(input, { ...init, headers });
+}
+
+/**
  * HTTP client with automatic Bearer injection and transparent token refresh.
  *
  * Behavior:
@@ -47,7 +62,7 @@ export async function authFetch(
   input: RequestInfo | URL,
   init?: RequestInit
 ): Promise<Response> {
-  const firstResponse = await fetch(input, withAuthHeader(init));
+  const firstResponse = await baseFetch(input, withAuthHeader(init));
 
   if (firstResponse.status !== 401) {
     return firstResponse;
@@ -62,5 +77,5 @@ export async function authFetch(
 
   const retryHeaders = new Headers(init?.headers);
   retryHeaders.set("Authorization", `Bearer ${freshToken}`);
-  return fetch(input, { ...init, headers: retryHeaders });
+  return baseFetch(input, { ...init, headers: retryHeaders });
 }

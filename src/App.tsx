@@ -21,7 +21,7 @@ import Landing from "@/modules/public/Landing";
 import Register from "@/modules/public/Register";
 import RecoveryPassword from "@/modules/public/RecoveryPassword";
 import Network from "@/modules/dashboard/networks/Network";
-import Experiments from "@/modules/experiments/Experiments";
+import Experiments from "@/modules/dashboard/experiments/Experiments";
 import CreateNetwork from "@/modules/dashboard/networks/CreateNetwork";
 import { ProtectedRoute } from "@/core/router/ProtectedRoute";
 import { PublicRoute } from "@/core/router/PublicRoute";

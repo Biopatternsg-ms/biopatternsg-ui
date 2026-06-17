@@ -21,7 +21,7 @@ import { Network as NetworkIcon, Plus, FolderOpen, Pencil, Trash2 } from "lucide
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/atoms/Button";
 import { Sidebar } from "@/components/organisms/Sidebar";
-import { DashboardTopBar } from "@/components/organisms/DashboardTopBar";
+import { TopBar } from "@/components/organisms/TopBar";
 import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
 import { networkService, type Network as NetworkModel } from "@/services/networkService";
 import { cn } from "@/lib/utils";
@@ -95,25 +95,28 @@ const Network = () => {
       className: "col-span-2 text-right",
       render: (item) => (
         <div className="flex justify-end gap-2">
-          <button
+          <Button
+            variant="icon"
+            size="icon"
             onClick={() => navigate(`/dashboard/experiments/${item.id}`)}
-            className="text-outline hover:text-primary transition-colors duration-300 p-1.5 rounded-lg hover:bg-surface-container-low"
             title="Abrir"
           >
             <FolderOpen className="w-[18px] h-[18px]" />
-          </button>
-          <button
-            className="text-outline hover:text-primary transition-colors duration-300 p-1.5 rounded-lg hover:bg-surface-container-low"
+          </Button>
+          <Button
+            variant="icon"
+            size="icon"
             title="Editar"
           >
             <Pencil className="w-[18px] h-[18px]" />
-          </button>
-          <button
-            className="text-outline hover:text-error transition-colors duration-300 p-1.5 rounded-lg hover:bg-surface-container-low"
+          </Button>
+          <Button
+            variant="iconDestructive"
+            size="icon"
             title="Eliminar"
           >
             <Trash2 className="w-[18px] h-[18px]" />
-          </button>
+          </Button>
         </div>
       ),
     },
@@ -127,7 +130,7 @@ const Network = () => {
       {/* Main Content Area */}
       <main className="flex-1 ml-0 md:ml-64 flex flex-col min-h-screen">
         {/* Top Bar */}
-        <DashboardTopBar title="Dashboard" />
+        <TopBar title="Dashboard" />
 
         {/* Page Canvas */}
         <div className="p-8 max-w-7xl mx-auto w-full flex-1 flex flex-col gap-10">

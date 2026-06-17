@@ -20,7 +20,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Microscope, ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { Sidebar } from "@/components/organisms/Sidebar";
-import { DashboardTopBar } from "@/components/organisms/DashboardTopBar";
+import { TopBar } from "@/components/organisms/TopBar";
 import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
 import { Badge } from "@/components/atoms/Badge";
 import { pipelineService, type Pipeline } from "@/services/pipelineService";
@@ -104,18 +104,20 @@ const Experiments = () => {
       className: "col-span-2 text-right",
       render: () => (
         <div className="flex justify-end gap-2">
-          <button
-            className="text-outline hover:text-primary transition-colors duration-300 p-1.5 rounded-lg hover:bg-surface-container-low"
+          <Button
+            variant="icon"
+            size="icon"
             title="Editar"
           >
             <Pencil className="w-[18px] h-[18px]" />
-          </button>
-          <button
-            className="text-outline hover:text-error transition-colors duration-300 p-1.5 rounded-lg hover:bg-surface-container-low"
+          </Button>
+          <Button
+            variant="iconDestructive"
+            size="icon"
             title="Eliminar"
           >
             <Trash2 className="w-[18px] h-[18px]" />
-          </button>
+          </Button>
         </div>
       ),
     },
@@ -129,7 +131,7 @@ const Experiments = () => {
       {/* Main Content Area */}
       <main className="flex-1 ml-0 md:ml-64 flex flex-col min-h-screen">
         {/* Top Bar */}
-        <DashboardTopBar title="Dashboard" />
+        <TopBar title="Dashboard" />
 
         {/* Page Canvas */}
         <div className="p-8 max-w-7xl mx-auto w-full flex-1 flex flex-col gap-10">

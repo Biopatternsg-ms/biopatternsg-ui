@@ -16,20 +16,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { PublicHeader } from "@/components/organisms/PublicHeader";
+import { Header } from "@/components/organisms/Header";
 import { Footer } from "@/components/organisms/Footer";
 import { RecoveryForm } from "@/components/organisms/RecoveryForm";
 
 /**
  * Recovery Password Page — Authenticator module.
  * Public route (does not require authentication). Assembled with the shared
- * PublicHeader, the RecoveryForm organism centered on bg-surface-section, and the
+ * Header, the RecoveryForm organism centered on bg-surface-section, and the
  * shared Footer. Mirrors the visual structure of /login and /register.
  */
 const RecoveryPassword = () => {
   return (
     <div className="bg-background text-on-background font-body min-h-screen flex flex-col">
-      <PublicHeader />
+      <Header />
 
       <main className="flex-1 pt-28">
         <section className="bg-surface-section min-h-[calc(100vh-112px)] flex items-center justify-center px-8 py-16 relative">
