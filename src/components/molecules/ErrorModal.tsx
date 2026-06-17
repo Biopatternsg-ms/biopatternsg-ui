@@ -19,7 +19,6 @@
 import * as React from "react";
 import { AlertTriangle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/atoms/Button";
 
 export interface ErrorModalProps {
   open: boolean;
@@ -48,6 +47,15 @@ const ErrorModal = React.forwardRef<HTMLDivElement, ErrorModalProps>(
       };
       document.addEventListener("keydown", handleKeyDown);
       return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [open, onClose]);
+
+    // Auto-close after 1.5 seconds
+    React.useEffect(() => {
+      if (!open) return;
+      const timer = setTimeout(() => {
+        onClose();
+      }, 1500);
+      return () => clearTimeout(timer);
     }, [open, onClose]);
 
     if (!open) return null;
@@ -101,17 +109,6 @@ const ErrorModal = React.forwardRef<HTMLDivElement, ErrorModalProps>(
                 {message}
               </p>
             </div>
-
-            <div className="w-full border-t border-outline-variant/10" />
-
-            <Button
-              variant="primary"
-              size="lg"
-              className="w-full shadow-lg"
-              onClick={onClose}
-            >
-              Entendido
-            </Button>
           </div>
         </div>
       </div>

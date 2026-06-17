@@ -25,6 +25,7 @@ import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/atoms/Button";
 import { SuccessModal } from "@/components/atoms/SuccessModal";
+import { ErrorModal } from "@/components/molecules/ErrorModal";
 import { RegisterFormFields } from "@/components/molecules/RegisterFormFields";
 import { toRegisterPayload, type RegisterFormValues } from "@/adapters/userAdapter";
 import { registerUser } from "@/services/userService";
@@ -61,8 +62,9 @@ const registerSchema = z.object({
  */
 const RegisterForm = () => {
   const navigate = useNavigate();
-  const [modalOpen, setModalOpen] = React.useState(false);
-  const [apiError, setApiError] = React.useState<string | null>(null);
+  const [successModalOpen, setSuccessModalOpen] = React.useState(false);
+  const [errorModalOpen, setErrorModalOpen] = React.useState(false);
+  const [errorModalMessage, setErrorModalMessage] = React.useState("");
 
   const {
     register,
@@ -74,13 +76,13 @@ const RegisterForm = () => {
   });
 
   const onSubmit = async (values: RegisterFormValues) => {
-    setApiError(null);
+    setErrorModalOpen(false);
     try {
       const payload = toRegisterPayload(values);
       const response = await registerUser(payload);
 
       if (response.status === 201) {
-        setModalOpen(true);
+        setSuccessModalOpen(true);
         return;
       }
 
@@ -97,21 +99,28 @@ const RegisterForm = () => {
         } catch {
           // Response is not JSON
         }
-        setApiError(errorMsg);
+        setErrorModalMessage(errorMsg);
+        setErrorModalOpen(true);
         return;
       }
 
       // Handle 5xx / Server errors
-      setApiError("Error en el servidor. Por favor, intente de nuevo más tarde.");
+      setErrorModalMessage("Error en el servidor. Por favor, intente de nuevo más tarde.");
+      setErrorModalOpen(true);
     } catch {
       // Handle Network-level errors
-      setApiError("No se pudo conectar con el servidor. Verifique su conexión de red.");
+      setErrorModalMessage("No se pudo conectar con el servidor. Verifique su conexión de red.");
+      setErrorModalOpen(true);
     }
   };
 
-  const handleModalClose = () => {
-    setModalOpen(false);
+  const handleSuccessModalClose = () => {
+    setSuccessModalOpen(false);
     navigate("/");
+  };
+
+  const handleErrorModalClose = () => {
+    setErrorModalOpen(false);
   };
 
   return (
@@ -131,17 +140,6 @@ const RegisterForm = () => {
           <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
             {/* Form Fields Molecule */}
             <RegisterFormFields register={register} errors={errors} />
-
-            {/* API level error warning */}
-            {apiError && (
-              <div
-                role="alert"
-                className="p-3.5 rounded-lg bg-error-container text-on-error-container text-xs font-label leading-relaxed flex gap-2 items-center"
-              >
-                <span className="font-bold">⚠</span>
-                <span>{apiError}</span>
-              </div>
-            )}
 
             {/* Submit Button */}
             <Button
@@ -181,10 +179,18 @@ const RegisterForm = () => {
 
       {/* Custom success modal popup */}
       <SuccessModal
-        open={modalOpen}
+        open={successModalOpen}
         title="¡Registro exitoso!"
         message="registro exitoso, por favor verifique la bandeja de entrada de su correo"
-        onClose={handleModalClose}
+        onClose={handleSuccessModalClose}
+      />
+
+      {/* Error modal popup */}
+      <ErrorModal
+        open={errorModalOpen}
+        title="No se pudo completar el registro"
+        message={errorModalMessage}
+        onClose={handleErrorModalClose}
       />
     </>
   );

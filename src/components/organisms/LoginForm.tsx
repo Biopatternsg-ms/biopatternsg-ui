@@ -25,6 +25,7 @@ import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/atoms/Button";
 import { ErrorModal } from "@/components/molecules/ErrorModal";
+import { SuccessModal } from "@/components/atoms/SuccessModal";
 import { LoginFormFields } from "@/components/molecules/LoginFormFields";
 import {
   toLoginPayload,
@@ -48,6 +49,15 @@ const LoginForm = () => {
   const { login } = useAuth();
   const [errorModalOpen, setErrorModalOpen] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
+  const [successModalOpen, setSuccessModalOpen] = React.useState(false);
+  const [redirectPath, setRedirectPath] = React.useState<string | null>(null);
+
+  const handleSuccessClose = () => {
+    setSuccessModalOpen(false);
+    if (redirectPath) {
+      navigate(redirectPath, { replace: true });
+    }
+  };
 
   const {
     register,
@@ -69,7 +79,9 @@ const LoginForm = () => {
 
         const fromState = location.state as { from?: string } | null;
         const redirectTo = fromState?.from ?? "/dashboard/network";
-        navigate(redirectTo, { replace: true });
+        
+        setRedirectPath(redirectTo);
+        setSuccessModalOpen(true);
         return;
       }
 
@@ -150,6 +162,13 @@ const LoginForm = () => {
         open={errorModalOpen}
         message={errorMessage}
         onClose={() => setErrorModalOpen(false)}
+      />
+
+      <SuccessModal
+        open={successModalOpen}
+        title="¡Bienvenido!"
+        message="Inicio de sesión exitoso. Redirigiendo..."
+        onClose={handleSuccessClose}
       />
     </>
   );
