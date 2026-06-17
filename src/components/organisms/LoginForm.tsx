@@ -51,9 +51,13 @@ const LoginForm = () => {
   const [errorMessage, setErrorMessage] = React.useState("");
   const [successModalOpen, setSuccessModalOpen] = React.useState(false);
   const [redirectPath, setRedirectPath] = React.useState<string | null>(null);
+  const [pendingTokens, setPendingTokens] = React.useState<TokenPair | null>(null);
 
   const handleSuccessClose = () => {
     setSuccessModalOpen(false);
+    if (pendingTokens) {
+      login(pendingTokens);
+    }
     if (redirectPath) {
       navigate(redirectPath, { replace: true });
     }
@@ -75,7 +79,7 @@ const LoginForm = () => {
 
       if (response.status === 200) {
         const data = (await response.json()) as TokenPair;
-        login(data);
+        setPendingTokens(data);
 
         const fromState = location.state as { from?: string } | null;
         const redirectTo = fromState?.from ?? "/dashboard/network";
