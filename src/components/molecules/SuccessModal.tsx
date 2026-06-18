@@ -32,7 +32,7 @@ export interface SuccessModalProps {
 }
 
 /**
- * Atom: SuccessModal
+ * Molecule: SuccessModal
  * A highly polished, custom animated Success Modal styled to fit the clinical platform aesthetic.
  * 
  * Rules Adhered:

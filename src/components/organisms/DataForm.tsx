@@ -6,7 +6,7 @@ import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/atoms/Button";
 import { ErrorModal } from "@/components/molecules/ErrorModal";
-import { SuccessModal } from "@/components/atoms/SuccessModal";
+import { SuccessModal } from "@/components/molecules/SuccessModal";
 import { FormField } from "@/components/molecules/FormField";
 import type { DataFormConfig } from "./DataFormConfig";
 
@@ -95,9 +95,11 @@ export const DataForm = <T extends FieldValues>({ config }: DataFormProps<T>) =>
           <h2 className="text-2xl font-black font-headline tracking-tight text-on-surface mb-2">
             {config.title}
           </h2>
-          <p className="text-sm text-on-surface-variant font-label uppercase tracking-wider mb-8">
-            {config.subtitle}
-          </p>
+          {config.subtitle && (
+            <p className="text-sm text-on-surface-variant font-label uppercase tracking-wider mb-8">
+              {config.subtitle}
+            </p>
+          )}
 
           <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
             {/* Dynamic Fields */}

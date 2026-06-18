@@ -16,7 +16,7 @@ export interface DataFormConfig<T extends FieldValues> {
   schema: ZodType<any, any, any>;
   fields: FieldDescriptor[];
   title: string;
-  subtitle: string;
+  subtitle?: string;
   submitLabel: string;
   submittingLabel: string;
   
