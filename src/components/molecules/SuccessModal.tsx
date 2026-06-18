@@ -19,7 +19,6 @@
 import * as React from "react";
 import { CheckCircle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/atoms/Button";
 
 export interface SuccessModalProps {
   /** Controls visibility of the modal */
@@ -33,7 +32,7 @@ export interface SuccessModalProps {
 }
 
 /**
- * Atom: SuccessModal
+ * Molecule: SuccessModal
  * A highly polished, custom animated Success Modal styled to fit the clinical platform aesthetic.
  * 
  * Rules Adhered:
@@ -63,6 +62,15 @@ const SuccessModal = React.forwardRef<HTMLDivElement, SuccessModalProps>(
       };
       document.addEventListener("keydown", handleKeyDown);
       return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [open, onClose]);
+
+    // Auto-close after 1.5 seconds
+    React.useEffect(() => {
+      if (!open) return;
+      const timer = setTimeout(() => {
+        onClose();
+      }, 1500);
+      return () => clearTimeout(timer);
     }, [open, onClose]);
 
     if (!open) return null;
@@ -123,19 +131,6 @@ const SuccessModal = React.forwardRef<HTMLDivElement, SuccessModalProps>(
                 {message}
               </p>
             </div>
-
-            {/* Separator line following "No-Line" rule (opacity-10) */}
-            <div className="w-full border-t border-outline-variant/10" />
-
-            {/* Primary Action Button */}
-            <Button
-              variant="primary"
-              size="lg"
-              className="w-full shadow-lg"
-              onClick={onClose}
-            >
-              Entendido
-            </Button>
           </div>
         </div>
       </div>

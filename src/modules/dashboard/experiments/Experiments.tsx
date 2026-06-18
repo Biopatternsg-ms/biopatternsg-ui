@@ -135,9 +135,9 @@ const Experiments = () => {
 
         {/* Page Canvas */}
         <div className="p-8 max-w-7xl mx-auto w-full flex-1 flex flex-col gap-10">
-          
+
           {/* Back button */}
-          <div className={cn(!networkId && "invisible")}>
+          <div className={cn(!networkId && "hidden")}>
             <Button
               variant="ghost"
               size="sm"

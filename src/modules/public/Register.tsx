@@ -16,9 +16,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/organisms/Header";
 import { Footer } from "@/components/organisms/Footer";
-import { RegisterForm } from "@/components/organisms/RegisterForm";
+import { DataForm } from "@/components/organisms/DataForm";
+import * as z from "zod";
+import { toRegisterPayload, type RegisterFormValues } from "@/adapters/userAdapter";
+import { registerUser } from "@/services/userService";
+import type { DataFormConfig } from "@/components/organisms/DataFormConfig";
+
+export const registerSchema = z.object({
+  email: z
+    .string()
+    .min(1, "El correo electrónico es requerido.")
+    .email("Ingresa un correo institucional válido."),
+  firstName: z
+    .string()
+    .min(2, "El nombre debe tener al menos 2 caracteres.")
+    .max(50, "El nombre es demasiado largo."),
+  lastName: z
+    .string()
+    .min(2, "El apellido debe tener al menos 2 caracteres.")
+    .max(50, "El apellido es demasiado largo."),
+  password: z
+    .string()
+    .min(8, "La contraseña debe tener al menos 8 caracteres.")
+    .max(128, "La contraseña es demasiado larga."),
+});
 
 /**
  * Register Page — Authenticator module.
@@ -33,6 +57,68 @@ import { RegisterForm } from "@/components/organisms/RegisterForm";
  *   - Offset padding-top adjusted to pt-28 to allow for the logo protruding 50% below the header.
  */
 const Register = () => {
+  const navigate = useNavigate();
+
+  const registerConfig: DataFormConfig<RegisterFormValues> = {
+    schema: registerSchema,
+    fields: [
+      {
+        name: "email",
+        label: "Institutional Email",
+        type: "email",
+        placeholder: "name@institute.edu",
+        colSpan: "full",
+      },
+      {
+        name: "firstName",
+        label: "First Name",
+        type: "text",
+        placeholder: "Jane",
+        colSpan: "half",
+      },
+      {
+        name: "lastName",
+        label: "Last Name",
+        type: "text",
+        placeholder: "Doe",
+        colSpan: "half",
+      },
+      {
+        name: "password",
+        label: "Access Key",
+        type: "password",
+        placeholder: "••••••••",
+        colSpan: "full",
+      },
+    ],
+    title: "Join the Research Network",
+    subtitle: "Node-04 Registration Portal",
+    submitLabel: "Initialize Registration",
+    submittingLabel: "Registrando...",
+    onSubmit: async (values) => {
+      const payload = toRegisterPayload(values);
+      return registerUser(payload);
+    },
+    successStatus: 201,
+    successModal: {
+      title: "¡Registro exitoso!",
+      message: "registro exitoso, por favor verifique la bandeja de entrada de su correo",
+    },
+    errorModal: {
+      title: "No se pudo completar el registro",
+      defaultMessage: "Error en el servidor. Por favor, intente de nuevo más tarde.",
+      parseResponseMessage: true,
+    },
+    onSuccessClose: () => {
+      navigate("/");
+    },
+    footerLink: {
+      text: "¿Ya eres investigador registrado?",
+      label: "Volver al portal de acceso",
+      to: "/",
+    },
+  };
+
   return (
     <div className="bg-background text-on-background font-body min-h-screen flex flex-col">
       {/* Shared TopNavBar */}
@@ -61,7 +147,7 @@ const Register = () => {
             </div>
 
             {/* Registration Card Organism */}
-            <RegisterForm />
+            <DataForm config={registerConfig} />
           </div>
         </section>
       </main>

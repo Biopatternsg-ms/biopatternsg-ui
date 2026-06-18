@@ -16,17 +16,74 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/organisms/Header";
 import { Footer } from "@/components/organisms/Footer";
-import { RecoveryForm } from "@/components/organisms/RecoveryForm";
+import { DataForm } from "@/components/organisms/DataForm";
+import * as z from "zod";
+import { toRecoveryPayload, type RecoveryFormValues } from "@/adapters/authAdapter";
+import { recoverPassword } from "@/services/authService";
+import type { DataFormConfig } from "@/components/organisms/DataFormConfig";
+
+export const recoverySchema = z.object({
+  email: z
+    .string()
+    .min(1, "El correo electrónico es requerido.")
+    .email("Ingresa un correo electrónico válido."),
+});
 
 /**
- * Recovery Password Page — Authenticator module.
- * Public route (does not require authentication). Assembled with the shared
- * Header, the RecoveryForm organism centered on bg-surface-section, and the
- * shared Footer. Mirrors the visual structure of /login and /register.
+ * RecoveryPassword Page.
+ *
+ * Minimalist editorial layout featuring a centered single-input form.
+ * Structure matches the Register page layout: Header, content, Footer.
  */
 const RecoveryPassword = () => {
+  const navigate = useNavigate();
+
+  const recoveryConfig: DataFormConfig<RecoveryFormValues> = {
+    schema: recoverySchema,
+    fields: [
+      {
+        name: "email",
+        label: "Institutional Email",
+        type: "email",
+        placeholder: "name@institute.edu",
+        autoComplete: "email",
+        colSpan: "full",
+      },
+    ],
+    title: "Recover Access",
+    subtitle: "Node-04 Password Recovery",
+    submitLabel: "Send Recovery Link",
+    submittingLabel: "Enviando...",
+    onSubmit: async (values) => {
+      const payload = toRecoveryPayload(values);
+      return recoverPassword(payload);
+    },
+    successStatus: "ok",
+    successModal: {
+      title: "¡Revisa tu correo!",
+      message: "Te hemos enviado un email, revisa tu correo electrónico",
+    },
+    errorModal: {
+      title: "Error de recuperación",
+      defaultMessage: "Ocurrió un problema para recuperar tu contraseña",
+      parseResponseMessage: false,
+    },
+    onSuccessClose: () => {
+      navigate("/");
+    },
+    onErrorClose: () => {
+      navigate("/");
+    },
+    footerLink: {
+      text: "Remembered your password?",
+      label: "Back to the access portal",
+      to: "/",
+    },
+  };
+
   return (
     <div className="bg-background text-on-background font-body min-h-screen flex flex-col">
       <Header />
@@ -50,7 +107,7 @@ const RecoveryPassword = () => {
               </span>
             </div>
 
-            <RecoveryForm />
+            <DataForm config={recoveryConfig} />
           </div>
         </section>
       </main>

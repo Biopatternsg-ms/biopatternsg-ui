@@ -20,7 +20,7 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const ROWS_PER_PAGE = 3;
+const ROWS_PER_PAGE = 10;
 
 export interface ColumnDef<T> {
   header: string;

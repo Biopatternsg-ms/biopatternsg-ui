@@ -360,7 +360,7 @@ PASO 5 — VISTA DE REGISTRO (modules/authenticator/register)
   ADAPTERS:
     · src/adapters/userAdapter.ts: Adapta inputs de formulario a payloads del API.
   ATOMS:
-    · src/components/atoms/SuccessModal.tsx: Modal custom con fondo glass-panel,
+    · src/components/molecules/SuccessModal.tsx: Modal custom con fondo glass-panel,
       backdrop blur, ícono CheckCircle, y controles de cierre (back, Esc, clic).
   MOLECULES:
     · src/components/molecules/RegisterFormFields.tsx: Estructura Email (Full),
