@@ -49,12 +49,12 @@ const ErrorModal = React.forwardRef<HTMLDivElement, ErrorModalProps>(
       return () => document.removeEventListener("keydown", handleKeyDown);
     }, [open, onClose]);
 
-    // Auto-close after 1.5 seconds
+    // Auto-close after 2 seconds
     React.useEffect(() => {
       if (!open) return;
       const timer = setTimeout(() => {
         onClose();
-      }, 1500);
+      }, 2000);
       return () => clearTimeout(timer);
     }, [open, onClose]);
 

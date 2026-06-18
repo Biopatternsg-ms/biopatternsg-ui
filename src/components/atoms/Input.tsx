@@ -16,28 +16,53 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as React from "react";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
+import { Eye, EyeOff } from "lucide-react";
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, ...props }, ref) => {
+    const [showPassword, setShowPassword] = useState(false);
+    const isPassword = type === "password";
+
+    // Si es password, alternamos entre text/password. Si no, usamos el type original.
+    const inputType = isPassword ? (showPassword ? "text" : "password") : type;
+
     return (
-      <input
-        type={type}
-        className={cn(
-          // "No-Line" rule: no border, use background depth instead
-          "w-full bg-surface-container-high border-none rounded-lg px-4 py-3",
-          "text-on-surface placeholder:text-outline/50 text-sm",
-          "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:bg-surface-container-lowest",
-          "transition-all duration-200",
-          "disabled:cursor-not-allowed disabled:opacity-50",
-          className
+      <div className="relative w-full">
+        <input
+          type={inputType}
+          className={cn(
+            // "No-Line" rule: no border, use background depth instead
+            "w-full bg-surface-container-high border-none rounded-lg px-4 py-3",
+            "text-on-surface placeholder:text-outline/50 text-sm",
+            "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:bg-surface-container-lowest",
+            "transition-all duration-200",
+            "disabled:cursor-not-allowed disabled:opacity-50",
+            isPassword && "pr-11", // Espacio extra a la derecha para no pisar el icono
+            className
+          )}
+          ref={ref}
+          {...props}
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors focus:outline-none"
+            aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+            tabIndex={-1} // Evita que al dar 'Tab' por el formulario se detenga en el icono en vez del siguiente input
+          >
+            {showPassword ? (
+              <EyeOff className="w-5 h-5 opacity-70" />
+            ) : (
+              <Eye className="w-5 h-5 opacity-70" />
+            )}
+          </button>
         )}
-        ref={ref}
-        {...props}
-      />
+      </div>
     );
   }
 );
