@@ -66,13 +66,7 @@ const Header = () => {
             </NavLink>
           ))}
         </div>
-
-        {/* Spacer — keeps the nav links centered by balancing the logo width */}
-        <div aria-hidden="true" />
       </div>
-
-      {/* "No-Line" separator: bg change instead of border */}
-      <div className="bg-surface-container-low h-[1px] w-full" />
     </nav>
   );
 };
