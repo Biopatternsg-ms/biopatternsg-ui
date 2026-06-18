@@ -49,10 +49,11 @@ const CreateNetwork = () => {
       {
         name: "description",
         label: "Descripción",
-        type: "text",
+        type: "textarea",
         placeholder: "Detail the scope, methodology...",
         helperText: "Detailed documentation supports reproducibility.",
         colSpan: "full",
+        rows: 3,
       },
     ],
     title: "Register New Network",

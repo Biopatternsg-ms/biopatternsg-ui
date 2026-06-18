@@ -4,12 +4,13 @@ import type { FieldValues } from "react-hook-form";
 export interface FieldDescriptor {
   name: string;
   label: string;
-  type: "text" | "email" | "password";
+  type: "text" | "email" | "password" | "textarea";
   placeholder: string;
   autoComplete?: string;
   helperText?: string;
   labelRight?: React.ReactNode;
   colSpan?: "full" | "half";
+  rows?: number;
 }
 
 export interface DataFormConfig<T extends FieldValues> {

@@ -116,6 +116,7 @@ export const DataForm = <T extends FieldValues>({ config }: DataFormProps<T>) =>
                     autoComplete={field.autoComplete}
                     aria-invalid={!!errors[field.name]}
                     labelRight={field.labelRight}
+                    rows={field.rows}
                     {...register(field.name as any)}
                   />
                   {field.helperText && !errors[field.name] && (

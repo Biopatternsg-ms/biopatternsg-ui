@@ -18,24 +18,31 @@
  */
 import * as React from "react";
 import { Label } from "@/components/atoms/Label";
-import { Input, type InputProps } from "@/components/atoms/Input";
+import { Input } from "@/components/atoms/Input";
+import { Textarea } from "@/components/atoms/Textarea";
 import { cn } from "@/lib/utils";
 
-export interface FormFieldProps extends InputProps {
+export type FormFieldProps = {
   label: string;
+  type?: "text" | "email" | "password" | "textarea";
   labelRight?: React.ReactNode;
   containerClassName?: string;
-}
+  rows?: number;
+} & Omit<React.InputHTMLAttributes<HTMLInputElement> & React.TextareaHTMLAttributes<HTMLTextAreaElement>, "type">;
 
-const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
-  ({ label, labelRight, containerClassName, className, ...inputProps }, ref) => {
+const FormField = React.forwardRef<any, FormFieldProps>(
+  ({ label, labelRight, containerClassName, className, type, rows, ...inputProps }, ref) => {
     return (
       <div className={cn("space-y-2", containerClassName)}>
         <div className="flex justify-between items-baseline">
           <Label>{label}</Label>
           {labelRight && <div>{labelRight}</div>}
         </div>
-        <Input ref={ref} className={className} {...inputProps} />
+        {type === "textarea" ? (
+          <Textarea ref={ref} className={className} rows={rows} {...(inputProps as any)} />
+        ) : (
+          <Input ref={ref} type={type} className={className} {...(inputProps as any)} />
+        )}
       </div>
     );
   }
