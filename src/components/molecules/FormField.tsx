@@ -31,7 +31,7 @@ const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
   ({ label, labelRight, containerClassName, className, ...inputProps }, ref) => {
     return (
       <div className={cn("space-y-2", containerClassName)}>
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-baseline">
           <Label>{label}</Label>
           {labelRight && <div>{labelRight}</div>}
         </div>
