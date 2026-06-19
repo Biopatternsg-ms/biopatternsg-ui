@@ -25,6 +25,7 @@ import { TopBar } from "@/components/organisms/TopBar";
 import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
 import { networkService, type Network as NetworkModel } from "@/services/networkService";
 import { cn } from "@/lib/utils";
+import { useSidebar } from "@/context/SidebarContext";
 
 const formatUnixTime = (unixSeconds: number) => {
   const date = new Date(unixSeconds * 1000);
@@ -44,6 +45,7 @@ const Network = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { isCollapsed } = useSidebar();
 
   useEffect(() => {
     const fetchNetworks = async () => {
@@ -128,7 +130,7 @@ const Network = () => {
       <Sidebar />
 
       {/* Main Content Area */}
-      <main className="flex-1 ml-0 md:ml-64 flex flex-col min-h-screen">
+      <main className={cn("flex-1 flex flex-col min-h-screen transition-all duration-300", isCollapsed ? "ml-0 md:ml-20" : "ml-0 md:ml-64")}>
         {/* Top Bar */}
         <TopBar title="Dashboard" />
 

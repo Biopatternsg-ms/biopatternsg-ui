@@ -19,7 +19,8 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { Network, Microscope } from "lucide-react";
 import { cn } from "@/lib/utils";
-import biologo from "@/assets/biologo.png";
+import logo from "@/assets/logo.png";
+import { useSidebar } from "@/context/SidebarContext";
 
 interface NavItem {
   label: string;
@@ -36,25 +37,43 @@ const navItems: NavItem[] = [
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isCollapsed, isMobileOpen, toggleMobileSidebar } = useSidebar();
 
   return (
-    <nav className="hidden md:flex flex-col w-64 h-screen fixed left-0 top-0 glass-nav border-r border-outline-variant/20 p-6 gap-8 z-50">
-      {/* Brand Header */}
-      <div className="flex items-center gap-3 mb-4 pb-4 w-full">
-        <img
-          src={biologo}
-          alt="Biopatternsg Logo"
-          className="w-10 h-10 object-contain drop-shadow-md"
+    <>
+      {/* Mobile backdrop overlay */}
+      {isMobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity duration-300"
+          onClick={toggleMobileSidebar}
         />
-        <div className="flex flex-col">
-          <h1 className="font-headline text-2xl font-black text-primary tracking-tighter leading-tight">
-            Biopatternsg
-          </h1>
-          <span className="font-label text-[10px] text-on-surface-variant tracking-widest uppercase">
-            Clinical Lens
-          </span>
+      )}
+
+      <nav
+        className={cn(
+          "flex flex-col h-screen fixed left-0 top-0 glass-sidebar border-r border-outline-variant/40 shadow-[4px_0_24px_-4px_rgba(0,80,203,0.08)] z-50 transition-all duration-300",
+          isCollapsed ? "md:w-20 md:p-4 md:gap-6" : "md:w-64 md:p-6 md:gap-8",
+          isMobileOpen ? "w-64 p-6 gap-8 translate-x-0" : "-translate-x-full md:translate-x-0"
+        )}
+      >
+      {/* Brand Header */}
+      {isCollapsed ? (
+        <div className="w-full flex justify-center pb-4 border-b border-outline-variant/10">
+          <img
+            src={logo}
+            alt="Biopatternsg Logo"
+            className="w-10 h-10 object-cover rounded-full drop-shadow-md"
+          />
         </div>
-      </div>
+      ) : (
+        <div className="-mx-6 -mt-6 mb-2 overflow-hidden border-b border-outline-variant/10">
+          <img
+            src={logo}
+            alt="Biopatternsg Logo"
+            className="w-full h-auto object-contain"
+          />
+        </div>
+      )}
 
       {/* Navigation Links */}
       <div className="flex flex-col gap-1.5 flex-1">
@@ -69,20 +88,27 @@ const Sidebar = () => {
               onClick={() => {
                 if (item.href !== "#") navigate(item.href);
               }}
+              title={isCollapsed ? item.label : undefined}
               className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant transition-all duration-300 group",
+                "flex items-center rounded-lg text-on-surface-variant transition-all duration-300 group",
+                isCollapsed ? "justify-center p-3" : "gap-3 px-4 py-3",
                 isActive
-                  ? "text-primary font-bold bg-primary-fixed/40"
-                  : "hover:bg-surface-container/70 hover:text-primary"
+                  ? "text-primary font-bold bg-white shadow-sm border border-primary/5"
+                  : "hover:bg-white/40 hover:text-primary"
               )}
             >
               <Icon
                 className={cn(
-                  "w-5 h-5 transition-colors duration-300",
+                  "w-5 h-5 transition-colors duration-300 flex-shrink-0",
                   isActive ? "text-primary" : "group-hover:text-primary"
                 )}
               />
-              <span className="font-body text-[14px] font-medium">
+              <span
+                className={cn(
+                  "font-body text-[14px] font-medium transition-all duration-300 whitespace-nowrap overflow-hidden",
+                  isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
+                )}
+              >
                 {item.label}
               </span>
             </button>
@@ -91,18 +117,25 @@ const Sidebar = () => {
       </div>
 
       {/* System Status */}
-      <div className="bg-surface-container-lowest rounded-xl p-4">
-        <span className="font-label text-[10px] tracking-widest uppercase text-on-surface-variant font-bold block mb-2">
-          System Status
-        </span>
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-tertiary-container animate-pulse" />
-          <span className="font-body text-[13px] text-on-surface font-medium">
-            Core API: Stable
-          </span>
+      {isCollapsed ? (
+        <div className="flex justify-center p-2 bg-surface-container-lowest rounded-xl">
+          <span className="w-2.5 h-2.5 rounded-full bg-tertiary-container animate-pulse" title="Core API: Stable" />
         </div>
-      </div>
+      ) : (
+        <div className="bg-surface-container-lowest rounded-xl p-4">
+          <span className="font-label text-[10px] tracking-widest uppercase text-on-surface-variant font-bold block mb-2">
+            System Status
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-tertiary-container animate-pulse" />
+            <span className="font-body text-[13px] text-on-surface font-medium">
+              Core API: Stable
+            </span>
+          </div>
+        </div>
+      )}
     </nav>
+    </>
   );
 };
 

@@ -26,6 +26,7 @@ import { Badge } from "@/components/atoms/Badge";
 import { pipelineService, type Pipeline } from "@/services/pipelineService";
 import { Button } from "@/components/atoms/Button";
 import { cn } from "@/lib/utils";
+import { useSidebar } from "@/context/SidebarContext";
 
 const formatUnixTime = (unixSeconds: number) => {
   const date = new Date(unixSeconds * 1000);
@@ -52,6 +53,7 @@ const getStatusBadgeVariant = (step: string): "new" | "inProgress" | "completed"
 const Experiments = () => {
   const { networkId } = useParams<{ networkId: string }>();
   const navigate = useNavigate();
+  const { isCollapsed } = useSidebar();
 
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -129,7 +131,7 @@ const Experiments = () => {
       <Sidebar />
 
       {/* Main Content Area */}
-      <main className="flex-1 ml-0 md:ml-64 flex flex-col min-h-screen">
+      <main className={cn("flex-1 flex flex-col min-h-screen transition-all duration-300", isCollapsed ? "ml-0 md:ml-20" : "ml-0 md:ml-64")}>
         {/* Top Bar */}
         <TopBar title="Dashboard" />
 

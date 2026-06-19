@@ -26,6 +26,8 @@ import { DataForm } from "@/components/organisms/DataForm";
 import * as z from "zod";
 import { networkService } from "@/services/networkService";
 import type { DataFormConfig } from "@/components/organisms/DataFormConfig";
+import { useSidebar } from "@/context/SidebarContext";
+import { cn } from "@/lib/utils";
 
 const createNetworkSchema = z.object({
   name: z.string().min(1, "El nombre de la red es requerido."),
@@ -34,6 +36,7 @@ const createNetworkSchema = z.object({
 
 const CreateNetwork = () => {
   const navigate = useNavigate();
+  const { isCollapsed } = useSidebar();
 
   const networkConfig: DataFormConfig<{ name: string; description: string }> = {
     schema: createNetworkSchema,
@@ -85,7 +88,7 @@ const CreateNetwork = () => {
       <Sidebar />
 
       {/* Main Content Area */}
-      <main className="flex-1 ml-0 md:ml-64 flex flex-col min-h-screen">
+      <main className={cn("flex-1 flex flex-col min-h-screen transition-all duration-300", isCollapsed ? "ml-0 md:ml-20" : "ml-0 md:ml-64")}>
         {/* Top Bar */}
         <TopBar title="Dashboard" />
 

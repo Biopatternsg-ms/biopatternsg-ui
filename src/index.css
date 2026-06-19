@@ -156,6 +156,12 @@
     -webkit-backdrop-filter: blur(20px);
   }
 
+  .glass-sidebar {
+    background: rgba(219, 227, 244, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
   /* "No-Line" Rule — Ghost border (outline-variant at 15% opacity) */
   .ghost-border {
     outline: 1px solid rgba(204, 195, 216, 0.15);
