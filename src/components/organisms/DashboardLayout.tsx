@@ -26,7 +26,7 @@ export function DashboardLayout() {
   const { isCollapsed } = useSidebar();
 
   return (
-    <div className="bg-surface text-on-surface font-body min-h-screen flex overflow-x-hidden">
+    <div className="bg-surface-base text-on-surface font-body min-h-screen flex overflow-x-hidden">
       {/* Side Navigation */}
       <Sidebar />
 

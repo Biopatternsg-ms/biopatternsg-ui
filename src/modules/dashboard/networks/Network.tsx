@@ -142,7 +142,7 @@ const Network = () => {
           <Button
             variant="ghost"
             size="md"
-            className="gap-2 text-primary font-semibold hover:bg-primary-fixed/30 transition-all"
+            className="gap-2 bg-primary-fixed/40 text-primary font-semibold hover:bg-primary-fixed/60 transition-all"
           >
             <NetworkIcon className="w-[18px] h-[18px]" />
             Integrar red

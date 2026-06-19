@@ -107,7 +107,7 @@ export function DataTable<T>({
                   key={keyExtractor(item)}
                   className={cn(
                     "grid grid-cols-12 gap-4 px-8 py-6 items-center transition-all duration-300 font-body text-[15px]",
-                    "hover:bg-surface-container-high border-b border-outline-variant/20 last:border-0"
+                    "hover:bg-surface-container-high"
                   )}
                 >
                   {columns.map((col, colIdx) => (

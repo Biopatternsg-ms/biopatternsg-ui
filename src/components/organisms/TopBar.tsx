@@ -29,7 +29,7 @@ const TopBar = ({ title = "Dashboard" }: TopBarProps) => {
   const { toggleSidebar, toggleMobileSidebar } = useSidebar();
 
   return (
-    <header className="h-16 w-full sticky top-0 z-40 glass-nav flex justify-between items-center px-8 shadow-nav">
+    <header className="h-16 w-full sticky top-0 z-40 bg-surface flex justify-between items-center px-8">
       {/* Mobile hamburger + Brand (Hidden on Desktop) */}
       <div className="md:hidden flex items-center gap-3">
         <button
@@ -38,7 +38,7 @@ const TopBar = ({ title = "Dashboard" }: TopBarProps) => {
         >
           <Menu className="w-6 h-6" />
         </button>
-        <span className="font-headline text-[18px] font-black text-on-surface tracking-tighter">
+        <span className="font-headline text-[18px] font-black text-primary tracking-tighter">
           {title}
         </span>
       </div>
@@ -51,7 +51,7 @@ const TopBar = ({ title = "Dashboard" }: TopBarProps) => {
         >
           <Menu className="w-5 h-5" />
         </button>
-        <h2 className="font-headline text-[22px] font-black text-on-surface tracking-tighter">
+        <h2 className="font-headline text-[22px] font-black text-primary tracking-tighter">
           {title}
         </h2>
       </div>

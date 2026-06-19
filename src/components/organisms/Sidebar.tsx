@@ -27,6 +27,7 @@ interface NavItem {
   href: string;
   icon: React.ElementType;
   matchPath?: string;
+  exact?: boolean;
 }
 
 const navItems: NavItem[] = [
@@ -51,14 +52,14 @@ const Sidebar = () => {
 
       <nav
         className={cn(
-          "flex flex-col h-screen fixed left-0 top-0 glass-sidebar border-r border-outline-variant/40 shadow-[4px_0_24px_-4px_rgba(0,80,203,0.08)] z-50 transition-all duration-300",
+          "flex flex-col h-screen fixed left-0 top-0 bg-[#eef3ff] z-50 transition-all duration-300",
           isCollapsed ? "md:w-20 md:p-4 md:gap-6" : "md:w-64 md:p-6 md:gap-8",
           isMobileOpen ? "w-64 p-6 gap-8 translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
       >
       {/* Brand Header */}
       {isCollapsed ? (
-        <div className="w-full flex justify-center pb-4 border-b border-outline-variant/10">
+        <div className="w-full flex justify-center pb-4">
           <img
             src={logo}
             alt="Biopatternsg Logo"
@@ -66,7 +67,7 @@ const Sidebar = () => {
           />
         </div>
       ) : (
-        <div className="-mx-6 -mt-6 mb-2 overflow-hidden border-b border-outline-variant/10">
+        <div className="-mx-6 -mt-6 mb-2 overflow-hidden">
           <img
             src={logo}
             alt="Biopatternsg Logo"
@@ -76,11 +77,12 @@ const Sidebar = () => {
       )}
 
       {/* Navigation Links */}
-      <div className="flex flex-col gap-1.5 flex-1">
+      <div className="flex flex-col gap-1.5 flex-1 mt-4">
         {navItems.map((item) => {
-          const isActive =
-            (item.href !== "#" && location.pathname.startsWith(item.href)) ||
-            (!!item.matchPath && location.pathname.startsWith(item.matchPath));
+          const isActive = item.exact
+            ? location.pathname === item.href
+            : (item.href !== "#" && location.pathname.startsWith(item.href)) ||
+              (!!item.matchPath && location.pathname.startsWith(item.matchPath));
           const Icon = item.icon;
           return (
             <button
@@ -90,22 +92,23 @@ const Sidebar = () => {
               }}
               title={isCollapsed ? item.label : undefined}
               className={cn(
-                "flex items-center rounded-lg text-on-surface-variant transition-all duration-300 group",
+                "flex items-center rounded-lg transition-all duration-300 group",
                 isCollapsed ? "justify-center p-3" : "gap-3 px-4 py-3",
                 isActive
-                  ? "text-primary font-bold bg-white shadow-sm border border-primary/5"
-                  : "hover:bg-white/40 hover:text-primary"
+                  ? "bg-primary text-on-primary font-bold shadow-md"
+                  : "text-on-surface-variant hover:bg-black/5 hover:text-primary"
               )}
             >
               <Icon
                 className={cn(
                   "w-5 h-5 transition-colors duration-300 flex-shrink-0",
-                  isActive ? "text-primary" : "group-hover:text-primary"
+                  isActive ? "text-on-primary" : "group-hover:text-primary"
                 )}
               />
               <span
                 className={cn(
-                  "font-body text-[14px] font-medium transition-all duration-300 whitespace-nowrap overflow-hidden",
+                  "font-body text-[14px] transition-all duration-300 whitespace-nowrap overflow-hidden",
+                  isActive ? "font-bold" : "font-medium",
                   isCollapsed ? "w-0 opacity-0" : "w-auto opacity-100"
                 )}
               >
@@ -118,16 +121,16 @@ const Sidebar = () => {
 
       {/* System Status */}
       {isCollapsed ? (
-        <div className="flex justify-center p-2 bg-surface-container-lowest rounded-xl">
-          <span className="w-2.5 h-2.5 rounded-full bg-tertiary-container animate-pulse" title="Core API: Stable" />
+        <div className="flex justify-center p-2 bg-[#e2ebf9] rounded-xl">
+          <span className="w-2.5 h-2.5 rounded-full bg-tertiary-fixed-dim animate-pulse" title="Core API: Stable" />
         </div>
       ) : (
-        <div className="bg-surface-container-lowest rounded-xl p-4">
+        <div className="bg-[#e2ebf9] rounded-xl p-4 mt-auto">
           <span className="font-label text-[10px] tracking-widest uppercase text-on-surface-variant font-bold block mb-2">
             System Status
           </span>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-tertiary-container animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
             <span className="font-body text-[13px] text-on-surface font-medium">
               Core API: Stable
             </span>
