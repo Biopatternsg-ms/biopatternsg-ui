@@ -19,15 +19,11 @@
 
 import { useNavigate } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
-import { Sidebar } from "@/components/organisms/Sidebar";
-import { TopBar } from "@/components/organisms/TopBar";
 import { Button } from "@/components/atoms/Button";
 import { DataForm } from "@/components/organisms/DataForm";
 import * as z from "zod";
 import { networkService } from "@/services/networkService";
 import type { DataFormConfig } from "@/components/organisms/DataFormConfig";
-import { useSidebar } from "@/context/SidebarContext";
-import { cn } from "@/lib/utils";
 
 const createNetworkSchema = z.object({
   name: z.string().min(1, "El nombre de la red es requerido."),
@@ -36,7 +32,6 @@ const createNetworkSchema = z.object({
 
 const CreateNetwork = () => {
   const navigate = useNavigate();
-  const { isCollapsed } = useSidebar();
 
   const networkConfig: DataFormConfig<{ name: string; description: string }> = {
     schema: createNetworkSchema,
@@ -83,49 +78,37 @@ const CreateNetwork = () => {
   };
 
   return (
-    <div className="bg-surface text-on-surface font-body min-h-screen flex overflow-x-hidden">
-      {/* Side Navigation */}
-      <Sidebar />
+    <div className="flex-1 flex flex-col gap-6 px-8 py-8">
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-sm font-body">
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/dashboard/network")}
+          className="text-on-surface-variant hover:text-primary gap-2"
+        >
+          Networks
+        </Button>
+        <ChevronRight className="w-4 h-4 text-on-surface-variant" />
+        <span className="text-primary font-semibold">Register Network</span>
+      </div>
 
-      {/* Main Content Area */}
-      <main className={cn("flex-1 flex flex-col min-h-screen transition-all duration-300", isCollapsed ? "ml-0 md:ml-20" : "ml-0 md:ml-64")}>
-        {/* Top Bar */}
-        <TopBar title="Dashboard" />
+      {/* Page Header */}
+      <div className="flex flex-col gap-2 max-w-2xl">
+        <h1 className="font-headline text-3xl font-black text-on-surface tracking-tighter">
+          Register New Network
+        </h1>
+        <p className="text-on-surface-variant font-body text-sm leading-relaxed">
+          Establish a new computational framework for genetic mapping.
+          Define parameters for precision lab monitoring and data ingestion sequences.
+        </p>
+      </div>
 
-        {/* Content */}
-        <div className="flex-1 flex flex-col gap-6 px-8 py-8">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-sm font-body">
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/dashboard/network")}
-              className="text-on-surface-variant hover:text-primary transition-colors"
-            >
-              Networks
-            </Button>
-            <ChevronRight className="w-4 h-4 text-on-surface-variant" />
-            <span className="text-primary font-semibold">Register Network</span>
-          </div>
-
-          {/* Page Header */}
-          <div className="flex flex-col gap-2 max-w-2xl">
-            <h1 className="font-headline text-3xl font-black text-on-surface tracking-tighter">
-              Register New Network
-            </h1>
-            <p className="text-on-surface-variant font-body text-sm leading-relaxed">
-              Establish a new computational framework for genetic mapping.
-              Define parameters for precision lab monitoring and data ingestion sequences.
-            </p>
-          </div>
-
-          {/* Glass Card -> Replaced by DataForm */}
-          <div className="flex justify-center">
-            <div className="w-full max-w-lg">
-              <DataForm config={networkConfig} />
-            </div>
-          </div>
+      {/* Glass Card -> Replaced by DataForm */}
+      <div className="flex justify-center">
+        <div className="w-full max-w-lg">
+          <DataForm config={networkConfig} />
         </div>
-      </main>
+      </div>
     </div>
   );
 };

@@ -19,14 +19,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Microscope, ArrowLeft, Pencil, Trash2 } from "lucide-react";
-import { Sidebar } from "@/components/organisms/Sidebar";
-import { TopBar } from "@/components/organisms/TopBar";
 import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
 import { Badge } from "@/components/atoms/Badge";
 import { pipelineService, type Pipeline } from "@/services/pipelineService";
 import { Button } from "@/components/atoms/Button";
 import { cn } from "@/lib/utils";
-import { useSidebar } from "@/context/SidebarContext";
 
 const formatUnixTime = (unixSeconds: number) => {
   const date = new Date(unixSeconds * 1000);
@@ -53,7 +50,6 @@ const getStatusBadgeVariant = (step: string): "new" | "inProgress" | "completed"
 const Experiments = () => {
   const { networkId } = useParams<{ networkId: string }>();
   const navigate = useNavigate();
-  const { isCollapsed } = useSidebar();
 
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -126,58 +122,45 @@ const Experiments = () => {
   ];
 
   return (
-    <div className="bg-surface text-on-surface font-body min-h-screen flex overflow-x-hidden">
-      {/* Side Navigation */}
-      <Sidebar />
+    <div className="p-8 max-w-7xl mx-auto w-full flex-1 flex flex-col gap-10">
+      {/* Back button */}
+      <div className={cn(!networkId && "hidden")}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate("/dashboard/network")}
+          className="text-on-surface-variant hover:text-primary gap-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Volver a Redes
+        </Button>
+      </div>
 
-      {/* Main Content Area */}
-      <main className={cn("flex-1 flex flex-col min-h-screen transition-all duration-300", isCollapsed ? "ml-0 md:ml-20" : "ml-0 md:ml-64")}>
-        {/* Top Bar */}
-        <TopBar title="Dashboard" />
-
-        {/* Page Canvas */}
-        <div className="p-8 max-w-7xl mx-auto w-full flex-1 flex flex-col gap-10">
-
-          {/* Back button */}
-          <div className={cn(!networkId && "hidden")}>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/dashboard/network")}
-              className="text-on-surface-variant hover:text-primary gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Volver a Redes
-            </Button>
+      {/* Page Header: Title, Description & Actions */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+        {/* Left: Icon + Title + Description */}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            <Microscope className="text-primary-container w-7 h-7" />
+            <h2 className="font-headline text-2xl font-black text-on-surface tracking-tighter">
+              Experimentos
+            </h2>
           </div>
-
-          {/* Page Header: Title, Description & Actions */}
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-            {/* Left: Icon + Title + Description */}
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-3">
-                <Microscope className="text-primary-container w-7 h-7" />
-                <h2 className="font-headline text-2xl font-black text-on-surface tracking-tighter">
-                  Experimentos
-                </h2>
-              </div>
-              <p className="text-on-surface-variant font-body text-sm max-w-lg leading-relaxed">
-                Visualiza los pipelines y simulaciones en ejecución o completados para la red seleccionada.
-              </p>
-            </div>
-          </div>
-
-          {/* Pipelines Data Table */}
-          <DataTable
-            data={pipelines}
-            columns={columns}
-            loading={loading}
-            error={error}
-            emptyMessage="No hay experimentos disponibles para esta red."
-            keyExtractor={(item) => item.id}
-          />
+          <p className="text-on-surface-variant font-body text-sm max-w-lg leading-relaxed">
+            Visualiza los pipelines y simulaciones en ejecución o completados para la red seleccionada.
+          </p>
         </div>
-      </main>
+      </div>
+
+      {/* Pipelines Data Table */}
+      <DataTable
+        data={pipelines}
+        columns={columns}
+        loading={loading}
+        error={error}
+        emptyMessage="No hay experimentos disponibles para esta red."
+        keyExtractor={(item) => item.id}
+      />
     </div>
   );
 };
