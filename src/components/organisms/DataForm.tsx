@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 import * as React from "react";
-import { useForm, type DefaultValues, type FieldValues } from "react-hook-form";
+import { useForm, type DefaultValues, type FieldValues, type Path, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
@@ -43,7 +43,7 @@ export const DataForm = <T extends FieldValues>({ config }: DataFormProps<T>) =>
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<T>({
-    resolver: zodResolver(config.schema) as any,
+    resolver: zodResolver(config.schema) as unknown as Resolver<T>,
     mode: "onTouched",
     defaultValues: {} as DefaultValues<T>
   });
@@ -135,7 +135,7 @@ export const DataForm = <T extends FieldValues>({ config }: DataFormProps<T>) =>
                     aria-invalid={!!errors[field.name]}
                     labelRight={field.labelRight}
                     rows={field.rows}
-                    {...register(field.name as any)}
+                    {...register(field.name as Path<T>)}
                   />
                   {field.helperText && !errors[field.name] && (
                     <p className="text-[11px] text-on-surface-variant font-label font-medium tracking-wide mt-1">

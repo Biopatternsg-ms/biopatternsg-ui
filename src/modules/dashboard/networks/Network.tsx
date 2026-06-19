@@ -20,8 +20,6 @@ import { useEffect, useState } from "react";
 import { Network as NetworkIcon, Plus, FolderOpen, Pencil, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/atoms/Button";
-import { Sidebar } from "@/components/organisms/Sidebar";
-import { TopBar } from "@/components/organisms/TopBar";
 import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
 import { networkService, type Network as NetworkModel } from "@/services/networkService";
 import { cn } from "@/lib/utils";
@@ -123,65 +121,53 @@ const Network = () => {
   ];
 
   return (
-    <div className="bg-surface text-on-surface font-body min-h-screen flex overflow-x-hidden">
-      {/* Side Navigation */}
-      <Sidebar />
-
-      {/* Main Content Area */}
-      <main className="flex-1 ml-0 md:ml-64 flex flex-col min-h-screen">
-        {/* Top Bar */}
-        <TopBar title="Dashboard" />
-
-        {/* Page Canvas */}
-        <div className="p-8 max-w-7xl mx-auto w-full flex-1 flex flex-col gap-10">
-          {/* Page Header: Title, Description & Actions */}
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-            {/* Left: Icon + Title + Description */}
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-3">
-                <NetworkIcon className="text-primary-container w-7 h-7" />
-                <h2 className="font-headline text-2xl font-black text-on-surface tracking-tighter">
-                  Redes
-                </h2>
-              </div>
-              <p className="text-on-surface-variant font-body text-sm max-w-lg leading-relaxed">
-                Manage and integrate biological neural networks for clinical
-                simulation and pattern analysis.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="md"
-                className="gap-2 text-primary font-semibold hover:bg-primary-fixed/30 transition-all"
-              >
-                <NetworkIcon className="w-[18px] h-[18px]" />
-                Integrar red
-              </Button>
-              <Button
-                variant="primary"
-                size="md"
-                onClick={() => navigate("/dashboard/network/create")}
-                className="hover:shadow-primary-glow transition-all transform hover:-translate-y-0.5"
-              >
-                <Plus className="w-[18px] h-[18px]" />
-                Crear red
-              </Button>
-            </div>
+    <div>
+      {/* Page Header: Title, Description & Actions */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+        {/* Left: Icon + Title + Description */}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            <NetworkIcon className="text-primary-container w-7 h-7" />
+            <h2 className="font-headline text-2xl font-black text-on-surface tracking-tighter">
+              Redes
+            </h2>
           </div>
-
-          {/* Networks Data Table */}
-          <DataTable
-            data={networks}
-            columns={columns}
-            loading={loading}
-            error={error}
-            emptyMessage="No hay redes disponibles."
-            keyExtractor={(item) => item.id}
-          />
+          <p className="text-on-surface-variant font-body text-sm max-w-lg leading-relaxed">
+            Manage and integrate biological neural networks for clinical
+            simulation and pattern analysis.
+          </p>
         </div>
-      </main>
+
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="md"
+            className="gap-2 bg-primary-fixed/40 text-primary font-semibold hover:bg-primary-fixed/60 transition-all"
+          >
+            <NetworkIcon className="w-[18px] h-[18px]" />
+            Integrar red
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => navigate("/dashboard/network/create")}
+            className="hover:shadow-primary-glow transition-all transform hover:-translate-y-0.5"
+          >
+            <Plus className="w-[18px] h-[18px]" />
+            Crear red
+          </Button>
+        </div>
+      </div>
+
+      {/* Networks Data Table */}
+      <DataTable
+        data={networks}
+        columns={columns}
+        loading={loading}
+        error={error}
+        emptyMessage="No hay redes disponibles."
+        keyExtractor={(item) => item.id}
+      />
     </div>
   );
 };

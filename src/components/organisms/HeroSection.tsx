@@ -16,6 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { useRef } from "react";
 import { ArrowRight } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/atoms/Button";
@@ -44,7 +45,7 @@ const HeroSection = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  let pendingTokens: TokenPair | null = null;
+  const pendingTokensRef = useRef<TokenPair | null>(null);
   const fromState = location.state as { from?: string } | null;
   const redirectPath = fromState?.from ?? "/dashboard/network";
 
@@ -95,11 +96,11 @@ const HeroSection = () => {
     },
     onSuccessResponse: async (response) => {
       const data = (await response.json()) as TokenPair;
-      pendingTokens = data;
+      pendingTokensRef.current = data;
     },
     onSuccessClose: () => {
-      if (pendingTokens) {
-        login(pendingTokens);
+      if (pendingTokensRef.current) {
+        login(pendingTokensRef.current);
       }
       navigate(redirectPath, { replace: true });
     },

@@ -17,23 +17,62 @@
  * limitations under the License.
  */
 import { Avatar } from "@/components/atoms/Avatar";
-import { Button } from "@/components/atoms/Button";
 import { useAuth } from "@/context/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
+} from "@/components/atoms/DropdownMenu";
+import { LogOut } from "lucide-react";
 
 const UserMenu = () => {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
   const handleLogout = () => {
     logout();
     window.location.href = "/";
   };
 
+  // Intentamos obtener el nombre de distintos posibles claims del JWT
+  const displayName = user?.name || user?.preferred_username || user?.upn || user?.sub || "Usuario";
+
   return (
-    <div className="flex items-center gap-3">
-      <Avatar />
-      <Button variant="ghost" size="md" onClick={handleLogout}>
-        Cerrar sesión
-      </Button>
+    <div className="flex items-center gap-4">
+      {/* Texto de Usuario (solo desktop para ahorrar espacio) */}
+      <div className="hidden md:flex flex-col items-end justify-center">
+        <span className="font-headline font-bold text-sm text-on-surface">
+          {displayName}
+        </span>
+      </div>
+      
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="rounded-full focus:outline-none focus:ring-2 focus:ring-primary ring-offset-2 transition-all cursor-pointer">
+            <Avatar />
+          </button>
+        </DropdownMenuTrigger>
+        
+        <DropdownMenuContent align="end" className="min-w-[200px]">
+          {/* Solo en mobile se muestra el nombre dentro del menú */}
+          <div className="md:hidden">
+            <DropdownMenuLabel>
+              {displayName}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+          </div>
+          
+          <DropdownMenuItem
+            onClick={handleLogout}
+            className="text-error hover:bg-error/10 focus:bg-error/10"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Cerrar sesión
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 };

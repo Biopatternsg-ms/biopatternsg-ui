@@ -30,7 +30,7 @@ export type FormFieldProps = {
   rows?: number;
 } & Omit<React.InputHTMLAttributes<HTMLInputElement> & React.TextareaHTMLAttributes<HTMLTextAreaElement>, "type">;
 
-const FormField = React.forwardRef<any, FormFieldProps>(
+const FormField = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FormFieldProps>(
   ({ label, labelRight, containerClassName, className, type, rows, ...inputProps }, ref) => {
     return (
       <div className={cn("space-y-2", containerClassName)}>
@@ -39,9 +39,19 @@ const FormField = React.forwardRef<any, FormFieldProps>(
           {labelRight && <div>{labelRight}</div>}
         </div>
         {type === "textarea" ? (
-          <Textarea ref={ref} className={className} rows={rows} {...(inputProps as any)} />
+          <Textarea
+            ref={ref as React.Ref<HTMLTextAreaElement>}
+            className={className}
+            rows={rows}
+            {...(inputProps as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
+          />
         ) : (
-          <Input ref={ref} type={type} className={className} {...(inputProps as any)} />
+          <Input
+            ref={ref as React.Ref<HTMLInputElement>}
+            type={type}
+            className={className}
+            {...(inputProps as React.InputHTMLAttributes<HTMLInputElement>)}
+          />
         )}
       </div>
     );

@@ -25,6 +25,7 @@ import Experiments from "@/modules/dashboard/experiments/Experiments";
 import CreateNetwork from "@/modules/dashboard/networks/CreateNetwork";
 import { ProtectedRoute } from "@/core/router/ProtectedRoute";
 import { PublicRoute } from "@/core/router/PublicRoute";
+import { DashboardLayout } from "@/components/organisms/DashboardLayout";
 
 /**
  * App Root Component.
@@ -45,9 +46,11 @@ function App() {
         </Route>
 
         <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard/network" element={<Network />} />
-          <Route path="/dashboard/network/create" element={<CreateNetwork />} />
-          <Route path="/dashboard/experiments/:networkId?" element={<Experiments />} />
+          <Route element={<DashboardLayout />}>
+            <Route path="/dashboard/network" element={<Network />} />
+            <Route path="/dashboard/network/create" element={<CreateNetwork />} />
+            <Route path="/dashboard/experiments/:networkId?" element={<Experiments />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>

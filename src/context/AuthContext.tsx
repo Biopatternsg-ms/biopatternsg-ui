@@ -42,8 +42,31 @@ import type { TokenPair } from "@/domain/models/Auth";
  * to listen.
  */
 
+export interface UserPayload {
+  name?: string;
+  role?: string;
+  sub?: string;
+  upn?: string;
+  preferred_username?: string;
+  [key: string]: unknown;
+}
+
+function parseJwt(token: string): UserPayload | null {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
+
 interface AuthContextValue {
   isAuthenticated: boolean;
+  user: UserPayload | null;
   login: (tokens: TokenPair) => void;
   logout: () => void;
 }
@@ -55,10 +78,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => hasAccessToken()
   );
 
+  const [user, setUser] = React.useState<UserPayload | null>(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem("access_token") : null;
+    return token ? parseJwt(token) : null;
+  });
+
   React.useEffect(() => {
     const handler = () => {
       clearTokens();
       setIsAuthenticated(false);
+      setUser(null);
     };
     window.addEventListener(SESSION_EXPIRED_EVENT, handler);
     return () => {
@@ -69,16 +98,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = React.useCallback((tokens: TokenPair) => {
     setTokens(tokens);
     setIsAuthenticated(true);
+    setUser(parseJwt(tokens.access_token));
   }, []);
 
   const logout = React.useCallback(() => {
     clearTokens();
     setIsAuthenticated(false);
+    setUser(null);
   }, []);
 
   const value = React.useMemo<AuthContextValue>(
-    () => ({ isAuthenticated, login, logout }),
-    [isAuthenticated, login, logout]
+    () => ({ isAuthenticated, user, login, logout }),
+    [isAuthenticated, user, login, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
