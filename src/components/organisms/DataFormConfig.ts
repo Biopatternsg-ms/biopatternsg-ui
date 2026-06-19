@@ -32,6 +32,7 @@ export interface FieldDescriptor {
 }
 
 export interface DataFormConfig<T extends FieldValues> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   schema: ZodType<any, any, any>;
   fields: FieldDescriptor[];
   title: string;
