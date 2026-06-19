@@ -122,8 +122,8 @@ const Experiments = () => {
   ];
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full flex-1 flex flex-col gap-10">
-      {/* Back button */}
+    <div>
+      {/* Page Header */}
       <div className={cn(!networkId && "hidden")}>
         <Button
           variant="ghost"

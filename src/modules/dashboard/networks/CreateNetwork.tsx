@@ -78,8 +78,8 @@ const CreateNetwork = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col gap-6 px-8 py-8">
-      {/* Breadcrumb */}
+    <div >
+      {/* Breadcrumb Navigation */}
       <div className="flex items-center gap-2 text-sm font-body">
         <Button
           variant="ghost"

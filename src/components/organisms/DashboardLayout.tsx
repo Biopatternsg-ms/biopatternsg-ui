@@ -36,7 +36,9 @@ export function DashboardLayout() {
         <TopBar title="Dashboard" />
 
         {/* Dynamic Inner Page Content */}
-        <Outlet />
+        <div className="p-8 max-w-7xl mx-auto w-full flex-1">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

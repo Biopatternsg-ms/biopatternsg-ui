@@ -121,7 +121,7 @@ const Network = () => {
   ];
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full flex-1 flex flex-col gap-10">
+    <div>
       {/* Page Header: Title, Description & Actions */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         {/* Left: Icon + Title + Description */}
