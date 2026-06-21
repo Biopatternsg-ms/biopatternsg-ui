@@ -36,15 +36,19 @@ const steps: Step[] = [
     description: "Hiperparámetros",
   },
   {
-    title: "Revisión",
-    description: "Confirmación final",
+    title: "Define expert objects",
+    description: "Search levels and export objects",
   },
 ];
 
 const CreateExperiment = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
-  
+  const [sourceSelection, setSourceSelection] = useState<string>("JASPAR");
+  const [searchLevel, setSearchLevel] = useState<string>("");
+  const [exportObjectsFile, setExportObjectsFile] = useState<File | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string>("");
+
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [errorModalOpen, setErrorModalOpen] = useState(false);
 
@@ -52,6 +56,11 @@ const CreateExperiment = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
+      if (!exportObjectsFile) {
+        setErrorMessage("Debe cargar un archivo CSV en el campo Export objects para crear el experimento.");
+        setErrorModalOpen(true);
+        return;
+      }
       // Simulate submission
       setSuccessModalOpen(true);
     }
@@ -94,58 +103,114 @@ const CreateExperiment = () => {
             </div>
           </div>
         );
-      case 1:
+      case 1: {
+        const showJasparFields = sourceSelection === "JASPAR" || sourceSelection === "BOTH";
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <h3 className="text-lg font-bold text-on-surface">Parámetros del Modelo</h3>
-            <p className="text-sm text-on-surface-variant">Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+            <p className="text-sm text-on-surface-variant">Configura las fuentes genómicas y los parámetros de la región promotora.</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
-                label="Learning Rate"
-                type="text"
-                value="0.001"
-                onChange={() => {}}
+                label="Sources"
+                type="select"
+                containerClassName="col-span-1 sm:col-span-2"
+                value={sourceSelection}
+                onChange={(e) => setSourceSelection(e.target.value)}
+                options={[
+                  { value: "JASPAR", label: "JASPAR" },
+                  { value: "TFBIND", label: "TFBIND" },
+                  { value: "BOTH", label: "Ambos" }
+                ]}
               />
-              <FormField
-                label="Batch Size"
-                type="text"
-                value="32"
-                onChange={() => {}}
-              />
-              <FormField
-                label="Epochs"
-                type="text"
-                value="100"
-                onChange={() => {}}
-              />
-              <FormField
-                label="Optimizer"
-                type="text"
-                value="Adam"
-                onChange={() => {}}
-              />
+
+              {showJasparFields && (
+                <>
+                  <div className="animate-in fade-in zoom-in-95 duration-300 col-span-1">
+                    <FormField label="Genome" type="text" defaultValue="HG38" />
+                  </div>
+                  <div className="animate-in fade-in zoom-in-95 duration-300 col-span-1">
+                    <FormField label="Track" type="text" defaultValue="jaspar2022" />
+                  </div>
+                  <div className="animate-in fade-in zoom-in-95 duration-300 col-span-1">
+                    <FormField label="Identity" type="text" defaultValue="100.0" />
+                  </div>
+                  <div className="animate-in fade-in zoom-in-95 duration-300 col-span-1">
+                    <FormField label="Chromosome" type="text" defaultValue="chr8" />
+                  </div>
+                  <div className="animate-in fade-in zoom-in-95 duration-300 col-span-1">
+                    <FormField label="Strand" type="text" defaultValue="NEGATIVE" />
+                  </div>
+                  <div className="animate-in fade-in zoom-in-95 duration-300 col-span-1">
+                    <FormField label="Start" type="text" defaultValue="58498163" />
+                  </div>
+                  <div className="animate-in fade-in zoom-in-95 duration-300 col-span-1">
+                    <FormField label="End" type="text" defaultValue="58502163" />
+                  </div>
+                </>
+              )}
+
+              <div className="col-span-1 sm:col-span-2">
+                <FormField label="Reliability" type="text" defaultValue="95" />
+              </div>
+              
+              <div className="col-span-1 sm:col-span-2">
+                <FormField
+                  label="Promoter Region"
+                  type="textarea"
+                  rows={3}
+                  placeholder="Ingrese la secuencia de la región promotora..."
+                />
+              </div>
             </div>
           </div>
         );
+      }
       case 2:
         return (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h3 className="text-lg font-bold text-on-surface">Revisión y Confirmación</h3>
-            <p className="text-sm text-on-surface-variant">Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-            
-            <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant/20 space-y-3">
-               <div className="flex justify-between items-center pb-3 border-b border-outline-variant/10">
-                 <span className="text-sm text-on-surface-variant">Nombre</span>
-                 <span className="text-sm font-bold text-on-surface">Lorem Ipsum Experiment</span>
-               </div>
-               <div className="flex justify-between items-center pb-3 border-b border-outline-variant/10">
-                 <span className="text-sm text-on-surface-variant">Learning Rate</span>
-                 <span className="text-sm font-bold text-on-surface">0.001</span>
-               </div>
-               <div className="flex justify-between items-center">
-                 <span className="text-sm text-on-surface-variant">Batch Size</span>
-                 <span className="text-sm font-bold text-on-surface">32</span>
-               </div>
+            <h3 className="text-lg font-bold text-on-surface">Define expert objects</h3>
+            <p className="text-sm text-on-surface-variant">Configure the search level and upload the CSV file with the objects to export.</p>
+
+            <div className="grid grid-cols-1 gap-6">
+              <FormField
+                label="Search Level"
+                type="text"
+                placeholder="e.g. 1, 2, 3"
+                value={searchLevel}
+                onChange={(e) => setSearchLevel(e.target.value)}
+              />
+              <FormField
+                label="Export objects"
+                type="file"
+                accept=".csv"
+                labelRight={
+                  <Button variant="link" size="sm" asChild>
+                    <a href="/templates/export-objects-template.csv" download>
+                      Download template CSV
+                    </a>
+                  </Button>
+                }
+                onChange={(e) => {
+                  const input = e.target as HTMLInputElement;
+                  const file = input.files?.[0] ?? null;
+                  if (file) {
+                    const isCsv = file.name.toLowerCase().endsWith(".csv") || file.type === "text/csv";
+                    if (!isCsv) {
+                      setExportObjectsFile(null);
+                      setErrorMessage("Solo se permiten archivos de tipo CSV.");
+                      setErrorModalOpen(true);
+                      input.value = "";
+                      return;
+                    }
+                  }
+                  setExportObjectsFile(file);
+                }}
+              />
+              {exportObjectsFile && (
+                <p className="text-sm text-on-surface-variant">
+                  Archivo seleccionado: <span className="font-medium text-on-surface">{exportObjectsFile.name}</span>
+                </p>
+              )}
             </div>
           </div>
         );
@@ -212,6 +277,7 @@ const CreateExperiment = () => {
               <Button
                 variant="primary"
                 onClick={handleNext}
+                disabled={currentStep === steps.length - 1 && !exportObjectsFile}
               >
                 {currentStep === steps.length - 1 ? "Crear Experimento" : "Siguiente"}
               </Button>
@@ -230,7 +296,7 @@ const CreateExperiment = () => {
       <ErrorModal
         open={errorModalOpen}
         title="Error"
-        message="Ocurrió un error al crear el experimento."
+        message={errorMessage || "Ocurrió un error al crear el experimento."}
         onClose={() => setErrorModalOpen(false)}
       />
     </div>
