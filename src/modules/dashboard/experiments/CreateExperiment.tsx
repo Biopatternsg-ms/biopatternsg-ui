@@ -37,7 +37,7 @@ const steps: Step[] = [
   },
   {
     title: "Define expert objects",
-    description: "Search levels and export objects",
+    description: "Search levels and expert objects",
   },
 ];
 
@@ -46,7 +46,7 @@ const CreateExperiment = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [sourceSelection, setSourceSelection] = useState<string>("JASPAR");
   const [searchLevel, setSearchLevel] = useState<string>("");
-  const [exportObjectsFile, setExportObjectsFile] = useState<File | null>(null);
+  const [expertObjectsFile, setExpertObjectsFile] = useState<File | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
 
   const [successModalOpen, setSuccessModalOpen] = useState(false);
@@ -56,8 +56,8 @@ const CreateExperiment = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(prev => prev + 1);
     } else {
-      if (!exportObjectsFile) {
-        setErrorMessage("Debe cargar un archivo CSV en el campo Export objects para crear el experimento.");
+      if (!expertObjectsFile) {
+        setErrorMessage("Debe cargar un archivo CSV en el campo Expert objects para crear el experimento.");
         setErrorModalOpen(true);
         return;
       }
@@ -180,12 +180,12 @@ const CreateExperiment = () => {
                 onChange={(e) => setSearchLevel(e.target.value)}
               />
               <FormField
-                label="Export objects"
+                label="Expert objects"
                 type="file"
                 accept=".csv"
                 labelRight={
                   <Button variant="link" size="sm" asChild>
-                    <a href="/templates/export-objects-template.csv" download>
+                    <a href="/templates/expert-objects-template.csv" download>
                       Download template CSV
                     </a>
                   </Button>
@@ -196,19 +196,19 @@ const CreateExperiment = () => {
                   if (file) {
                     const isCsv = file.name.toLowerCase().endsWith(".csv") || file.type === "text/csv";
                     if (!isCsv) {
-                      setExportObjectsFile(null);
+                      setExpertObjectsFile(null);
                       setErrorMessage("Solo se permiten archivos de tipo CSV.");
                       setErrorModalOpen(true);
                       input.value = "";
                       return;
                     }
                   }
-                  setExportObjectsFile(file);
+                  setExpertObjectsFile(file);
                 }}
               />
-              {exportObjectsFile && (
+              {expertObjectsFile && (
                 <p className="text-sm text-on-surface-variant">
-                  Archivo seleccionado: <span className="font-medium text-on-surface">{exportObjectsFile.name}</span>
+                  Archivo seleccionado: <span className="font-medium text-on-surface">{expertObjectsFile.name}</span>
                 </p>
               )}
             </div>
@@ -277,7 +277,7 @@ const CreateExperiment = () => {
               <Button
                 variant="primary"
                 onClick={handleNext}
-                disabled={currentStep === steps.length - 1 && !exportObjectsFile}
+                disabled={currentStep === steps.length - 1 && !expertObjectsFile}
               >
                 {currentStep === steps.length - 1 ? "Crear Experimento" : "Siguiente"}
               </Button>
