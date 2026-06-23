@@ -21,7 +21,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Microscope, ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
 import { Badge } from "@/components/atoms/Badge";
-import { pipelineService, type Pipeline } from "@/services/pipelineService";
+import { experimentService, type Pipeline } from "@/services/experimentService";
 import { Button } from "@/components/atoms/Button";
 import { cn } from "@/lib/utils";
 
@@ -59,7 +59,7 @@ const Experiments = () => {
     const fetchPipelines = async () => {
       try {
         setLoading(true);
-        const data = await pipelineService.getPipelines(networkId);
+        const data = await experimentService.getPipelines(networkId);
         setPipelines(data);
       } catch (err) {
         setError("Error al cargar los experimentos");

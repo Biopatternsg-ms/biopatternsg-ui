@@ -27,7 +27,7 @@ export interface Pipeline {
   createdAt: number;
 }
 
-export const pipelineService = {
+export const experimentService = {
   /**
    * Retrieves the list of pipelines for a given network using authFetch,
    * which automatically injects the Authorization: Bearer token into the headers.
