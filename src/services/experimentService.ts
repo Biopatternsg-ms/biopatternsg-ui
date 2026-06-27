@@ -41,6 +41,17 @@ export const experimentService = {
   },
 
   /**
+   * Retrieves a single pipeline by its ID.
+   */
+  async getPipelineById(id: string): Promise<Experiment> {
+    const response = await authFetch(`${PIPELINES_ENDPOINT}/${id}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch pipeline");
+    }
+    return response.json();
+  },
+
+  /**
    * Creates a new pipeline configuration by sending a POST request.
    * Returns the raw Response so callers can inspect the status code.
    */

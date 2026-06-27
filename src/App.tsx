@@ -51,6 +51,7 @@ function App() {
             <Route path="/dashboard/network" element={<Network />} />
             <Route path="/dashboard/network/create" element={<CreateNetwork />} />
             <Route path="/dashboard/experiments/:networkId/create" element={<CreateExperiment />} />
+            <Route path="/dashboard/experiments/:networkId/update/:experimentId" element={<CreateExperiment />} />
             <Route path="/dashboard/experiments/:networkId?" element={<Experiments />} />
           </Route>
         </Route>

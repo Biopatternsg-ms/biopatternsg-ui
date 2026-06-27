@@ -21,6 +21,16 @@ import type { ExpertObject } from "@/services/models/Experiment";
 const CSV_SEPARATOR = ";";
 const REQUIRED_HEADERS = ["symbol", "uniprotid", "hgncid"];
 
+export function expertObjectsToCsvFile(expertObjects: ExpertObject[]): File {
+  const headers = "symbol;uniprotId;hgncId";
+  const rows = expertObjects.map(
+    (obj) => `${obj.symbol ?? ""};${obj.uniprotId ?? ""};${obj.hgncId ?? ""}`
+  );
+  const content = [headers, ...rows].join("\n");
+  const blob = new Blob([content], { type: "text/csv" });
+  return new File([blob], "expert-objects.csv", { type: "text/csv" });
+}
+
 export function parseExpertObjectsCsv(csvText: string): ExpertObject[] {
   const lines = csvText.split(/\r?\n/).filter((line) => line.trim() !== "");
 

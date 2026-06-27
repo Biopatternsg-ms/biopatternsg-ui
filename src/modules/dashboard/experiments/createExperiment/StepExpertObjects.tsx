@@ -17,6 +17,7 @@
  * limitations under the License.
  */
 
+import { useEffect, useRef } from "react";
 import { FormField } from "@/components/molecules/FormField";
 import { Button } from "@/components/atoms/Button";
 import { parseExpertObjectsCsv } from "@/utils/csvParser";
@@ -39,6 +40,22 @@ export function StepExpertObjects({
   onFileParsed,
   onError,
 }: StepExpertObjectsProps) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    const input = fileInputRef.current;
+    if (!input || !expertObjectsFile) {
+      return;
+    }
+    if (input.files?.[0]?.name === expertObjectsFile.name) {
+      return;
+    }
+
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(expertObjectsFile);
+    input.files = dataTransfer.files;
+  }, [expertObjectsFile]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const input = e.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
@@ -71,6 +88,7 @@ export function StepExpertObjects({
     };
     reader.readAsText(file);
   };
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <h3 className="text-lg font-bold text-on-surface">Define expert objects</h3>
@@ -90,6 +108,7 @@ export function StepExpertObjects({
           label="Expert objects"
           type="file"
           accept=".csv"
+          ref={fileInputRef}
           labelRight={
             <Button variant="link" size="sm" asChild>
               <a href="/templates/expert-objects-template.csv" download>

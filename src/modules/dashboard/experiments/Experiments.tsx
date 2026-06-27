@@ -101,12 +101,17 @@ const Experiments = () => {
     {
       header: "Opciones",
       className: "col-span-2 text-right",
-      render: () => (
+      render: (item) => (
         <div className="flex justify-end gap-2">
           <Button
             variant="icon"
             size="icon"
             title="Editar"
+            onClick={() => {
+              if (item.networkId) {
+                navigate(`/dashboard/experiments/${item.networkId}/update/${item.id}`);
+              }
+            }}
           >
             <Pencil className="w-[18px] h-[18px]" />
           </Button>

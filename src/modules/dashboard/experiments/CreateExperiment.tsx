@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/atoms/Button";
@@ -28,6 +28,7 @@ import { StepGeneralConfig } from "./createExperiment/StepGeneralConfig";
 import { StepModelParameters } from "./createExperiment/StepModelParameters";
 import { StepExpertObjects } from "./createExperiment/StepExpertObjects";
 import { experimentService } from "@/services/experimentService";
+import { expertObjectsToCsvFile } from "@/utils/csvParser";
 import type { Experiment, ExpertObject, TranscriptionFactorConfig } from "@/services/models/Experiment";
 
 const steps: Step[] = [
@@ -47,7 +48,8 @@ const steps: Step[] = [
 
 const CreateExperiment = () => {
   const navigate = useNavigate();
-  const { networkId } = useParams<{ networkId: string }>();
+  const { networkId, experimentId } = useParams<{ networkId: string; experimentId: string }>();
+  const isEditMode = !!experimentId;
   const [currentStep, setCurrentStep] = useState(0);
   
   const [experimentName, setExperimentName] = useState("");
@@ -84,6 +86,53 @@ const CreateExperiment = () => {
 
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [errorModalOpen, setErrorModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (!experimentId) {
+      return;
+    }
+
+    const fetchExperiment = async () => {
+      setIsSubmitting(true);
+      try {
+        const data = await experimentService.getPipelineById(experimentId);
+        setExperiment(data);
+        setExperimentName(data.name);
+        setExperimentDescription(data.description);
+
+        const tfConfig = data.transcriptionFactorConfig;
+        if (tfConfig) {
+          const hasJaspar = tfConfig.sources.includes("JASPAR");
+          const hasTfBind = tfConfig.sources.includes("TFBIND");
+          setSourceSelection(hasJaspar && hasTfBind ? "BOTH" : hasJaspar ? "JASPAR" : "TFBIND");
+          setGenome(tfConfig.genome ?? "");
+          setTrack(tfConfig.track ?? "");
+          setIdentity(tfConfig.identity?.toString() ?? "");
+          setChromosome(tfConfig.chromosome ?? "");
+          setStrand(tfConfig.strand ?? "");
+          setStart(tfConfig.start ?? "");
+          setEnd(tfConfig.end ?? "");
+          setReliability(tfConfig.reliability?.toString() ?? "");
+          setPromoterRegion(tfConfig.promoterRegion ?? "");
+        }
+
+        if (data.levels !== undefined) {
+          setSearchLevel(data.levels.toString());
+        }
+
+        if (data.expertObjects && data.expertObjects.length > 0) {
+          setExpertObjectsFile(expertObjectsToCsvFile(data.expertObjects));
+        }
+      } catch {
+        setErrorMessage("Error al cargar la información del experimento.");
+        setErrorModalOpen(true);
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
+
+    fetchExperiment();
+  }, [experimentId]);
 
   const handleNext = async () => {
     if (currentStep === 0) {
@@ -234,8 +283,8 @@ const CreateExperiment = () => {
       case 0:
         return (
           <StepGeneralConfig
-            name={experiment?.id ? experiment.name : experimentName}
-            description={experimentDescription}
+            name={experiment?.id ? (experiment.name ?? "") : experimentName}
+            description={experiment?.id ? (experiment.description ?? "") : experimentDescription}
             onNameChange={setExperimentName}
             onDescriptionChange={setExperimentDescription}
             nameReadOnly={!!experiment?.id}
@@ -297,7 +346,7 @@ const CreateExperiment = () => {
       {/* Page Header */}
       <div className="flex flex-col gap-2 max-w-2xl mb-8">
         <h1 className="font-headline text-3xl font-black text-on-surface tracking-tighter">
-          Register New Experiment
+          {isEditMode ? "Edit Experiment" : "Register New Experiment"}
         </h1>
         <p className="text-on-surface-variant font-body text-sm leading-relaxed">
           Configure a new experimental pipeline. Set general properties, fine-tune model hyperparameters, and confirm your setup.
@@ -349,7 +398,7 @@ const CreateExperiment = () => {
               <Button
                 variant="primary"
                 onClick={handleNext}
-                disabled={(currentStep === steps.length - 1 && !expertObjectsFile) || isSubmitting}
+                disabled={(currentStep === steps.length - 1 && !expertObjectsFile && !experiment?.expertObjects?.length) || isSubmitting}
                 className="gap-2"
               >
                 {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
