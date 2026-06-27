@@ -18,10 +18,11 @@
  */
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Microscope, ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { Microscope, ArrowLeft, Pencil, Trash2, Plus } from "lucide-react";
 import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
 import { Badge } from "@/components/atoms/Badge";
-import { experimentService, type Pipeline } from "@/services/experimentService";
+import { experimentService } from "@/services/experimentService";
+import type { Experiment } from "@/services/models/Experiment";
 import { Button } from "@/components/atoms/Button";
 import { cn } from "@/lib/utils";
 
@@ -51,7 +52,7 @@ const Experiments = () => {
   const { networkId } = useParams<{ networkId: string }>();
   const navigate = useNavigate();
 
-  const [pipelines, setPipelines] = useState<Pipeline[]>([]);
+  const [pipelines, setPipelines] = useState<Experiment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,7 +73,7 @@ const Experiments = () => {
     fetchPipelines();
   }, [networkId]);
 
-  const columns: ColumnDef<Pipeline>[] = [
+  const columns: ColumnDef<Experiment>[] = [
     {
       header: "Nombre",
       className: "col-span-3 font-semibold text-on-surface truncate",
@@ -87,7 +88,7 @@ const Experiments = () => {
       header: "Status",
       className: "col-span-2",
       render: (item) => (
-        <Badge variant={getStatusBadgeVariant(item.step)}>
+        <Badge variant={getStatusBadgeVariant(item.step ?? "")}>
           {item.step}
         </Badge>
       ),
@@ -95,7 +96,7 @@ const Experiments = () => {
     {
       header: "Fecha de creación",
       className: "col-span-2 text-on-surface-variant whitespace-nowrap",
-      render: (item) => formatUnixTime(item.createdAt),
+      render: (item) => formatUnixTime(item.createdAt ?? 0),
     },
     {
       header: "Opciones",
@@ -150,6 +151,19 @@ const Experiments = () => {
             Visualiza los pipelines y simulaciones en ejecución o completados para la red seleccionada.
           </p>
         </div>
+
+        {/* Right: Create experiment button */}
+        {networkId && (
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => navigate(`/dashboard/experiments/${networkId}/create`)}
+            className="hover:shadow-primary-glow transition-all transform hover:-translate-y-0.5"
+          >
+            <Plus className="w-[18px] h-[18px]" />
+            Crear experimento
+          </Button>
+        )}
       </div>
 
       {/* Pipelines Data Table */}
