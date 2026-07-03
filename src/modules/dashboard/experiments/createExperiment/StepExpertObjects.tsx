@@ -24,8 +24,6 @@ import { parseExpertObjectsCsv } from "@/utils/csvParser";
 import type { ExpertObject } from "@/services/models/Experiment";
 
 export interface StepExpertObjectsProps {
-  searchLevel: string;
-  onSearchLevelChange: (value: string) => void;
   expertObjectsFile: File | null;
   onFileChange: (file: File | null) => void;
   onFileParsed: (objects: ExpertObject[]) => void;
@@ -33,8 +31,6 @@ export interface StepExpertObjectsProps {
 }
 
 export function StepExpertObjects({
-  searchLevel,
-  onSearchLevelChange,
   expertObjectsFile,
   onFileChange,
   onFileParsed,
@@ -97,13 +93,6 @@ export function StepExpertObjects({
       </p>
 
       <div className="grid grid-cols-1 gap-6">
-        <FormField
-          label="Search Level"
-          type="text"
-          placeholder="e.g. 1, 2, 3"
-          value={searchLevel}
-          onChange={(e) => onSearchLevelChange(e.target.value)}
-        />
         <FormField
           label="Expert objects"
           type="file"

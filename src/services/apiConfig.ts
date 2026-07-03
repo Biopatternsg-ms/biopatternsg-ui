@@ -62,3 +62,9 @@ export const NETWORKS_ENDPOINT = `${CONFIG_AND_CONTROL}/${NETWORKS_PATH}`;
 /** Endpoint path for pipelines (experiments). */
 export const PIPELINES_PATH = "config-and-control/pipelines";
 export const PIPELINES_ENDPOINT = `${CONFIG_AND_CONTROL}/${PIPELINES_PATH}`;
+
+/** Sub-endpoints for updating specific sections of a pipeline. */
+export const PIPELINES_DESCRIPTION_ENDPOINT = `${PIPELINES_ENDPOINT}/description`;
+export const PIPELINES_TRANSCRIPTION_FACTOR_ENDPOINT = `${PIPELINES_ENDPOINT}/transcription-factor`;
+export const PIPELINES_EXPERT_OBJECTS_ENDPOINT = `${PIPELINES_ENDPOINT}/expert-objects`;
+export const PIPELINES_SEARCH_CONFIG_ENDPOINT = `${PIPELINES_ENDPOINT}/search-config`;

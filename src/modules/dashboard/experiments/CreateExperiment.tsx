@@ -27,22 +27,27 @@ import { ErrorModal } from "@/components/molecules/ErrorModal";
 import { StepGeneralConfig } from "./createExperiment/StepGeneralConfig";
 import { StepModelParameters } from "./createExperiment/StepModelParameters";
 import { StepExpertObjects } from "./createExperiment/StepExpertObjects";
+import { StepSearchConfig } from "./createExperiment/StepSearchConfig";
 import { experimentService } from "@/services/experimentService";
 import { expertObjectsToCsvFile } from "@/utils/csvParser";
 import type { Experiment, ExpertObject, TranscriptionFactorConfig } from "@/services/models/Experiment";
 
 const steps: Step[] = [
   {
-    title: "Configuración General",
-    description: "Información básica",
+    title: "General Configuration",
+    description: "Basic information",
   },
   {
-    title: "Parámetros del Modelo",
-    description: "Hiperparámetros",
+    title: "Model Parameters",
+    description: "Hyperparameters",
   },
   {
-    title: "Define expert objects",
-    description: "Search levels and expert objects",
+    title: "Expert Objects",
+    description: "Search objects",
+  },
+  {
+    title: "Search Configuration",
+    description: "Levels & Pubtator",
   },
 ];
 
@@ -81,6 +86,7 @@ const CreateExperiment = () => {
   };
 
   const [searchLevel, setSearchLevel] = useState<string>("");
+  const [retMax, setRetMax] = useState<string>("");
   const [expertObjectsFile, setExpertObjectsFile] = useState<File | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
 
@@ -120,6 +126,10 @@ const CreateExperiment = () => {
           setSearchLevel(data.levels.toString());
         }
 
+        if (data.retMax !== undefined) {
+          setRetMax(data.retMax.toString());
+        }
+
         if (data.expertObjects && data.expertObjects.length > 0) {
           setExpertObjectsFile(expertObjectsToCsvFile(data.expertObjects));
         }
@@ -150,7 +160,7 @@ const CreateExperiment = () => {
       setIsSubmitting(true);
       try {
         const response = experiment?.id
-          ? await experimentService.updatePipelineDescription(experiment.id, experimentDescription)
+          ? await experimentService.updatePipelineDescription(experiment.id, experiment.name, experimentDescription)
           : await experimentService.createPipeline(networkId, experimentName, experimentDescription);
 
         if (response.ok) {
@@ -219,21 +229,51 @@ const CreateExperiment = () => {
       } finally {
         setIsSubmitting(false);
       }
-    } else if (currentStep < steps.length - 1) {
-      setCurrentStep(prev => prev + 1);
-    } else {
+    } else if (currentStep === 2) {
       if (!experiment) {
         setErrorMessage("No se ha creado el experimento. Por favor, complete el paso anterior.");
         setErrorModalOpen(true);
         return;
       }
       if (!expertObjectsFile) {
-        setErrorMessage("Debe cargar un archivo CSV en el campo Expert objects para crear el experimento.");
+        setErrorMessage("Debe cargar un archivo CSV en el campo Expert objects para continuar.");
+        setErrorModalOpen(true);
+        return;
+      }
+
+      setIsSubmitting(true);
+      try {
+        const response = await experimentService.updateExperimentConfiguration(
+          experiment.id,
+          experiment.expertObjects ?? []
+        );
+        if (response.ok) {
+          const updatedData: Experiment = await response.json();
+          setExperiment(updatedData);
+          setCurrentStep((prev) => prev + 1);
+        } else {
+          setErrorMessage("Error al guardar los objetos expertos del experimento.");
+          setErrorModalOpen(true);
+        }
+      } catch {
+        setErrorMessage("Ocurrió un error inesperado al comunicarse con el servidor.");
+        setErrorModalOpen(true);
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      if (!experiment) {
+        setErrorMessage("No se ha creado el experimento. Por favor, complete el paso anterior.");
         setErrorModalOpen(true);
         return;
       }
       if (!searchLevel) {
         setErrorMessage("Por favor, ingrese el nivel de búsqueda.");
+        setErrorModalOpen(true);
+        return;
+      }
+      if (!retMax) {
+        setErrorMessage("Por favor, ingrese el número máximo de búsqueda en Pubtator.");
         setErrorModalOpen(true);
         return;
       }
@@ -245,17 +285,24 @@ const CreateExperiment = () => {
         return;
       }
 
+      const retMaxNumber = Number(retMax);
+      if (Number.isNaN(retMaxNumber)) {
+        setErrorMessage("El número máximo de búsqueda debe ser un número válido.");
+        setErrorModalOpen(true);
+        return;
+      }
+
       setIsSubmitting(true);
       try {
-        const response = await experimentService.updateExperimentConfiguration(
+        const response = await experimentService.updateSearchConfig(
           experiment.id,
           levels,
-          experiment.expertObjects ?? []
+          retMaxNumber
         );
         if (response.ok) {
           setSuccessModalOpen(true);
         } else {
-          setErrorMessage("Error al configurar el experimento. Por favor, intente de nuevo.");
+          setErrorMessage("Error al configurar la búsqueda del experimento.");
           setErrorModalOpen(true);
         }
       } catch {
@@ -310,8 +357,6 @@ const CreateExperiment = () => {
       case 2:
         return (
           <StepExpertObjects
-            searchLevel={searchLevel}
-            onSearchLevelChange={setSearchLevel}
             expertObjectsFile={expertObjectsFile}
             onFileChange={setExpertObjectsFile}
             onFileParsed={(objects: ExpertObject[]) => {
@@ -321,6 +366,15 @@ const CreateExperiment = () => {
               setErrorMessage(msg);
               setErrorModalOpen(true);
             }}
+          />
+        );
+      case 3:
+        return (
+          <StepSearchConfig
+            searchLevel={searchLevel}
+            onSearchLevelChange={setSearchLevel}
+            retMax={retMax}
+            onRetMaxChange={setRetMax}
           />
         );
       default:
@@ -398,7 +452,7 @@ const CreateExperiment = () => {
               <Button
                 variant="primary"
                 onClick={handleNext}
-                disabled={(currentStep === steps.length - 1 && !expertObjectsFile && !experiment?.expertObjects?.length) || isSubmitting}
+                disabled={(currentStep === steps.length - 1 && (!searchLevel || !retMax)) || isSubmitting}
                 className="gap-2"
               >
                 {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}

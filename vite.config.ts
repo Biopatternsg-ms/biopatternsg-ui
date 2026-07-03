@@ -35,7 +35,7 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         "/config-and-control": {
-          target: env.VITE_API_URL || "http://localhost:8081",
+          target: env.VITE_BACKEND_URL || "http://localhost:8080",
           changeOrigin: true,
           secure: false,
         },
