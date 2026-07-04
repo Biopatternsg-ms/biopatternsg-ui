@@ -103,13 +103,13 @@ const CreateExperiment = () => {
       try {
         const data = await experimentService.getPipelineById(experimentId);
         setExperiment(data);
-        setExperimentName(data.name);
-        setExperimentDescription(data.description);
+        setExperimentName(data.name ?? "");
+        setExperimentDescription(data.description ?? "");
 
         const tfConfig = data.transcriptionFactorConfig;
         if (tfConfig) {
-          const hasJaspar = tfConfig.sources.includes("JASPAR");
-          const hasTfBind = tfConfig.sources.includes("TFBIND");
+          const hasJaspar = tfConfig.sources?.includes("JASPAR") ?? false;
+          const hasTfBind = tfConfig.sources?.includes("TFBIND") ?? false;
           setSourceSelection(hasJaspar && hasTfBind ? "BOTH" : hasJaspar ? "JASPAR" : "TFBIND");
           setGenome(tfConfig.genome ?? "");
           setTrack(tfConfig.track ?? "");
@@ -122,11 +122,11 @@ const CreateExperiment = () => {
           setPromoterRegion(tfConfig.promoterRegion ?? "");
         }
 
-        if (data.levels !== undefined) {
+        if (data.levels != null) {
           setSearchLevel(data.levels.toString());
         }
 
-        if (data.retMax !== undefined) {
+        if (data.retMax != null) {
           setRetMax(data.retMax.toString());
         }
 
