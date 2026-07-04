@@ -22,6 +22,7 @@ import Register from "@/modules/public/Register";
 import RecoveryPassword from "@/modules/public/RecoveryPassword";
 import Network from "@/modules/dashboard/networks/Network";
 import Experiments from "@/modules/dashboard/experiments/Experiments";
+import CreateExperiment from "@/modules/dashboard/experiments/CreateExperiment";
 import CreateNetwork from "@/modules/dashboard/networks/CreateNetwork";
 import { ProtectedRoute } from "@/core/router/ProtectedRoute";
 import { PublicRoute } from "@/core/router/PublicRoute";
@@ -49,6 +50,8 @@ function App() {
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard/network" element={<Network />} />
             <Route path="/dashboard/network/create" element={<CreateNetwork />} />
+            <Route path="/dashboard/experiments/:networkId/create" element={<CreateExperiment />} />
+            <Route path="/dashboard/experiments/:networkId/update/:experimentId" element={<CreateExperiment />} />
             <Route path="/dashboard/experiments/:networkId?" element={<Experiments />} />
           </Route>
         </Route>

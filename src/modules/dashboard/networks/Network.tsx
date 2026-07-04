@@ -140,14 +140,6 @@ const Network = () => {
 
         <div className="flex items-center gap-3">
           <Button
-            variant="ghost"
-            size="md"
-            className="gap-2 bg-primary-fixed/40 text-primary font-semibold hover:bg-primary-fixed/60 transition-all"
-          >
-            <NetworkIcon className="w-[18px] h-[18px]" />
-            Integrar red
-          </Button>
-          <Button
             variant="primary"
             size="md"
             onClick={() => navigate("/dashboard/network/create")}

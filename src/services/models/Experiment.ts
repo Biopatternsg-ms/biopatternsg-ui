@@ -16,33 +16,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { authFetch } from "@/core/http/httpClient";
-import { PIPELINES_ENDPOINT } from "./apiConfig";
 
-export interface Pipeline {
+export interface TranscriptionFactorConfig {
+  sources: string[];
+  genome?: string;
+  track?: string;
+  identity?: number;
+  chromosome?: string;
+  strand?: string;
+  start?: string;
+  end?: string;
+  reliability: number;
+  promoterRegion: string;
+}
+
+export interface ExpertObject {
+  symbol: string | null;
+  uniprotId: string | null;
+  hgncId: string | null;
+}
+
+export interface Experiment {
   id: string;
   name: string;
   description: string;
-  step: string;
-  createdAt: number;
+  networkId: string;
+  levels?: number;
+  retMax?: number;
+  step?: string;
+  transcriptionFactorConfig?: TranscriptionFactorConfig;
+  expertObjects?: ExpertObject[];
+  createdAt?: number;
 }
-
-export const pipelineService = {
-  /**
-   * Retrieves the list of pipelines for a given network using authFetch,
-   * which automatically injects the Authorization: Bearer token into the headers.
-   */
-  async getPipelines(networkId?: string | null): Promise<Pipeline[]> {
-    const url = networkId 
-      ? `${PIPELINES_ENDPOINT}?networkId=${encodeURIComponent(networkId)}`
-      : PIPELINES_ENDPOINT;
-
-    const response = await authFetch(url);
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch pipelines");
-    }
-
-    return response.json();
-  },
-};

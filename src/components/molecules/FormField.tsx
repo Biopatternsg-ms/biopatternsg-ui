@@ -20,18 +20,20 @@ import * as React from "react";
 import { Label } from "@/components/atoms/Label";
 import { Input } from "@/components/atoms/Input";
 import { Textarea } from "@/components/atoms/Textarea";
+import { Select, type SelectOption } from "@/components/atoms/Select";
 import { cn } from "@/lib/utils";
 
 export type FormFieldProps = {
   label: string;
-  type?: "text" | "email" | "password" | "textarea";
+  type?: "text" | "email" | "password" | "file" | "textarea" | "select" | "number";
   labelRight?: React.ReactNode;
   containerClassName?: string;
   rows?: number;
-} & Omit<React.InputHTMLAttributes<HTMLInputElement> & React.TextareaHTMLAttributes<HTMLTextAreaElement>, "type">;
+  options?: SelectOption[];
+} & Omit<React.InputHTMLAttributes<HTMLInputElement> & React.TextareaHTMLAttributes<HTMLTextAreaElement> & React.SelectHTMLAttributes<HTMLSelectElement>, "type">;
 
-const FormField = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FormFieldProps>(
-  ({ label, labelRight, containerClassName, className, type, rows, ...inputProps }, ref) => {
+const FormField = React.forwardRef<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement, FormFieldProps>(
+  ({ label, labelRight, containerClassName, className, type, rows, options, ...inputProps }, ref) => {
     return (
       <div className={cn("space-y-2", containerClassName)}>
         <div className="flex justify-between items-baseline">
@@ -44,6 +46,13 @@ const FormField = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FormF
             className={className}
             rows={rows}
             {...(inputProps as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
+          />
+        ) : type === "select" ? (
+          <Select
+            ref={ref as React.Ref<HTMLSelectElement>}
+            className={className}
+            options={options}
+            {...(inputProps as React.SelectHTMLAttributes<HTMLSelectElement>)}
           />
         ) : (
           <Input
