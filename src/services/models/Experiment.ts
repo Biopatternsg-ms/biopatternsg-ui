@@ -42,6 +42,7 @@ export interface Experiment {
   description: string;
   networkId: string;
   levels?: number;
+  retMax?: number;
   step?: string;
   transcriptionFactorConfig?: TranscriptionFactorConfig;
   expertObjects?: ExpertObject[];

@@ -17,7 +17,13 @@
  * limitations under the License.
  */
 import { authFetch } from "@/core/http/httpClient";
-import { PIPELINES_ENDPOINT } from "./apiConfig";
+import {
+  PIPELINES_ENDPOINT,
+  PIPELINES_DESCRIPTION_ENDPOINT,
+  PIPELINES_TRANSCRIPTION_FACTOR_ENDPOINT,
+  PIPELINES_EXPERT_OBJECTS_ENDPOINT,
+  PIPELINES_SEARCH_CONFIG_ENDPOINT,
+} from "./apiConfig";
 
 import type { Experiment, ExpertObject, TranscriptionFactorConfig } from "./models/Experiment";
 
@@ -63,36 +69,57 @@ export const experimentService = {
   },
 
   /**
-   * Updates an existing pipeline configuration with transcription factor config.
+   * Updates the transcription factor configuration of an existing pipeline.
+   * PUT /config-and-control/pipelines/transcription-factor
+   * Body: { id, transcriptionFactorConfig }
    */
   async updatePipeline(id: string, transcriptionFactorConfig: TranscriptionFactorConfig): Promise<Response> {
-    return authFetch(PIPELINES_ENDPOINT, {
+    return authFetch(PIPELINES_TRANSCRIPTION_FACTOR_ENDPOINT, {
       method: "PUT",
       body: JSON.stringify({ id, transcriptionFactorConfig }),
     });
   },
 
   /**
-   * Updates the description of an existing pipeline.
+   * Updates the name and description of an existing pipeline.
+   * PUT /config-and-control/pipelines/description
+   * Body: { id, name, description }
    */
-  async updatePipelineDescription(id: string, description: string): Promise<Response> {
-    return authFetch(PIPELINES_ENDPOINT, {
+  async updatePipelineDescription(id: string, name: string, description: string): Promise<Response> {
+    return authFetch(PIPELINES_DESCRIPTION_ENDPOINT, {
       method: "PUT",
-      body: JSON.stringify({ id, description }),
+      body: JSON.stringify({ id, name, description }),
     });
   },
 
   /**
-   * Updates the final configuration of an existing pipeline (levels + expert objects).
+   * Updates the expert objects of an existing pipeline.
+   * PUT /config-and-control/pipelines/expert-objects
+   * Body: { id, expertObjects }
    */
   async updateExperimentConfiguration(
     id: string,
-    levels: number,
     expertObjects: ExpertObject[]
   ): Promise<Response> {
-    return authFetch(PIPELINES_ENDPOINT, {
+    return authFetch(PIPELINES_EXPERT_OBJECTS_ENDPOINT, {
       method: "PUT",
-      body: JSON.stringify({ id, levels, expertObjects }),
+      body: JSON.stringify({ id, expertObjects }),
+    });
+  },
+
+  /**
+   * Updates the search configuration of an existing pipeline (levels + retMax).
+   * PUT /config-and-control/pipelines/search-config
+   * Body: { id, levels, retMax }
+   */
+  async updateSearchConfig(
+    id: string,
+    levels: number,
+    retMax: number
+  ): Promise<Response> {
+    return authFetch(PIPELINES_SEARCH_CONFIG_ENDPOINT, {
+      method: "PUT",
+      body: JSON.stringify({ id, levels, retMax }),
     });
   },
 };

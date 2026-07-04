@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 
 export type FormFieldProps = {
   label: string;
-  type?: "text" | "email" | "password" | "file" | "textarea" | "select";
+  type?: "text" | "email" | "password" | "file" | "textarea" | "select" | "number";
   labelRight?: React.ReactNode;
   containerClassName?: string;
   rows?: number;
