@@ -150,7 +150,7 @@ const CreateExperiment = () => {
       setIsSubmitting(true);
       try {
         const response = experiment?.id
-          ? await experimentService.updatePipelineDescription(experiment.id, experimentDescription)
+          ? await experimentService.updatePipelineDescription(experiment.id, experiment.name ?? "", experimentDescription)
           : await experimentService.createPipeline(networkId, experimentName, experimentDescription);
 
         if (response.ok) {
@@ -321,6 +321,7 @@ const CreateExperiment = () => {
               setErrorMessage(msg);
               setErrorModalOpen(true);
             }}
+            expertObjects={experiment?.expertObjects}
           />
         );
       default:

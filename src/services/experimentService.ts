@@ -27,7 +27,7 @@ export const experimentService = {
    * which automatically injects the Authorization: Bearer token into the headers.
    */
   async getPipelines(networkId?: string | null): Promise<Experiment[]> {
-    const url = networkId 
+    const url = networkId
       ? `${PIPELINES_ENDPOINT}?networkId=${encodeURIComponent(networkId)}`
       : PIPELINES_ENDPOINT;
 

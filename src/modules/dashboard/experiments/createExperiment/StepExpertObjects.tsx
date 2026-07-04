@@ -20,7 +20,7 @@
 import { useEffect, useRef } from "react";
 import { FormField } from "@/components/molecules/FormField";
 import { Button } from "@/components/atoms/Button";
-import { parseExpertObjectsCsv } from "@/utils/csvParser";
+import { expertObjectsToCsvFile, parseExpertObjectsCsv } from "@/utils/csvParser";
 import type { ExpertObject } from "@/services/models/Experiment";
 
 export interface StepExpertObjectsProps {
@@ -30,6 +30,7 @@ export interface StepExpertObjectsProps {
   onFileChange: (file: File | null) => void;
   onFileParsed: (objects: ExpertObject[]) => void;
   onError: (message: string) => void;
+  expertObjects?: ExpertObject[];
 }
 
 export function StepExpertObjects({
@@ -39,8 +40,26 @@ export function StepExpertObjects({
   onFileChange,
   onFileParsed,
   onError,
+  expertObjects,
 }: StepExpertObjectsProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleDownloadTemplate = () => {
+    const link = document.createElement("a");
+    if (expertObjects && expertObjects.length > 0) {
+      const file = expertObjectsToCsvFile(expertObjects);
+      link.href = URL.createObjectURL(file);
+    } else {
+      link.href = "/templates/expert-objects-template.csv";
+    }
+    link.download = "expert-objects.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    if (link.href.startsWith("blob:")) {
+      URL.revokeObjectURL(link.href);
+    }
+  };
 
   useEffect(() => {
     const input = fileInputRef.current;
@@ -110,10 +129,8 @@ export function StepExpertObjects({
           accept=".csv"
           ref={fileInputRef}
           labelRight={
-            <Button variant="link" size="sm" asChild>
-              <a href="/templates/expert-objects-template.csv" download>
-                Download template CSV
-              </a>
+            <Button variant="link" size="sm" onClick={handleDownloadTemplate}>
+              Download template CSV
             </Button>
           }
           onChange={handleFileChange}
