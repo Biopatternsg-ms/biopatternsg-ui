@@ -20,7 +20,6 @@
 import { useEffect, useRef } from "react";
 import { FormField } from "@/components/molecules/FormField";
 import { Button } from "@/components/atoms/Button";
-import { Label } from "@/components/atoms/Label";
 import { expertObjectsToCsvFile, parseExpertObjectsCsv } from "@/utils/csvParser";
 import type { ExpertObject } from "@/services/models/Experiment";
 
