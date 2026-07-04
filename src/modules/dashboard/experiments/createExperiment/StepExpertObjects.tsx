@@ -20,6 +20,7 @@
 import { useEffect, useRef } from "react";
 import { FormField } from "@/components/molecules/FormField";
 import { Button } from "@/components/atoms/Button";
+import { Label } from "@/components/atoms/Label";
 import { expertObjectsToCsvFile, parseExpertObjectsCsv } from "@/utils/csvParser";
 import type { ExpertObject } from "@/services/models/Experiment";
 
@@ -42,19 +43,25 @@ export function StepExpertObjects({
 
   const handleDownloadTemplate = () => {
     const link = document.createElement("a");
-    if (expertObjects && expertObjects.length > 0) {
-      const file = expertObjectsToCsvFile(expertObjects);
-      link.href = URL.createObjectURL(file);
-    } else {
-      link.href = "/templates/expert-objects-template.csv";
+    link.href = "/templates/expert-objects-template.csv";
+    link.download = "expert-objects-template.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleDownloadCurrentCsv = () => {
+    if (!expertObjects || expertObjects.length === 0) {
+      return;
     }
+    const file = expertObjectsToCsvFile(expertObjects);
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(file);
     link.download = "expert-objects.csv";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    if (link.href.startsWith("blob:")) {
-      URL.revokeObjectURL(link.href);
-    }
+    URL.revokeObjectURL(link.href);
   };
 
   useEffect(() => {
@@ -108,7 +115,7 @@ export function StepExpertObjects({
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <h3 className="text-lg font-bold text-on-surface">Define expert objects</h3>
       <p className="text-sm text-on-surface-variant">
-        Configure the search level and upload the CSV file with the objects to export.
+        Upload the CSV file with the expert objects to export.
       </p>
 
       <div className="grid grid-cols-1 gap-6">
@@ -124,9 +131,12 @@ export function StepExpertObjects({
           }
           onChange={handleFileChange}
         />
-        {expertObjectsFile && (
+        {expertObjects && expertObjects.length > 0 && (
           <p className="text-sm text-on-surface-variant">
-            Archivo seleccionado: <span className="font-medium text-on-surface">{expertObjectsFile.name}</span>
+            Archivo seleccionado:
+            <Button variant="link" size="sm" onClick={handleDownloadCurrentCsv}>
+              Expert-objects.csv
+            </Button>
           </p>
         )}
       </div>

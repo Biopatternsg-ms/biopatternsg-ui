@@ -160,7 +160,7 @@ const CreateExperiment = () => {
       setIsSubmitting(true);
       try {
         const response = experiment?.id
-          ? await experimentService.updatePipelineDescription(experiment.id, experiment.name, experimentDescription)
+          ? await experimentService.updatePipelineDescription(experiment.id, experiment.name ?? "", experimentDescription)
           : await experimentService.createPipeline(networkId, experimentName, experimentDescription);
 
         if (response.ok) {
@@ -367,15 +367,6 @@ const CreateExperiment = () => {
               setErrorModalOpen(true);
             }}
             expertObjects={experiment?.expertObjects}
-          />
-        );
-      case 3:
-        return (
-          <StepSearchConfig
-            searchLevel={searchLevel}
-            onSearchLevelChange={setSearchLevel}
-            retMax={retMax}
-            onRetMaxChange={setRetMax}
           />
         );
       case 3:

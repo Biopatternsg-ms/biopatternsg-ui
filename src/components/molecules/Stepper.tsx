@@ -35,7 +35,7 @@ export interface StepperProps {
 export function Stepper({ steps, currentStep, className, onStepClick }: StepperProps) {
   return (
     <div className={cn("w-full", className)}>
-      <div className="flex items-center justify-between relative">
+      <div className="flex items-start justify-between relative">
         {/* Background line */}
         <div className="absolute left-0 top-5 -translate-y-1/2 w-full h-1 bg-surface-variant z-0 rounded-full" />
         
@@ -71,7 +71,7 @@ export function Stepper({ steps, currentStep, className, onStepClick }: StepperP
                 )}
               </button>
               
-              <div className="mt-3 text-center w-32 hidden sm:block">
+              <div className="mt-3 text-center w-32 hidden sm:block min-h-[3.5rem]">
                 <p className={cn(
                   "text-sm font-bold tracking-tight mb-0.5 transition-colors duration-300",
                   isActive || isCompleted ? "text-on-surface" : "text-on-surface-variant"
