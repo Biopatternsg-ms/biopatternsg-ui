@@ -81,7 +81,7 @@ const Experiments = () => {
       header: "Status",
       className: "col-span-2",
       render: (item) => (
-        <PipelineStatus status={item.status?.status} />
+        <PipelineStatus status={item.status} />
       ),
     },
     {
