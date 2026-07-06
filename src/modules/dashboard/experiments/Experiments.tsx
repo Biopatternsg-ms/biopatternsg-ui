@@ -18,7 +18,7 @@
  */
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Microscope, ArrowLeft, Pencil, Trash2, Plus } from "lucide-react";
+import { Microscope, ArrowLeft, Pencil, Trash2, Plus, Play } from "lucide-react";
 import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
 import { PipelineStatus, getFriendlyStepLabel } from "@/components/molecules/PipelineStatus";
 import { experimentService } from "@/services/experimentService";
@@ -44,22 +44,37 @@ const Experiments = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchPipelines = async () => {
-      try {
-        setLoading(true);
-        const data = await experimentService.getPipelines(networkId);
-        setPipelines(data);
-      } catch (err) {
-        setError("Error loading experiments");
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchPipelines = async () => {
+    try {
+      setLoading(true);
+      const data = await experimentService.getPipelines(networkId);
+      setPipelines(data);
+    } catch (err) {
+      setError("Error loading experiments");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchPipelines();
   }, [networkId]);
+
+  const handleLaunch = async (pipelineId: string) => {
+    try {
+      setLoading(true);
+      const response = await experimentService.launchPipeline(pipelineId);
+      if (!response.ok) {
+        throw new Error("Failed to launch pipeline");
+      }
+      await fetchPipelines();
+    } catch (err) {
+      setError("Error launching experiment");
+      console.error(err);
+      setLoading(false);
+    }
+  };
 
   const columns: ColumnDef<Experiment>[] = [
     {
@@ -94,6 +109,15 @@ const Experiments = () => {
       className: "col-span-2 text-right",
       render: (item) => (
         <div className="flex justify-end gap-2">
+          <Button
+            variant="icon"
+            size="icon"
+            title="Launch"
+            onClick={() => handleLaunch(item.id)}
+            disabled={!((item.status?.step || item.step) === "CONFIG" && item.status?.status === "COMPLETED")}
+          >
+            <Play className="w-[18px] h-[18px]" />
+          </Button>
           <Button
             variant="icon"
             size="icon"

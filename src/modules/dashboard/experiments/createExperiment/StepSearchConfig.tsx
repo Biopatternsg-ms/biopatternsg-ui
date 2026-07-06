@@ -24,6 +24,8 @@ export interface StepSearchConfigProps {
   onSearchLevelChange: (value: string) => void;
   retMax: string;
   onRetMaxChange: (value: string) => void;
+  useOnlyPrincipalName: boolean;
+  onUseOnlyPrincipalNameChange: (value: boolean) => void;
 }
 
 export function StepSearchConfig({
@@ -31,12 +33,19 @@ export function StepSearchConfig({
   onSearchLevelChange,
   retMax,
   onRetMaxChange,
+  useOnlyPrincipalName,
+  onUseOnlyPrincipalNameChange,
 }: StepSearchConfigProps) {
+  const options = [
+    { value: "true", label: "Yes" },
+    { value: "false", label: "No" },
+  ];
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <h3 className="text-lg font-bold text-on-surface">Search Configuration</h3>
       <p className="text-sm text-on-surface-variant">
-        Set the search depth level and the maximum number of results retrieved from Pubtator.
+        Set the search depth level, the maximum number of results retrieved from Pubtator, and entity search rules.
       </p>
 
       <div className="grid grid-cols-1 gap-6">
@@ -53,6 +62,13 @@ export function StepSearchConfig({
           placeholder="e.g. 100"
           value={retMax}
           onChange={(e) => onRetMaxChange(e.target.value)}
+        />
+        <FormField
+          label="Use Only Principal Name"
+          type="select"
+          options={options}
+          value={useOnlyPrincipalName.toString()}
+          onChange={(e) => onUseOnlyPrincipalNameChange(e.target.value === "true")}
         />
       </div>
     </div>

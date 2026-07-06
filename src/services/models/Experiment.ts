@@ -54,4 +54,5 @@ export interface Experiment {
   expertObjects?: ExpertObject[];
   createdAt?: number;
   status?: PipelineStatus;
+  useOnlyPrincipalName?: boolean;
 }

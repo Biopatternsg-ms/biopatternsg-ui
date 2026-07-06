@@ -87,6 +87,7 @@ const CreateExperiment = () => {
 
   const [searchLevel, setSearchLevel] = useState<string>("");
   const [retMax, setRetMax] = useState<string>("");
+  const [useOnlyPrincipalName, setUseOnlyPrincipalName] = useState(true);
   const [expertObjectsFile, setExpertObjectsFile] = useState<File | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
 
@@ -128,6 +129,10 @@ const CreateExperiment = () => {
 
         if (data.retMax != null) {
           setRetMax(data.retMax.toString());
+        }
+
+        if (data.useOnlyPrincipalName !== undefined) {
+          setUseOnlyPrincipalName(data.useOnlyPrincipalName);
         }
 
         if (data.expertObjects && data.expertObjects.length > 0) {
@@ -236,8 +241,7 @@ const CreateExperiment = () => {
         return;
       }
       if (!expertObjectsFile) {
-        setErrorMessage("Debe cargar un archivo CSV en el campo Expert objects para continuar.");
-        setErrorModalOpen(true);
+        setCurrentStep((prev) => prev + 1);
         return;
       }
 
@@ -297,7 +301,8 @@ const CreateExperiment = () => {
         const response = await experimentService.updateSearchConfig(
           experiment.id,
           levels,
-          retMaxNumber
+          retMaxNumber,
+          useOnlyPrincipalName
         );
         if (response.ok) {
           setSuccessModalOpen(true);
@@ -376,6 +381,8 @@ const CreateExperiment = () => {
             onSearchLevelChange={setSearchLevel}
             retMax={retMax}
             onRetMaxChange={setRetMax}
+            useOnlyPrincipalName={useOnlyPrincipalName}
+            onUseOnlyPrincipalNameChange={setUseOnlyPrincipalName}
           />
         );
       default:

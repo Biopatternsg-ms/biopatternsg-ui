@@ -77,7 +77,7 @@ export function PipelineStatus({ status }: { status?: PipelineStatusType }) {
   };
 
   const formattedDate = status?.createdAt ? formatStatusDate(status.createdAt) : "";
-  const tooltipText = formattedDate ? `Started at: ${formattedDate}` : undefined;
+  const tooltipText = formattedDate ? `Date: ${formattedDate}` : undefined;
 
   return (
     <div className="relative group inline-block">
