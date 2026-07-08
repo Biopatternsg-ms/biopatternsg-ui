@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Microscope, ArrowLeft, Pencil, Trash2, Plus, Play } from "lucide-react";
 import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
@@ -44,9 +44,15 @@ const Experiments = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPipelines = async () => {
+  const [prevNetworkId, setPrevNetworkId] = useState(networkId);
+
+  if (networkId !== prevNetworkId) {
+    setPrevNetworkId(networkId);
+    setLoading(true);
+  }
+
+  const fetchPipelines = useCallback(async () => {
     try {
-      setLoading(true);
       const data = await experimentService.getPipelines(networkId);
       setPipelines(data);
     } catch (err) {
@@ -55,10 +61,31 @@ const Experiments = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [networkId]);
 
   useEffect(() => {
-    fetchPipelines();
+    let isMounted = true;
+    const load = async () => {
+      try {
+        const data = await experimentService.getPipelines(networkId);
+        if (isMounted) {
+          setPipelines(data);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError("Error loading experiments");
+        }
+        console.error(err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+    load();
+    return () => {
+      isMounted = false;
+    };
   }, [networkId]);
 
   const handleLaunch = async (pipelineId: string) => {
