@@ -42,10 +42,16 @@ const badgeVariants = cva(
           "px-3 py-1 bg-secondary-fixed text-on-secondary-fixed-variant text-[10px] tracking-widest",
         // Experiment status — En progreso
         inProgress:
-          "px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed-variant text-[10px] tracking-widest",
+          "px-3 py-1 bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/30 text-[10px] tracking-widest",
         // Experiment status — Completado
         completed:
-          "px-3 py-1 bg-surface-section text-primary-container text-[10px] tracking-widest border border-primary-fixed-dim",
+          "px-3 py-1 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/30 text-[10px] tracking-widest",
+        // Experiment status — Fallido (Rojo)
+        failed:
+          "px-3 py-1 bg-rose-50 text-rose-700 dark:bg-rose-950/20 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/30 text-[10px] tracking-widest",
+        // Experiment status — Pendiente (Gris)
+        pending:
+          "px-3 py-1 bg-slate-100 text-slate-700 dark:bg-slate-800/40 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/50 text-[10px] tracking-widest",
       },
     },
     defaultVariants: {

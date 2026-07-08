@@ -16,11 +16,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Microscope, ArrowLeft, Pencil, Trash2, Plus } from "lucide-react";
+import { Microscope, ArrowLeft, Pencil, Trash2, Plus, Play } from "lucide-react";
 import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
-import { Badge } from "@/components/atoms/Badge";
+import { PipelineStatus, getFriendlyStepLabel } from "@/components/molecules/PipelineStatus";
 import { experimentService } from "@/services/experimentService";
 import type { Experiment } from "@/services/models/Experiment";
 import { Button } from "@/components/atoms/Button";
@@ -34,19 +34,7 @@ const formatUnixTime = (unixSeconds: number) => {
   return `${day}/${month}/${year}`;
 };
 
-// Map step values to our Badge variants
-const getStatusBadgeVariant = (step: string): "new" | "inProgress" | "completed" | "neutral" => {
-  switch (step) {
-    case "CONFIG":
-      return "new";
-    case "TRAINING":
-      return "inProgress";
-    case "COMPLETED":
-      return "completed";
-    default:
-      return "neutral";
-  }
-};
+
 
 const Experiments = () => {
   const { networkId } = useParams<{ networkId: string }>();
@@ -56,57 +44,111 @@ const Experiments = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [prevNetworkId, setPrevNetworkId] = useState(networkId);
+
+  if (networkId !== prevNetworkId) {
+    setPrevNetworkId(networkId);
+    setLoading(true);
+  }
+
+  const fetchPipelines = useCallback(async () => {
+    try {
+      const data = await experimentService.getPipelines(networkId);
+      setPipelines(data);
+    } catch (err) {
+      setError("Error loading experiments");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [networkId]);
+
   useEffect(() => {
-    const fetchPipelines = async () => {
+    let isMounted = true;
+    const load = async () => {
       try {
-        setLoading(true);
         const data = await experimentService.getPipelines(networkId);
-        setPipelines(data);
+        if (isMounted) {
+          setPipelines(data);
+        }
       } catch (err) {
-        setError("Error al cargar los experimentos");
+        if (isMounted) {
+          setError("Error loading experiments");
+        }
         console.error(err);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
-
-    fetchPipelines();
+    load();
+    return () => {
+      isMounted = false;
+    };
   }, [networkId]);
+
+  const handleLaunch = async (pipelineId: string) => {
+    try {
+      setLoading(true);
+      const response = await experimentService.launchPipeline(pipelineId);
+      if (!response.ok) {
+        throw new Error("Failed to launch pipeline");
+      }
+      await fetchPipelines();
+    } catch (err) {
+      setError("Error launching experiment");
+      console.error(err);
+      setLoading(false);
+    }
+  };
 
   const columns: ColumnDef<Experiment>[] = [
     {
-      header: "Nombre",
-      className: "col-span-3 font-semibold text-on-surface truncate",
+      header: "Name",
+      className: "col-span-2 font-semibold text-on-surface truncate",
       accessor: "name",
     },
     {
-      header: "Descripción",
+      header: "Description",
       className: "col-span-3 text-on-surface-variant truncate",
       accessor: "description",
+    },
+    {
+      header: "Task",
+      className: "col-span-2 text-on-surface-variant truncate font-medium",
+      render: (item) => getFriendlyStepLabel(item.status?.step || item.step),
     },
     {
       header: "Status",
       className: "col-span-2",
       render: (item) => (
-        <Badge variant={getStatusBadgeVariant(item.step ?? "")}>
-          {item.step}
-        </Badge>
+        <PipelineStatus status={item.status} />
       ),
     },
     {
-      header: "Fecha de creación",
-      className: "col-span-2 text-on-surface-variant whitespace-nowrap",
+      header: "Created At",
+      className: "col-span-1 text-on-surface-variant whitespace-nowrap",
       render: (item) => formatUnixTime(item.createdAt ?? 0),
     },
     {
-      header: "Opciones",
+      header: "Options",
       className: "col-span-2 text-right",
       render: (item) => (
         <div className="flex justify-end gap-2">
           <Button
             variant="icon"
             size="icon"
-            title="Editar"
+            title="Launch"
+            onClick={() => handleLaunch(item.id)}
+            disabled={!((item.status?.step || item.step) === "CONFIG" && item.status?.status === "COMPLETED")}
+          >
+            <Play className="w-[18px] h-[18px]" />
+          </Button>
+          <Button
+            variant="icon"
+            size="icon"
+            title="Edit"
             onClick={() => {
               if (item.networkId) {
                 navigate(`/dashboard/experiments/${item.networkId}/update/${item.id}`);
@@ -118,7 +160,7 @@ const Experiments = () => {
           <Button
             variant="iconDestructive"
             size="icon"
-            title="Eliminar"
+            title="Delete"
           >
             <Trash2 className="w-[18px] h-[18px]" />
           </Button>
@@ -138,7 +180,7 @@ const Experiments = () => {
           className="text-on-surface-variant hover:text-primary gap-2"
         >
           <ArrowLeft className="w-4 h-4" />
-          Volver a Redes
+          Back to Networks
         </Button>
       </div>
 
@@ -149,11 +191,11 @@ const Experiments = () => {
           <div className="flex items-center gap-3">
             <Microscope className="text-primary-container w-7 h-7" />
             <h2 className="font-headline text-2xl font-black text-on-surface tracking-tighter">
-              Experimentos
+              Experiments
             </h2>
           </div>
           <p className="text-on-surface-variant font-body text-sm max-w-lg leading-relaxed">
-            Visualiza los pipelines y simulaciones en ejecución o completados para la red seleccionada.
+            View executing or completed pipelines and simulations for the selected network.
           </p>
         </div>
 
@@ -166,7 +208,7 @@ const Experiments = () => {
             className="hover:shadow-primary-glow transition-all transform hover:-translate-y-0.5"
           >
             <Plus className="w-[18px] h-[18px]" />
-            Crear experimento
+            Create experiment
           </Button>
         )}
       </div>
@@ -177,7 +219,7 @@ const Experiments = () => {
         columns={columns}
         loading={loading}
         error={error}
-        emptyMessage="No hay experimentos disponibles para esta red."
+        emptyMessage="No experiments available for this network."
         keyExtractor={(item) => item.id}
       />
     </div>

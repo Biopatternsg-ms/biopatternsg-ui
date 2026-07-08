@@ -36,6 +36,12 @@ export interface ExpertObject {
   hgncId: string | null;
 }
 
+export interface PipelineStatus {
+  step: string;
+  status: string;
+  createdAt: string;
+}
+
 export interface Experiment {
   id: string;
   name: string;
@@ -47,4 +53,6 @@ export interface Experiment {
   transcriptionFactorConfig?: TranscriptionFactorConfig;
   expertObjects?: ExpertObject[];
   createdAt?: number;
+  status?: PipelineStatus;
+  useOnlyPrincipalName?: boolean;
 }
