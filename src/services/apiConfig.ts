@@ -36,13 +36,11 @@ export const CONFIG_AND_CONTROL: string = import.meta.env.DEV
 
 /** Endpoint path for users (do NOT include a leading slash — it's added below). */
 export const REGISTER_PATH = "config-and-control/users";
-
-/**
- * Final endpoint:
- *   - DEV:  "/config-and-control/users"               (relative → proxied by Vite)
- *   - PROD: "https://<host>/config-and-control/users" (absolute)
- */
 export const USERS_ENDPOINT = `${CONFIG_AND_CONTROL}/${REGISTER_PATH}`;
+
+/** Endpoint path for admin users list. */
+export const ADMIN_USERS_PATH = "config-and-control/admin/users";
+export const ADMIN_USERS_ENDPOINT = `${CONFIG_AND_CONTROL}/${ADMIN_USERS_PATH}`;
 
 export const LOGIN_PATH = "config-and-control/users/login";
 export const LOGIN_ENDPOINT = `${CONFIG_AND_CONTROL}/${LOGIN_PATH}`;
