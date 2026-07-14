@@ -17,27 +17,17 @@
  * limitations under the License.
  */
 import { useLocation, useNavigate } from "react-router-dom";
-import { Network, Microscope } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 import { useSidebar } from "@/context/SidebarContext";
-
-interface NavItem {
-  label: string;
-  href: string;
-  icon: React.ElementType;
-  matchPath?: string;
-  exact?: boolean;
-}
-
-const navItems: NavItem[] = [
-  { label: "Redes", href: "/dashboard/network", icon: Network },
-  { label: "Experimentos", href: "/dashboard/experiments", matchPath: "/dashboard/experiments", icon: Microscope },
-];
+import { useAuth } from "@/context/AuthContext";
+import { getRoleConfig } from "@/config/roles";
 
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { userRole } = useAuth();
+  const { navItems } = getRoleConfig(userRole);
   const { isCollapsed, isMobileOpen, toggleMobileSidebar } = useSidebar();
 
   return (

@@ -18,7 +18,7 @@
  */
 import { useRef } from "react";
 import { ArrowRight } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/atoms/Button";
 import { DataForm } from "@/components/organisms/DataForm";
 import { useAuth } from "@/context/AuthContext";
@@ -27,6 +27,20 @@ import { toLoginPayload, type LoginFormValues } from "@/adapters/authAdapter";
 import { loginUser } from "@/services/authService";
 import type { TokenPair } from "@/domain/models/Auth";
 import type { DataFormConfig } from "@/components/organisms/DataFormConfig";
+import { extractAppRole, getRoleConfig } from "@/config/roles";
+
+function parseJwtPayload(token: string) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
 
 export const loginSchema = z.object({
   username: z
@@ -43,11 +57,9 @@ export const loginSchema = z.object({
 const HeroSection = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const pendingTokensRef = useRef<TokenPair | null>(null);
-  const fromState = location.state as { from?: string } | null;
-  const redirectPath = fromState?.from ?? "/dashboard/network";
+  const pendingHomePathRef = useRef<string>("/dashboard/network");
 
   const loginConfig: DataFormConfig<LoginFormValues> = {
     schema: loginSchema,
@@ -96,19 +108,29 @@ const HeroSection = () => {
     },
     onSuccessResponse: async (response) => {
       const data = (await response.json()) as TokenPair;
+
+      const jwtPayload = parseJwtPayload(data.access_token);
+      const realmAccess = jwtPayload?.realm_access as { roles?: string[] } | undefined;
+      const appRole = extractAppRole(realmAccess?.roles);
+
+      if (!appRole) {
+        throw new Error("El usuario no tiene asignado un rol para ingresar a la plataforma.");
+      }
+
       pendingTokensRef.current = data;
+      pendingHomePathRef.current = getRoleConfig(appRole).homePath;
     },
     onSuccessClose: () => {
       if (pendingTokensRef.current) {
         login(pendingTokensRef.current);
       }
-      navigate(redirectPath, { replace: true });
+      navigate(pendingHomePathRef.current, { replace: true });
     },
-    footerLink: {
+    /* footerLink: {
       text: "New researcher on the team?",
       label: "Create an institutional account",
       to: "/register",
-    },
+    }, */
   };
 
   return (

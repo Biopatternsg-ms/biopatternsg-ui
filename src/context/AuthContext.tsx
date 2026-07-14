@@ -24,6 +24,7 @@ import {
 } from "@/core/http/tokenStorage";
 import { SESSION_EXPIRED_EVENT } from "@/core/http/httpClient";
 import type { TokenPair } from "@/domain/models/Auth";
+import { extractAppRole } from "@/config/roles";
 
 /**
  * AuthContext
@@ -44,10 +45,12 @@ import type { TokenPair } from "@/domain/models/Auth";
 
 export interface UserPayload {
   name?: string;
-  role?: string;
   sub?: string;
   upn?: string;
   preferred_username?: string;
+  realm_access?: {
+    roles?: string[];
+  };
   [key: string]: unknown;
 }
 
@@ -67,6 +70,7 @@ function parseJwt(token: string): UserPayload | null {
 interface AuthContextValue {
   isAuthenticated: boolean;
   user: UserPayload | null;
+  userRole: string | null;
   login: (tokens: TokenPair) => void;
   logout: () => void;
 }
@@ -107,9 +111,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
+  const userRole = React.useMemo(
+    () => extractAppRole(user?.realm_access?.roles),
+    [user]
+  );
+
   const value = React.useMemo<AuthContextValue>(
-    () => ({ isAuthenticated, user, login, logout }),
-    [isAuthenticated, user, login, logout]
+    () => ({ isAuthenticated, user, userRole, login, logout }),
+    [isAuthenticated, user, userRole, login, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

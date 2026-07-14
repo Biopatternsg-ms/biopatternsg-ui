@@ -65,7 +65,7 @@ export const DataForm = <T extends FieldValues>({ config }: DataFormProps<T>) =>
       }
 
       let errorMsg = config.errorModal.defaultMessage;
-      
+
       // Attempt to parse response if requested (like 401 or 400 responses)
       if (config.errorModal.parseResponseMessage && response.status >= 400 && response.status < 500) {
         try {
@@ -82,9 +82,12 @@ export const DataForm = <T extends FieldValues>({ config }: DataFormProps<T>) =>
 
       setErrorMessage(errorMsg);
       setErrorModalOpen(true);
-    } catch {
-      // Network errors
-      setErrorMessage("No se pudo conectar con el servidor. Verifique su conexión de red.");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : "No se pudo conectar con el servidor. Verifique su conexión de red.";
+      setErrorMessage(message);
       setErrorModalOpen(true);
     }
   };

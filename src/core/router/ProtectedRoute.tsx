@@ -19,6 +19,7 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { isProtectedRoute } from "@/routes/protectedRoutes";
+import { isRouteAllowedForRole, getRoleConfig } from "@/config/roles";
 
 /**
  * Route guard component.
@@ -35,7 +36,7 @@ import { isProtectedRoute } from "@/routes/protectedRoutes";
  * guard safe to use at the layout level for the whole app.
  */
 export function ProtectedRoute() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, userRole } = useAuth();
   const location = useLocation();
 
   const requiresAuth = isProtectedRoute(location.pathname);
@@ -48,6 +49,11 @@ export function ProtectedRoute() {
         state={{ from: location.pathname + location.search }}
       />
     );
+  }
+
+  if (requiresAuth && !isRouteAllowedForRole(location.pathname, userRole)) {
+    const { homePath } = getRoleConfig(userRole);
+    return <Navigate to={homePath} replace />;
   }
 
   return <Outlet />;

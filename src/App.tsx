@@ -18,7 +18,7 @@
  */
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Landing from "@/modules/public/Landing";
-import Register from "@/modules/public/Register";
+//import Register from "@/modules/public/Register";
 import RecoveryPassword from "@/modules/public/RecoveryPassword";
 import Network from "@/modules/dashboard/networks/Network";
 import Experiments from "@/modules/dashboard/experiments/Experiments";
@@ -27,6 +27,8 @@ import CreateNetwork from "@/modules/dashboard/networks/CreateNetwork";
 import { ProtectedRoute } from "@/core/router/ProtectedRoute";
 import { PublicRoute } from "@/core/router/PublicRoute";
 import { DashboardLayout } from "@/components/organisms/DashboardLayout";
+import UsersView from "@/modules/admin/users/UsersView";
+import CreateUserView from "@/modules/admin/users/CreateUserView";
 
 /**
  * App Root Component.
@@ -42,7 +44,7 @@ function App() {
       <Routes>
         <Route element={<PublicRoute />}>
           <Route path="/" element={<Landing />} />
-          <Route path="/register" element={<Register />} />
+          {/* <Route path="/register" element={<Register />} /> */}
           <Route path="/recovery-password" element={<RecoveryPassword />} />
         </Route>
 
@@ -53,6 +55,10 @@ function App() {
             <Route path="/dashboard/experiments/:networkId/create" element={<CreateExperiment />} />
             <Route path="/dashboard/experiments/:networkId/update/:experimentId" element={<CreateExperiment />} />
             <Route path="/dashboard/experiments/:networkId?" element={<Experiments />} />
+
+            {/* Rutas de administración */}
+            <Route path="/dashboard/admin/users" element={<UsersView />} />
+            <Route path="/dashboard/admin/create-user" element={<CreateUserView />} />
           </Route>
         </Route>
       </Routes>
