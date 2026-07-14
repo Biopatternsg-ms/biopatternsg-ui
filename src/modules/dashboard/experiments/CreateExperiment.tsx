@@ -288,6 +288,11 @@ const CreateExperiment = () => {
         setErrorModalOpen(true);
         return;
       }
+      if (levels < 1 || levels > 3) {
+        setErrorMessage("Search level must be between 1 and 3.");
+        setErrorModalOpen(true);
+        return;
+      }
 
       const retMaxNumber = Number(retMax);
       if (Number.isNaN(retMaxNumber)) {

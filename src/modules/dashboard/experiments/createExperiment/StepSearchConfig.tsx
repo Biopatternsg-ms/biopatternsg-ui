@@ -53,6 +53,8 @@ export function StepSearchConfig({
           label="Search Level"
           type="number"
           placeholder="e.g. 1, 2, 3"
+          min={1}
+          max={3}
           value={searchLevel}
           onChange={(e) => onSearchLevelChange(e.target.value)}
         />
