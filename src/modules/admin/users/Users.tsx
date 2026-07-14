@@ -41,8 +41,8 @@ const Users = () => {
   const [error, setError] = useState<string | null>(null);
   
   // Basic pagination state (could be expanded to be controlled by DataTable)
-  const [page, setPage] = useState(0);
-  const [size, setSize] = useState(10);
+  const [page] = useState(0);
+  const [size] = useState(10);
   
   const navigate = useNavigate();
 
@@ -176,7 +176,7 @@ const Users = () => {
           <Button
             variant="primary"
             size="md"
-            onClick={() => navigate("/admin/create-user")}
+            onClick={() => navigate("/dashboard/admin/users/create")}
             className="hover:shadow-primary-glow transition-all transform hover:-translate-y-0.5"
           >
             <Plus className="w-[18px] h-[18px]" />

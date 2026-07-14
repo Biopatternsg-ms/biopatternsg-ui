@@ -27,8 +27,8 @@ import CreateNetwork from "@/modules/dashboard/networks/CreateNetwork";
 import { ProtectedRoute } from "@/core/router/ProtectedRoute";
 import { PublicRoute } from "@/core/router/PublicRoute";
 import { DashboardLayout } from "@/components/organisms/DashboardLayout";
-import UsersView from "@/modules/admin/users/UsersView";
-import CreateUserView from "@/modules/admin/users/CreateUserView";
+import Users from "@/modules/admin/users/Users";
+import CreateUser from "@/modules/admin/users/CreateUser";
 
 /**
  * App Root Component.
@@ -57,8 +57,8 @@ function App() {
             <Route path="/dashboard/experiments/:networkId?" element={<Experiments />} />
 
             {/* Rutas de administración */}
-            <Route path="/dashboard/admin/users" element={<UsersView />} />
-            <Route path="/dashboard/admin/create-user" element={<CreateUserView />} />
+            <Route path="/dashboard/admin/users" element={<Users />} />
+            <Route path="/dashboard/admin/users/create" element={<CreateUser />} />
           </Route>
         </Route>
       </Routes>
