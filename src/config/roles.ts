@@ -1,4 +1,4 @@
-import { type LucideIcon, Network, Microscope, Users, UserPlus } from "lucide-react";
+import { type LucideIcon, Network, Microscope, Users } from "lucide-react";
 
 export type AppRole = "admin" | "admin-user" | "researcher";
 
