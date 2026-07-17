@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { type LucideIcon, Network, Microscope, Users } from "lucide-react";
+import { type LucideIcon, Network, Microscope, Users, UserPlus } from "lucide-react";
 
 export type AppRole = "admin" | "admin-user" | "researcher";
 
@@ -37,6 +37,9 @@ export interface RoleConfig {
 const NAV_USERS: RoleNavItem = {
   label: "Usuarios", href: "/dashboard/admin/users", icon: Users,
 };
+const NAV_CREATE_USER: RoleNavItem = {
+  label: "Crear Usuario", href: "/dashboard/admin/users/create", icon: UserPlus,
+};
 const NAV_NETWORKS: RoleNavItem = {
   label: "Redes", href: "/dashboard/network", icon: Network,
 };
@@ -48,12 +51,12 @@ const NAV_EXPERIMENTS: RoleNavItem = {
 export const ROLE_CONFIGS: Record<AppRole, RoleConfig> = {
   admin: {
     homePath: "/dashboard/admin/users",
-    navItems: [NAV_USERS, NAV_NETWORKS, NAV_EXPERIMENTS],
+    navItems: [NAV_USERS, NAV_CREATE_USER, NAV_NETWORKS, NAV_EXPERIMENTS],
     allowedRoutes: ["/dashboard/admin", "/dashboard/network", "/dashboard/experiments"],
   },
   "admin-user": {
     homePath: "/dashboard/admin/users",
-    navItems: [NAV_USERS, NAV_NETWORKS, NAV_EXPERIMENTS],
+    navItems: [NAV_USERS, NAV_CREATE_USER, NAV_NETWORKS, NAV_EXPERIMENTS],
     allowedRoutes: ["/dashboard/admin", "/dashboard/network", "/dashboard/experiments"],
   },
   researcher: {

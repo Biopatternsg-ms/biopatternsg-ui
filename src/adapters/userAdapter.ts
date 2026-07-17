@@ -28,6 +28,12 @@ export interface RegisterFormValues {
   password: string;
 }
 
+export interface CreateAdminUserFormValues {
+  email: string;
+  firstName: string;
+  lastName: string;
+}
+
 /**
  * Adapts internal UI form values into the expected API RegisterPayload structure.
  *
@@ -48,5 +54,13 @@ export function toRegisterPayload(formValues: RegisterFormValues): RegisterPaylo
     firstName: formValues.firstName.trim(),
     lastName: formValues.lastName.trim(),
     password: formValues.password,
+  };
+}
+
+export function toCreateAdminUserPayload(formValues: CreateAdminUserFormValues): import("@/domain/models/User").CreateAdminUserPayload {
+  return {
+    username: formValues.email.trim().toLowerCase(),
+    firstName: formValues.firstName.trim(),
+    lastName: formValues.lastName.trim(),
   };
 }
