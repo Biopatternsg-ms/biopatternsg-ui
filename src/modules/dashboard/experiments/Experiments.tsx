@@ -18,13 +18,13 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Microscope, ArrowLeft, Pencil, Trash2, Plus, Play } from "lucide-react";
+import { Microscope, Pencil, Trash2, Plus, Play } from "lucide-react";
 import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
 import { PipelineStatus, getFriendlyStepLabel } from "@/components/molecules/PipelineStatus";
 import { experimentService } from "@/services/experimentService";
 import type { Experiment } from "@/services/models/Experiment";
 import { Button } from "@/components/atoms/Button";
-import { cn } from "@/lib/utils";
+import { Breadcrumb } from "@/components/atoms/Breadcrumb";
 
 const formatUnixTime = (unixSeconds: number) => {
   const date = new Date(unixSeconds * 1000);
@@ -171,18 +171,18 @@ const Experiments = () => {
 
   return (
     <div>
-      {/* Page Header */}
-      <div className={cn(!networkId && "hidden")}>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate("/dashboard/network")}
-          className="text-on-surface-variant hover:text-primary gap-2"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Networks
-        </Button>
-      </div>
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb
+        className="mb-6"
+        items={
+          networkId
+            ? [
+                { label: "Networks", href: "/dashboard/network" },
+                { label: "Experiments" },
+              ]
+            : [{ label: "Experiments" }]
+        }
+      />
 
       {/* Page Header: Title, Description & Actions */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">

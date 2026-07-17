@@ -4,8 +4,7 @@ import * as z from "zod";
 import { toCreateAdminUserPayload, type CreateAdminUserFormValues } from "@/adapters/userAdapter";
 import { createAdminUser } from "@/services/userService";
 import type { DataFormConfig } from "@/components/organisms/DataFormConfig";
-import { ChevronLeft } from "lucide-react";
-import { Button } from "@/components/atoms/Button";
+import { Breadcrumb } from "@/components/atoms/Breadcrumb";
 
 export const createUserSchema = z.object({
   email: z
@@ -78,16 +77,13 @@ const CreateUser = () => {
       {/* Scrollable container with padding */}
       <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12">
         {/* Breadcrumb Navigation */}
-        <div className="flex items-center gap-2 text-sm font-body mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/dashboard/admin/users")}
-            className="text-on-surface-variant hover:text-primary gap-2"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Usuarios
-          </Button>
-        </div>
+        <Breadcrumb
+          className="mb-6"
+          items={[
+            { label: "Usuarios", href: "/dashboard/admin/users" },
+            { label: "Crear Usuario" },
+          ]}
+        />
 
         {/* Centered Form similar to Register */}
         <div className="max-w-lg mx-auto">

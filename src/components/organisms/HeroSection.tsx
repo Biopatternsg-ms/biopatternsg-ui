@@ -77,6 +77,7 @@ const HeroSection = () => {
         label: "Contraseña",
         type: "password",
         placeholder: "••••••••",
+        helperText: "Ingresa tu contraseña",
         colSpan: "full",
         labelRight: (
           <button
