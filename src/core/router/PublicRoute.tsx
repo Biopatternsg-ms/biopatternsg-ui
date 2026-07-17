@@ -18,6 +18,7 @@
  */
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { getRoleConfig } from "@/config/roles";
 
 /**
  * Route guard component for public routes.
@@ -26,10 +27,11 @@ import { useAuth } from "@/context/AuthContext";
  * Otherwise, it lets the request pass through.
  */
 export function PublicRoute() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, userRole } = useAuth();
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard/network" replace />;
+    const { homePath } = getRoleConfig(userRole);
+    return <Navigate to={homePath} replace />;
   }
 
   return <Outlet />;

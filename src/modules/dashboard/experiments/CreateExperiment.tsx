@@ -19,8 +19,9 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ChevronRight, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/atoms/Button";
+import { Breadcrumb } from "@/components/atoms/Breadcrumb";
 import { Stepper, type Step } from "@/components/molecules/Stepper";
 import { SuccessModal } from "@/components/molecules/SuccessModal";
 import { ErrorModal } from "@/components/molecules/ErrorModal";
@@ -398,17 +399,16 @@ const CreateExperiment = () => {
   return (
     <div>
       {/* Breadcrumb Navigation */}
-      <div className="flex items-center gap-2 text-sm font-body mb-6">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(networkId ? `/dashboard/experiments/${networkId}` : "/dashboard/network")}
-          className="text-on-surface-variant hover:text-primary gap-2"
-        >
-          Experiments
-        </Button>
-        <ChevronRight className="w-4 h-4 text-on-surface-variant" />
-        <span className="text-primary font-semibold">Create Experiment</span>
-      </div>
+      <Breadcrumb
+        className="mb-6"
+        items={[
+          {
+            label: "Experiments",
+            href: networkId ? `/dashboard/experiments/${networkId}` : "/dashboard/network",
+          },
+          { label: isEditMode ? "Edit Experiment" : "Create Experiment" },
+        ]}
+      />
 
       {/* Page Header */}
       <div className="flex flex-col gap-2 max-w-2xl mb-8">

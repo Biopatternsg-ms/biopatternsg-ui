@@ -16,9 +16,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { USERS_ENDPOINT } from "@/services/apiConfig";
-import type { RegisterPayload } from "@/domain/models/User";
-import { baseFetch } from "@/core/http/httpClient";
+import { USERS_ENDPOINT, ADMIN_USERS_ENDPOINT, CREATE_ADMIN_USER_ENDPOINT } from "@/services/apiConfig";
+import type { RegisterPayload, CreateAdminUserPayload } from "@/domain/models/User";
+import { baseFetch, authFetch } from "@/core/http/httpClient";
 
 /**
  * Registers a new user/researcher in the platform.
@@ -30,6 +30,38 @@ import { baseFetch } from "@/core/http/httpClient";
  */
 export async function registerUser(payload: RegisterPayload): Promise<Response> {
   return baseFetch(USERS_ENDPOINT, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export interface UserModel {
+  id: string;
+  username: string;
+  firstName: string;
+  lastName: string;
+  enabled: boolean | string;
+  createdTimestamp: number;
+}
+
+/**
+ * Fetches the paginated list of users for the admin dashboard.
+ */
+export async function getAdminUsers(page: number = 0, size: number = 10): Promise<UserModel[]> {
+  const response = await authFetch(`${ADMIN_USERS_ENDPOINT}?page=${page}&size=${size}`, {
+    method: "GET",
+  });
+  if (!response.ok) {
+    throw new Error("Failed to fetch users");
+  }
+  return response.json();
+}
+
+/**
+ * Creates a new user from the admin dashboard.
+ */
+export async function createAdminUser(payload: CreateAdminUserPayload): Promise<Response> {
+  return authFetch(CREATE_ADMIN_USER_ENDPOINT, {
     method: "POST",
     body: JSON.stringify(payload),
   });

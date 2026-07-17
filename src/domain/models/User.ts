@@ -36,6 +36,12 @@ export interface RegisterPayload {
   password: string;
 }
 
+export interface CreateAdminUserPayload {
+  username: string;
+  firstName: string;
+  lastName: string;
+}
+
 /** Internal authenticated user representation */
 export interface User {
   id: string;

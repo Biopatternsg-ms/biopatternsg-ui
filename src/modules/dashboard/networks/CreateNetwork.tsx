@@ -18,8 +18,7 @@
  */
 
 import { useNavigate } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
-import { Button } from "@/components/atoms/Button";
+import { Breadcrumb } from "@/components/atoms/Breadcrumb";
 import { DataForm } from "@/components/organisms/DataForm";
 import * as z from "zod";
 import { networkService } from "@/services/networkService";
@@ -80,17 +79,12 @@ const CreateNetwork = () => {
   return (
     <div >
       {/* Breadcrumb Navigation */}
-      <div className="flex items-center gap-2 text-sm font-body">
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/dashboard/network")}
-          className="text-on-surface-variant hover:text-primary gap-2"
-        >
-          Networks
-        </Button>
-        <ChevronRight className="w-4 h-4 text-on-surface-variant" />
-        <span className="text-primary font-semibold">Register Network</span>
-      </div>
+      <Breadcrumb
+        items={[
+          { label: "Networks", href: "/dashboard/network" },
+          { label: "Register Network" },
+        ]}
+      />
 
       {/* Page Header */}
       <div className="flex flex-col gap-2 max-w-2xl">
