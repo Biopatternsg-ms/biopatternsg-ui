@@ -109,19 +109,20 @@ export const experimentService = {
   },
 
   /**
-   * Updates the search configuration of an existing pipeline (levels + retMax + useOnlyPrincipalName).
+   * Updates the search configuration of an existing pipeline (levels + retMax + useOnlyPrincipalName + maxComplexes).
    * PUT /config-and-control/pipelines/search-config
-   * Body: { id, levels, retMax, useOnlyPrincipalName }
+   * Body: { id, levels, retMax, useOnlyPrincipalName, maxComplexes }
    */
   async updateSearchConfig(
     id: string,
     levels: number,
     retMax: number,
-    useOnlyPrincipalName: boolean
+    useOnlyPrincipalName: boolean,
+    maxComplexes: number
   ): Promise<Response> {
     return authFetch(PIPELINES_SEARCH_CONFIG_ENDPOINT, {
       method: "PUT",
-      body: JSON.stringify({ id, levels, retMax, useOnlyPrincipalName }),
+      body: JSON.stringify({ id, levels, retMax, useOnlyPrincipalName, maxComplexes }),
     });
   },
 

@@ -88,6 +88,7 @@ const CreateExperiment = () => {
 
   const [searchLevel, setSearchLevel] = useState<string>("");
   const [retMax, setRetMax] = useState<string>("");
+  const [maxComplexes, setMaxComplexes] = useState<string>("");
   const [useOnlyPrincipalName, setUseOnlyPrincipalName] = useState(true);
   const [expertObjectsFile, setExpertObjectsFile] = useState<File | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -130,6 +131,10 @@ const CreateExperiment = () => {
 
         if (data.retMax != null) {
           setRetMax(data.retMax.toString());
+        }
+
+        if (data.maxComplexes != null) {
+          setMaxComplexes(data.maxComplexes.toString());
         }
 
         if (data.useOnlyPrincipalName !== undefined) {
@@ -282,6 +287,11 @@ const CreateExperiment = () => {
         setErrorModalOpen(true);
         return;
       }
+      if (!maxComplexes) {
+        setErrorMessage("Por favor, ingrese el número máximo de complejos.");
+        setErrorModalOpen(true);
+        return;
+      }
 
       const levels = Number(searchLevel);
       if (Number.isNaN(levels)) {
@@ -302,13 +312,26 @@ const CreateExperiment = () => {
         return;
       }
 
+      const maxComplexesNumber = Number(maxComplexes);
+      if (Number.isNaN(maxComplexesNumber)) {
+        setErrorMessage("El número máximo de complejos debe ser un número válido.");
+        setErrorModalOpen(true);
+        return;
+      }
+      if (maxComplexesNumber <= 0) {
+        setErrorMessage("El número máximo de complejos debe ser mayor a cero.");
+        setErrorModalOpen(true);
+        return;
+      }
+
       setIsSubmitting(true);
       try {
         const response = await experimentService.updateSearchConfig(
           experiment.id,
           levels,
           retMaxNumber,
-          useOnlyPrincipalName
+          useOnlyPrincipalName,
+          maxComplexesNumber
         );
         if (response.ok) {
           setSuccessModalOpen(true);
@@ -389,6 +412,8 @@ const CreateExperiment = () => {
             onRetMaxChange={setRetMax}
             useOnlyPrincipalName={useOnlyPrincipalName}
             onUseOnlyPrincipalNameChange={setUseOnlyPrincipalName}
+            maxComplexes={maxComplexes}
+            onMaxComplexesChange={setMaxComplexes}
           />
         );
       default:
@@ -465,7 +490,7 @@ const CreateExperiment = () => {
               <Button
                 variant="primary"
                 onClick={handleNext}
-                disabled={(currentStep === steps.length - 1 && (!searchLevel || !retMax)) || isSubmitting}
+                disabled={(currentStep === steps.length - 1 && (!searchLevel || !retMax || !maxComplexes)) || isSubmitting}
                 className="gap-2"
               >
                 {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
