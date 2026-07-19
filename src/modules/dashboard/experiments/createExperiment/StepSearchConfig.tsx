@@ -19,6 +19,7 @@
 
 import { FormField } from "@/components/molecules/FormField";
 import { Checkbox } from "@/components/atoms/Checkbox";
+import { Label } from "@/components/atoms/Label";
 
 export interface StepSearchConfigProps {
   searchLevel: string;
@@ -81,12 +82,13 @@ export function StepSearchConfig({
             onCheckedChange={(checked) => onUseOnlyPrincipalNameChange(checked === true)}
           />
           <div className="grid gap-1.5 leading-none">
-            <label
+            <Label
               htmlFor="useOnlyPrincipalName"
-              className="text-sm font-bold text-on-surface cursor-pointer select-none"
+              size="md"
+              className="text-on-surface cursor-pointer select-none"
             >
               Use Only Principal Name
-            </label>
+            </Label>
             <p className="text-xs text-on-surface-variant">
               Only search using the main canonical name of entities.
             </p>
