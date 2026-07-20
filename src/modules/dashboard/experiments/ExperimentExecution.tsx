@@ -35,7 +35,7 @@ import {
   Clock
 } from "lucide-react";
 import { experimentService } from "@/services/experimentService";
-import type { ExperimentExecution, PipelineStepExecution } from "@/services/models/Experiment";
+import type { ExperimentExecution } from "@/services/models/Experiment";
 import { Button } from "@/components/atoms/Button";
 import { Breadcrumb } from "@/components/atoms/Breadcrumb";
 import { Badge } from "@/components/atoms/Badge";
@@ -96,7 +96,7 @@ const ExperimentExecutionView = () => {
   // Live timer states
   const [totalSeconds, setTotalSeconds] = useState(0);
   const [phaseSeconds, setPhaseSeconds] = useState(0);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<any>(null);
 
   useEffect(() => {
     if (!experimentId) return;
@@ -247,7 +247,7 @@ const ExperimentExecutionView = () => {
               {/* Vertical line through timeline steps */}
               <div className="absolute left-[29px] top-4 bottom-4 w-[2px] bg-outline-variant/20 z-0" />
 
-              {data.steps.map((step, idx) => {
+              {data.steps.map((step) => {
                 const isSelected = step.id === selectedStepId;
                 const isCompleted = step.status === "COMPLETED";
                 const isActive = step.status === "ACTIVE";
