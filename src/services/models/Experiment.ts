@@ -42,6 +42,44 @@ export interface PipelineStatus {
   createdAt: string;
 }
 
+export interface MetricCard {
+  label: string;
+  value: string;
+  subLabel?: string;
+  subLabelColor?: "green" | "red" | "blue" | "default";
+  progress?: number;
+  hasWarnings?: boolean;
+  warningCount?: number;
+}
+
+export interface SubStep {
+  name: string;
+  status: "COMPLETED" | "ACTIVE" | "PENDING";
+}
+
+export interface PipelineStepExecution {
+  id: string;
+  name: string;
+  status: "COMPLETED" | "ACTIVE" | "PENDING" | "FAILED";
+  startTime?: string;
+  duration?: string;
+  outputText?: string;
+  description: string;
+  iconName: string;
+  subSteps?: SubStep[];
+  metrics?: MetricCard[];
+}
+
+export interface ExperimentExecution {
+  experimentId: string;
+  experimentName: string;
+  status: "ACTIVE" | "COMPLETED" | "FAILED" | "PENDING";
+  totalExecutionTime: string;
+  currentPhaseDuration: string;
+  steps: PipelineStepExecution[];
+}
+
+
 export interface Experiment {
   id: string;
   name: string;
