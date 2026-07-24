@@ -84,12 +84,20 @@ function formatSecondsToMs(totalSecs: number): string {
   return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
 }
 
-// Helper to format ISO timestamp or HH:mm:ss to local user time
-function formatLocalTime(isoTimeStr?: string): string {
+// Helper to format ISO timestamp or date-string to local user date and time
+function formatLocalDateTime(isoTimeStr?: string): string {
   if (!isoTimeStr) return "";
   const date = new Date(isoTimeStr);
-  if (isNaN(date.getTime())) return isoTimeStr; // Fallback if already HH:mm:ss
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+  if (isNaN(date.getTime())) return isoTimeStr; // Fallback if simple string
+  return date.toLocaleString([], {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
 }
 
 const ExperimentExecutionView = () => {
@@ -274,11 +282,11 @@ const ExperimentExecutionView = () => {
                     {/* Bullet Indicator */}
                     <div className="flex items-start justify-center pt-0.5">
                       {isCompleted ? (
-                        <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center shadow-sm shrink-0">
+                        <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm shrink-0">
                           <Check className="w-3.5 h-3.5 font-bold" />
                         </div>
                       ) : isActive ? (
-                        <div className="w-6 h-6 rounded-full bg-primary-container ring-4 ring-primary-container/20 flex items-center justify-center shrink-0">
+                        <div className="w-6 h-6 rounded-full bg-amber-500 ring-4 ring-amber-500/20 flex items-center justify-center shrink-0">
                           <span className="w-2.5 h-2.5 rounded-full bg-white animate-pulse" />
                         </div>
                       ) : (
@@ -311,7 +319,7 @@ const ExperimentExecutionView = () => {
 
                       {isActive && (
                         <div className="flex flex-col gap-1.5 mt-1 text-[11px] font-body text-on-surface-variant/80 font-medium">
-                          {step.startTime && <p>Start: {formatLocalTime(step.startTime)}</p>}
+                          {step.startTime && <p>Start: {formatLocalDateTime(step.startTime)}</p>}
                           <p>Duration: {displayPhaseTime} (Active)</p>
                           {step.subSteps && step.subSteps.length > 0 && (
                             <ul className="flex flex-col gap-1 mt-2 pl-1 border-l border-primary/20 bg-primary/5 rounded-lg p-2">
@@ -363,7 +371,13 @@ const ExperimentExecutionView = () => {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-6 border-b border-outline-variant/10">
                   {/* Left: Step Info */}
                   <div className="flex gap-4">
-                    <div className="p-3 bg-secondary-container text-primary-container rounded-2xl shrink-0 self-start shadow-sm">
+                    <div className={`p-3 rounded-2xl shrink-0 self-start shadow-sm ${
+                      selectedStep.status === "COMPLETED"
+                        ? "bg-emerald-500/10 text-emerald-500"
+                        : selectedStep.status === "ACTIVE"
+                        ? "bg-amber-500/10 text-amber-500 ring-2 ring-amber-500/20"
+                        : "bg-secondary-container text-primary-container"
+                    }`}>
                       <StepIcon name={selectedStep.iconName} className="w-6 h-6" />
                     </div>
                     <div>
@@ -375,7 +389,7 @@ const ExperimentExecutionView = () => {
                       </p>
                       {selectedStep.startTime && (
                         <p className="text-xs font-semibold text-primary-container mt-2 font-label">
-                          Start Time: {formatLocalTime(selectedStep.startTime)}
+                          Start Time: {formatLocalDateTime(selectedStep.startTime)}
                         </p>
                       )}
                     </div>
