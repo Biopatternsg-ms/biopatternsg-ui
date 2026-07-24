@@ -47,7 +47,7 @@ const CreateUser = () => {
     fields: [
       {
         name: "email",
-        label: "Institutional Email",
+        label: "Email address",
         type: "email",
         placeholder: "name@institute.edu",
         colSpan: "full",
@@ -67,22 +67,22 @@ const CreateUser = () => {
         colSpan: "half",
       },
     ],
-    title: "Crear Nuevo Usuario",
-    subtitle: "Añadir un investigador a la plataforma",
-    submitLabel: "Crear Usuario",
-    submittingLabel: "Creando...",
+    title: "Create New User",
+    subtitle: "Add a researcher to the platform",
+    submitLabel: "Create User",
+    submittingLabel: "Creating...",
     onSubmit: async (values) => {
       const payload = toCreateAdminUserPayload(values);
       return createAdminUser(payload);
     },
-    successStatus: 201, // Asumimos que el backend retorna 201 Created o 200 OK
+    successStatus: 201,
     successModal: {
-      title: "¡Usuario creado!",
-      message: "El usuario ha sido creado exitosamente.",
+      title: "User Created!",
+      message: "The user has been created successfully.",
     },
     errorModal: {
-      title: "No se pudo crear el usuario",
-      defaultMessage: "Error en el servidor. Por favor, intente de nuevo más tarde.",
+      title: "Could Not Create User",
+      defaultMessage: "Server error. Please try again later.",
       parseResponseMessage: true,
     },
     onSuccessClose: () => {

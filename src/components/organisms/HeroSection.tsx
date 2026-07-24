@@ -17,9 +17,7 @@
  * limitations under the License.
  */
 import { useRef } from "react";
-import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/atoms/Button";
 import { DataForm } from "@/components/organisms/DataForm";
 import { useAuth } from "@/context/AuthContext";
 import * as z from "zod";
@@ -66,18 +64,18 @@ const HeroSection = () => {
     fields: [
       {
         name: "username",
-        label: "Usuario",
+        label: "Email address",
         type: "email",
         placeholder: "name@institute.edu",
-        helperText: "Ingresa tu correo electrónico",
+        helperText: "Enter your email address",
         colSpan: "full",
       },
       {
         name: "password",
-        label: "Contraseña",
+        label: "Password",
         type: "password",
         placeholder: "••••••••",
-        helperText: "Ingresa tu contraseña",
+        helperText: "Enter your account password",
         colSpan: "full",
         labelRight: (
           <button
@@ -91,20 +89,20 @@ const HeroSection = () => {
       },
     ],
     title: "Access Lab Portal",
-    subtitle: "Node-04 Secure Entrance",
-    submitLabel: "Initialize Session",
-    submittingLabel: "Iniciando sesión...",
+    subtitle: "Secure Access Portal",
+    submitLabel: "Sign in",
+    submittingLabel: "Signing in...",
     onSubmit: async (values) => {
       const payload = toLoginPayload(values);
       return loginUser(payload);
     },
     successStatus: 200,
     successModal: {
-      title: "¡Bienvenido!",
-      message: "Inicio de sesión exitoso. Redirigiendo...",
+      title: "Welcome!",
+      message: "Sign in successful. Redirecting...",
     },
     errorModal: {
-      defaultMessage: "Ocurrió un error al momento de iniciar sesión.",
+      defaultMessage: "An error occurred while signing in.",
       parseResponseMessage: true,
     },
     onSuccessResponse: async (response) => {
@@ -115,7 +113,7 @@ const HeroSection = () => {
       const appRole = extractAppRole(realmAccess?.roles);
 
       if (!appRole) {
-        throw new Error("El usuario no tiene asignado un rol para ingresar a la plataforma.");
+        throw new Error("User does not have an assigned role to access the platform.");
       }
 
       pendingTokensRef.current = data;
@@ -135,37 +133,17 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative px-8 py-20 max-w-screen-2xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+    <section className="relative px-8 pt-20 pb-10 max-w-screen-2xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
       {/* Left — Editorial copy */}
       <div className="lg:col-span-7 space-y-8">
-        {/* Live badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label text-[10px] uppercase tracking-widest font-bold">
-          <span className="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse" />
-          Live Sequencing Active
-        </div>
-
         {/* Heading — tracking-tighter per Typography rule */}
         <h1 className="text-6xl md:text-8xl font-black font-headline tracking-tighter text-on-surface leading-[0.9]">
-          Decipher the{" "}
-          <span className="text-primary">Human</span>{" "}
-          Blueprint.
+          Build Gene Regulatory <span className="text-primary">Networks</span> with AI.
         </h1>
 
         <p className="text-lg md:text-xl text-on-surface-variant max-w-xl leading-relaxed">
-          A high-precision clinical lens for genomic researchers. Streamline
-          multi-omics analysis with AI-driven pattern recognition and real-time
-          sequencing pipelines.
+          Combine Generative AI and Logic AI to transform scientific literature into validated regulatory models.
         </p>
-
-        <div className="flex flex-wrap gap-4 pt-4">
-          <Button variant="primary" size="lg" className="shadow-lg hover:shadow-primary-glow">
-            Get Started
-            <ArrowRight className="w-5 h-5" />
-          </Button>
-          <Button variant="surface" size="lg">
-            View Documentation
-          </Button>
-        </div>
       </div>
 
       {/* Right — Login form glassmorphism card */}
