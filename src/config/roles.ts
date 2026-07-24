@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { type LucideIcon, Network, Users, UserPlus } from "lucide-react";
+import { type LucideIcon, Network, Users } from "lucide-react";
 
 export type AppRole = "admin" | "admin-user" | "researcher";
 
@@ -37,9 +37,9 @@ export interface RoleConfig {
 const NAV_USERS: RoleNavItem = {
   label: "Users", href: "/dashboard/admin/users", icon: Users,
 };
-const NAV_CREATE_USER: RoleNavItem = {
+/* const NAV_CREATE_USER: RoleNavItem = {
   label: "Create user", href: "/dashboard/admin/users/create", icon: UserPlus,
-};
+}; */
 const NAV_NETWORKS: RoleNavItem = {
   label: "Networks", href: "/dashboard/network", icon: Network,
 };

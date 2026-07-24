@@ -22,6 +22,9 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/atoms/Button";
 import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
 import { getAdminUsers, type UserModel } from "@/services/userService";
+import { recoverPassword } from "@/services/authService";
+import { SuccessModal } from "@/components/molecules/SuccessModal";
+import { ErrorModal } from "@/components/molecules/ErrorModal";
 import { cn } from "@/lib/utils";
 
 const formatUnixTime = (unixSeconds: number) => {
@@ -39,11 +42,14 @@ const Users = () => {
   const [users, setUsers] = useState<UserModel[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  
+
+  const [successModalOpen, setSuccessModalOpen] = useState<boolean>(false);
+  const [errorModalOpen, setErrorModalOpen] = useState<boolean>(false);
+
   // Basic pagination state (could be expanded to be controlled by DataTable)
   const [page] = useState(0);
   const [size] = useState(10);
-  
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -63,12 +69,21 @@ const Users = () => {
     fetchUsers();
   }, [page, size]);
 
-  const handleRecoveryPassword = (username: string) => {
-    console.log("Recuperar contraseña para:", username);
-    // TODO: Connect with actual API
+  const handleRecoveryPassword = async (username: string) => {
+    try {
+      setLoading(true);
+      const response = await recoverPassword({ username });
+      if (response.ok) {
+        setSuccessModalOpen(true);
+      } else {
+        setErrorModalOpen(true);
+      }
+    } catch {
+      setErrorModalOpen(true);
+    } finally {
+      setLoading(false);
+    }
   };
-
-
 
   const handleToggleEnabled = (id: string, currentState: boolean | string) => {
     console.log("Cambiar estado de usuario:", id, "Estado actual:", currentState);
@@ -185,6 +200,20 @@ const Users = () => {
           keyExtractor={(item) => item.id}
         />
       </div>
+
+      <SuccessModal
+        open={successModalOpen}
+        title="Check Your Inbox!"
+        message="We have sent you an email. Please check your inbox for instructions."
+        onClose={() => setSuccessModalOpen(false)}
+      />
+
+      <ErrorModal
+        open={errorModalOpen}
+        title="Recovery Error"
+        message="An issue occurred while recovering your password."
+        onClose={() => setErrorModalOpen(false)}
+      />
     </div>
   );
 };
