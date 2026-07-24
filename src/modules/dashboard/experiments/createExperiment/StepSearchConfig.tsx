@@ -18,6 +18,8 @@
  */
 
 import { FormField } from "@/components/molecules/FormField";
+import { Checkbox } from "@/components/atoms/Checkbox";
+import { Label } from "@/components/atoms/Label";
 
 export interface StepSearchConfigProps {
   searchLevel: string;
@@ -26,6 +28,8 @@ export interface StepSearchConfigProps {
   onRetMaxChange: (value: string) => void;
   useOnlyPrincipalName: boolean;
   onUseOnlyPrincipalNameChange: (value: boolean) => void;
+  maxComplexes: string;
+  onMaxComplexesChange: (value: string) => void;
 }
 
 export function StepSearchConfig({
@@ -35,17 +39,15 @@ export function StepSearchConfig({
   onRetMaxChange,
   useOnlyPrincipalName,
   onUseOnlyPrincipalNameChange,
+  maxComplexes,
+  onMaxComplexesChange,
 }: StepSearchConfigProps) {
-  const options = [
-    { value: "true", label: "Yes" },
-    { value: "false", label: "No" },
-  ];
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <h3 className="text-lg font-bold text-on-surface">Search Configuration</h3>
       <p className="text-sm text-on-surface-variant">
-        Set the search depth level, the maximum number of results retrieved from Pubtator, and entity search rules.
+        Set the search depth level, the maximum number of results retrieved from Pubtator, entity search rules, and maximum number of complexes.
       </p>
 
       <div className="grid grid-cols-1 gap-6">
@@ -66,12 +68,32 @@ export function StepSearchConfig({
           onChange={(e) => onRetMaxChange(e.target.value)}
         />
         <FormField
-          label="Use Only Principal Name"
-          type="select"
-          options={options}
-          value={useOnlyPrincipalName.toString()}
-          onChange={(e) => onUseOnlyPrincipalNameChange(e.target.value === "true")}
+          label="Maximum Number of Complexes"
+          type="number"
+          placeholder="e.g. 10"
+          min={1}
+          value={maxComplexes}
+          onChange={(e) => onMaxComplexesChange(e.target.value)}
         />
+        <div className="flex items-center space-x-3 bg-surface-container-high/50 p-4 rounded-xl border border-outline-variant/10">
+          <Checkbox
+            id="useOnlyPrincipalName"
+            checked={useOnlyPrincipalName}
+            onCheckedChange={(checked) => onUseOnlyPrincipalNameChange(checked === true)}
+          />
+          <div className="grid gap-1.5 leading-none">
+            <Label
+              htmlFor="useOnlyPrincipalName"
+              size="md"
+              className="text-on-surface cursor-pointer select-none"
+            >
+              Use Only Principal Name
+            </Label>
+            <p className="text-xs text-on-surface-variant">
+              Only search using the main canonical name of entities.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

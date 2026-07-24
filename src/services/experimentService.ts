@@ -26,7 +26,7 @@ import {
   PIPELINES_LAUNCH_ENDPOINT,
 } from "./apiConfig";
 
-import type { Experiment, ExpertObject, TranscriptionFactorConfig } from "./models/Experiment";
+import type { Experiment, ExpertObject, TranscriptionFactorConfig, ExperimentExecution } from "./models/Experiment";
 
 export const experimentService = {
   /**
@@ -109,19 +109,20 @@ export const experimentService = {
   },
 
   /**
-   * Updates the search configuration of an existing pipeline (levels + retMax + useOnlyPrincipalName).
+   * Updates the search configuration of an existing pipeline (levels + retMax + useOnlyPrincipalName + maxComplexes).
    * PUT /config-and-control/pipelines/search-config
-   * Body: { id, levels, retMax, useOnlyPrincipalName }
+   * Body: { id, levels, retMax, useOnlyPrincipalName, maxComplexes }
    */
   async updateSearchConfig(
     id: string,
     levels: number,
     retMax: number,
-    useOnlyPrincipalName: boolean
+    useOnlyPrincipalName: boolean,
+    maxComplexes: number
   ): Promise<Response> {
     return authFetch(PIPELINES_SEARCH_CONFIG_ENDPOINT, {
       method: "PUT",
-      body: JSON.stringify({ id, levels, retMax, useOnlyPrincipalName }),
+      body: JSON.stringify({ id, levels, retMax, useOnlyPrincipalName, maxComplexes }),
     });
   },
 
@@ -136,4 +137,116 @@ export const experimentService = {
       body: JSON.stringify({ pipelineId }),
     });
   },
+
+  /**
+   * Retrieves the detailed execution status of a launched experiment.
+   * If the backend endpoint is not built yet, falls back to mocked data.
+   */
+  async getExperimentExecution(experimentId: string): Promise<ExperimentExecution> {
+    let experimentName = "Protein Folding Analysis";
+    try {
+      const exp = await this.getPipelineById(experimentId);
+      if (exp && exp.name) {
+        experimentName = exp.name;
+      }
+    } catch (err) {
+      console.warn("Failed to fetch experiment details for name, using default name", err);
+    }
+
+    try {
+      const response = await authFetch(`${PIPELINES_ENDPOINT}/${experimentId}/execution`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {
+      console.warn("Failed to fetch execution details from backend, falling back to mock data", err);
+    }
+
+    return getMockExecutionData(experimentId, experimentName);
+  },
 };
+
+export function getMockExecutionData(experimentId: string, experimentName = "Protein Folding Analysis"): ExperimentExecution {
+  return {
+    experimentId,
+    experimentName,
+    status: "ACTIVE",
+    totalExecutionTime: "01:15:58",
+    currentPhaseDuration: "18:42",
+    steps: [
+      {
+        id: "step-1",
+        name: "Sequence Pre-processing",
+        status: "COMPLETED",
+        startTime: "13:50:07",
+        duration: "12m 4s",
+        outputText: "Completed • 12m 4s",
+        description: "Filters low-quality reads, trims adapter sequences, and runs initial sequence quality control checks.",
+        iconName: "Sliders",
+        metrics: [
+          { label: "TOTAL READS", value: "42.8M", progress: 100 },
+          { label: "QUALITY SCORE (Q30)", value: "94.2%", subLabel: "Optimal quality profile", subLabelColor: "green" },
+          { label: "TRIMMED BASES", value: "1.2M", subLabel: "2.7% of total reads" }
+        ]
+      },
+      {
+        id: "step-2",
+        name: "Sequence Pre-processing",
+        status: "COMPLETED",
+        startTime: "14:02:11",
+        duration: "12m 4s",
+        outputText: "Output: 42.8M reads",
+        description: "Secondary pre-processing phase, indexing genomic reference and aligning reads.",
+        iconName: "GitBranch",
+        metrics: [
+          { label: "ALIGNMENT RATE", value: "98.6%", subLabel: "↑ 0.4% vs index", subLabelColor: "green" },
+          { label: "UNMAPPED READS", value: "0.6M", progress: 1.4 },
+          { label: "DUPLICATION RATE", value: "1.8%" }
+        ]
+      },
+      {
+        id: "step-3",
+        name: "Alignment & Mapping",
+        status: "COMPLETED",
+        startTime: "14:14:15",
+        duration: "45m 12s",
+        outputText: "Output: 98.4% Quality",
+        description: "Performs coordinate sorting, duplicate marking, and base quality score recalibration (BQSR).",
+        iconName: "Cpu",
+        metrics: [
+          { label: "TOTAL READS", value: "42.8M" },
+          { label: "MAPPING QUALITY", value: "98.4%", subLabel: "↑ 0.2% from baseline", subLabelColor: "green" },
+          { label: "WARNINGS DETECTED", value: "02", hasWarnings: true, warningCount: 2 }
+        ]
+      },
+      {
+        id: "step-4",
+        name: "Variant Calling",
+        status: "ACTIVE",
+        startTime: "14:59:27",
+        duration: "18m 42s",
+        outputText: "(Active)",
+        description: "Identifying genetic variations from aligned sequences using the GATK HaplotypeCaller engine. Currently processing chromosome 14.",
+        iconName: "Activity",
+        subSteps: [
+          { name: "Haplotype Engine Init", status: "COMPLETED" },
+          { name: "Chr 14 Processing", status: "ACTIVE" },
+          { name: "VCF Generation", status: "PENDING" }
+        ],
+        metrics: [
+          { label: "TOTAL READS", value: "42.8M", progress: 75 },
+          { label: "MAPPING QUALITY", value: "98.4%", subLabel: "↑ 0.2% from baseline", subLabelColor: "green" },
+          { label: "WARNINGS DETECTED", value: "02", hasWarnings: true, warningCount: 2 }
+        ]
+      },
+      {
+        id: "step-5",
+        name: "Final Reporting",
+        status: "PENDING",
+        description: "Generates clinical annotation reports, exports annotated VCFs, and packages pipeline artifacts.",
+        iconName: "FileText"
+      }
+    ]
+  };
+}
+

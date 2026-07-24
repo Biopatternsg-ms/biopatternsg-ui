@@ -18,7 +18,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Microscope, Pencil, Trash2, Plus, Play } from "lucide-react";
+import { Microscope, Pencil, Trash2, Plus, Play, Eye } from "lucide-react";
 import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
 import { PipelineStatus, getFriendlyStepLabel } from "@/components/molecules/PipelineStatus";
 import { experimentService } from "@/services/experimentService";
@@ -134,38 +134,59 @@ const Experiments = () => {
     {
       header: "Options",
       className: "col-span-2 text-right",
-      render: (item) => (
-        <div className="flex justify-end gap-2">
-          <Button
-            variant="icon"
-            size="icon"
-            title="Launch"
-            onClick={() => handleLaunch(item.id)}
-            disabled={!((item.status?.step || item.step) === "CONFIG" && item.status?.status === "COMPLETED")}
-          >
-            <Play className="w-[18px] h-[18px]" />
-          </Button>
-          <Button
-            variant="icon"
-            size="icon"
-            title="Edit"
-            onClick={() => {
-              if (item.networkId) {
-                navigate(`/dashboard/experiments/${item.networkId}/update/${item.id}`);
-              }
-            }}
-          >
-            <Pencil className="w-[18px] h-[18px]" />
-          </Button>
-          <Button
-            variant="iconDestructive"
-            size="icon"
-            title="Delete"
-          >
-            <Trash2 className="w-[18px] h-[18px]" />
-          </Button>
-        </div>
-      ),
+      render: (item) => {
+        const isLaunched = (item.status?.step || item.step) !== "CONFIG";
+        const netId = item.networkId || networkId;
+        return (
+          <div className="flex justify-end gap-2">
+            {isLaunched ? (
+              <Button
+                variant="icon"
+                size="icon"
+                title="View Execution"
+                onClick={() => {
+                  if (netId) {
+                    navigate(`/dashboard/experiments/${netId}/execution/${item.id}`);
+                  }
+                }}
+              >
+                <Eye className="w-[18px] h-[18px] text-primary-container" />
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="icon"
+                  size="icon"
+                  title="Launch"
+                  onClick={() => handleLaunch(item.id)}
+                  disabled={!((item.status?.step || item.step) === "CONFIG" && item.status?.status === "COMPLETED")}
+                >
+                  <Play className="w-[18px] h-[18px]" />
+                </Button>
+                <Button
+                  variant="icon"
+                  size="icon"
+                  title="Edit"
+                  onClick={() => {
+                    if (netId) {
+                      navigate(`/dashboard/experiments/${netId}/update/${item.id}`);
+                    }
+                  }}
+                >
+                  <Pencil className="w-[18px] h-[18px]" />
+                </Button>
+                <Button
+                  variant="iconDestructive"
+                  size="icon"
+                  title="Delete"
+                >
+                  <Trash2 className="w-[18px] h-[18px]" />
+                </Button>
+              </>
+            )}
+          </div>
+        );
+      },
     },
   ];
 
