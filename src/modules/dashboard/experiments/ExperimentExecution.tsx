@@ -84,6 +84,14 @@ function formatSecondsToMs(totalSecs: number): string {
   return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
 }
 
+// Helper to format ISO timestamp or HH:mm:ss to local user time
+function formatLocalTime(isoTimeStr?: string): string {
+  if (!isoTimeStr) return "";
+  const date = new Date(isoTimeStr);
+  if (isNaN(date.getTime())) return isoTimeStr; // Fallback if already HH:mm:ss
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+}
+
 const ExperimentExecutionView = () => {
   const { networkId, experimentId } = useParams<{ networkId: string; experimentId: string }>();
   const navigate = useNavigate();
@@ -303,7 +311,7 @@ const ExperimentExecutionView = () => {
 
                       {isActive && (
                         <div className="flex flex-col gap-1.5 mt-1 text-[11px] font-body text-on-surface-variant/80 font-medium">
-                          {step.startTime && <p>Start: {step.startTime}</p>}
+                          {step.startTime && <p>Start: {formatLocalTime(step.startTime)}</p>}
                           <p>Duration: {displayPhaseTime} (Active)</p>
                           {step.subSteps && step.subSteps.length > 0 && (
                             <ul className="flex flex-col gap-1 mt-2 pl-1 border-l border-primary/20 bg-primary/5 rounded-lg p-2">
@@ -365,6 +373,11 @@ const ExperimentExecutionView = () => {
                       <p className="text-on-surface-variant font-body text-sm max-w-xl mt-1.5 leading-relaxed">
                         {selectedStep.description}
                       </p>
+                      {selectedStep.startTime && (
+                        <p className="text-xs font-semibold text-primary-container mt-2 font-label">
+                          Start Time: {formatLocalTime(selectedStep.startTime)}
+                        </p>
+                      )}
                     </div>
                   </div>
 
