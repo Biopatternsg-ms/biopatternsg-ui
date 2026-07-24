@@ -64,7 +64,7 @@ const HeroSection = () => {
     fields: [
       {
         name: "username",
-        label: "Institutional Email",
+        label: "Email address",
         type: "email",
         placeholder: "name@institute.edu",
         helperText: "Enter your email address",
