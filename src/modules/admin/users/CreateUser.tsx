@@ -29,7 +29,7 @@ const CreateUser = () => {
     fields: [
       {
         name: "email",
-        label: "Institutional Email",
+        label: "Email address",
         type: "email",
         placeholder: "name@institute.edu",
         colSpan: "full",

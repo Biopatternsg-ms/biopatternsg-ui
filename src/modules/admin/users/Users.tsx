@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 import { useEffect, useState } from "react";
-import { Users as UsersIcon, Plus, Key, Pencil, Power, CheckCircle2, XCircle } from "lucide-react";
+import { Users as UsersIcon, Plus, Key, Power, CheckCircle2, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/atoms/Button";
 import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
@@ -68,10 +68,7 @@ const Users = () => {
     // TODO: Connect with actual API
   };
 
-  const handleEdit = (id: string) => {
-    console.log("Editar usuario:", id);
-    // TODO: navigate to edit page or open modal
-  };
+
 
   const handleToggleEnabled = (id: string, currentState: boolean | string) => {
     console.log("Cambiar estado de usuario:", id, "Estado actual:", currentState);
@@ -133,14 +130,6 @@ const Users = () => {
             title="Recover Password"
           >
             <Key className="w-[18px] h-[18px]" />
-          </Button>
-          <Button
-            variant="icon"
-            size="icon"
-            onClick={() => handleEdit(item.id)}
-            title="Edit"
-          >
-            <Pencil className="w-[18px] h-[18px]" />
           </Button>
           <Button
             variant="icon"

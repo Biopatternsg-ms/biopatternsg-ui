@@ -51,12 +51,12 @@ const NAV_NETWORKS: RoleNavItem = {
 export const ROLE_CONFIGS: Record<AppRole, RoleConfig> = {
   admin: {
     homePath: "/dashboard/admin/users",
-    navItems: [NAV_USERS, NAV_CREATE_USER, NAV_NETWORKS],
+    navItems: [NAV_USERS, NAV_NETWORKS],
     allowedRoutes: ["/dashboard/admin", "/dashboard/network", "/dashboard/experiments"],
   },
   "admin-user": {
     homePath: "/dashboard/admin/users",
-    navItems: [NAV_USERS, NAV_CREATE_USER, NAV_NETWORKS],
+    navItems: [NAV_USERS, NAV_NETWORKS],
     allowedRoutes: ["/dashboard/admin", "/dashboard/network", "/dashboard/experiments"],
   },
   researcher: {
