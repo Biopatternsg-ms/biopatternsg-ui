@@ -54,21 +54,21 @@ const RecoveryPassword = () => {
       },
     ],
     title: "Recover Access",
-    subtitle: "Node-04 Password Recovery",
+    subtitle: "Account Password Recovery",
     submitLabel: "Send Recovery Link",
-    submittingLabel: "Enviando...",
+    submittingLabel: "Sending...",
     onSubmit: async (values) => {
       const payload = toRecoveryPayload(values);
       return recoverPassword(payload);
     },
     successStatus: "ok",
     successModal: {
-      title: "¡Revisa tu correo!",
-      message: "Te hemos enviado un email, revisa tu correo electrónico",
+      title: "Check Your Inbox!",
+      message: "We have sent you an email. Please check your inbox for instructions.",
     },
     errorModal: {
-      title: "Error de recuperación",
-      defaultMessage: "Ocurrió un problema para recuperar tu contraseña",
+      title: "Recovery Error",
+      defaultMessage: "An issue occurred while recovering your password.",
       parseResponseMessage: false,
     },
     onSuccessClose: () => {

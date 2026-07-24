@@ -92,21 +92,21 @@ const Register = () => {
       },
     ],
     title: "Join the Research Network",
-    subtitle: "Node-04 Registration Portal",
+    subtitle: "Researcher Registration Portal",
     submitLabel: "Initialize Registration",
-    submittingLabel: "Registrando...",
+    submittingLabel: "Registering...",
     onSubmit: async (values) => {
       const payload = toRegisterPayload(values);
       return registerUser(payload);
     },
     successStatus: 201,
     successModal: {
-      title: "¡Registro exitoso!",
-      message: "registro exitoso, por favor verifique la bandeja de entrada de su correo",
+      title: "Registration Successful!",
+      message: "Registration successful. Please check your email inbox to verify your account.",
     },
     errorModal: {
-      title: "No se pudo completar el registro",
-      defaultMessage: "Error en el servidor. Por favor, intente de nuevo más tarde.",
+      title: "Registration Failed",
+      defaultMessage: "Server error. Please try again later.",
       parseResponseMessage: true,
     },
     onSuccessClose: () => {

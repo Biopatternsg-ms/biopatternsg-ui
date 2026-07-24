@@ -37,7 +37,7 @@ const CreateNetwork = () => {
     fields: [
       {
         name: "name",
-        label: "Nombre del network",
+        label: "Network Name",
         type: "text",
         placeholder: "e.g., Alpha-Helix Distribution",
         helperText: "Assign a unique identifier for clinical tracking.",
@@ -45,7 +45,7 @@ const CreateNetwork = () => {
       },
       {
         name: "description",
-        label: "Descripción",
+        label: "Description",
         type: "textarea",
         placeholder: "Detail the scope, methodology...",
         helperText: "Detailed documentation supports reproducibility.",
@@ -54,23 +54,23 @@ const CreateNetwork = () => {
       },
     ],
     title: "Register New Network",
-    subtitle: "Node-04 Secure Entrance",
-    submitLabel: "Crear Red",
-    submittingLabel: "Creando...",
+    subtitle: "Gene Regulatory Network Creation",
+    submitLabel: "Create Network",
+    submittingLabel: "Creating...",
     onSubmit: async (values) =>
       networkService.createNetwork(values.name.trim(), values.description.trim()),
     successStatus: 201,
     successModal: {
-      title: "Creación de red exitosa",
-      message: "La red fue creada correctamente.",
+      title: "Network Created Successfully",
+      message: "The network was created successfully.",
     },
     errorModal: {
       title: "Error",
-      defaultMessage: "No pudo crearse la red",
+      defaultMessage: "Could not create network.",
     },
     onSuccessClose: () => navigate("/dashboard/network"),
     footerLink: {
-      text: "Do you want to return to your networks??",
+      text: "Want to return to your networks?",
       label: "Go to Networks",
       to: "/dashboard/network",
     },

@@ -64,18 +64,18 @@ const HeroSection = () => {
     fields: [
       {
         name: "username",
-        label: "Usuario",
+        label: "Institutional Email",
         type: "email",
         placeholder: "name@institute.edu",
-        helperText: "Ingresa tu correo electrónico",
+        helperText: "Enter your email address",
         colSpan: "full",
       },
       {
         name: "password",
-        label: "Contraseña",
+        label: "Password",
         type: "password",
         placeholder: "••••••••",
-        helperText: "Ingresa tu contraseña",
+        helperText: "Enter your account password",
         colSpan: "full",
         labelRight: (
           <button
@@ -89,20 +89,20 @@ const HeroSection = () => {
       },
     ],
     title: "Access Lab Portal",
-    subtitle: "Node-04 Secure Entrance",
-    submitLabel: "Initialize Session",
-    submittingLabel: "Iniciando sesión...",
+    subtitle: "Secure Access Portal",
+    submitLabel: "Sign in",
+    submittingLabel: "Signing in...",
     onSubmit: async (values) => {
       const payload = toLoginPayload(values);
       return loginUser(payload);
     },
     successStatus: 200,
     successModal: {
-      title: "¡Bienvenido!",
-      message: "Inicio de sesión exitoso. Redirigiendo...",
+      title: "Welcome!",
+      message: "Sign in successful. Redirecting...",
     },
     errorModal: {
-      defaultMessage: "Ocurrió un error al momento de iniciar sesión.",
+      defaultMessage: "An error occurred while signing in.",
       parseResponseMessage: true,
     },
     onSuccessResponse: async (response) => {
@@ -113,7 +113,7 @@ const HeroSection = () => {
       const appRole = extractAppRole(realmAccess?.roles);
 
       if (!appRole) {
-        throw new Error("El usuario no tiene asignado un rol para ingresar a la plataforma.");
+        throw new Error("User does not have an assigned role to access the platform.");
       }
 
       pendingTokensRef.current = data;
