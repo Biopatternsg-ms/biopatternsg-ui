@@ -27,7 +27,7 @@ export interface NavItem {
  */
 export const publicNavItems: NavItem[] = [
   { label: "Home", href: "/" },
-  { label: "Research", href: "#" },
-  { label: "Sequencing", href: "#" },
-  { label: "Datasets", href: "#" },
+  { label: "Pipeline", href: "#" },
+  { label: "Networks", href: "#" },
+  { label: "Documentation", href: "#" },
 ];

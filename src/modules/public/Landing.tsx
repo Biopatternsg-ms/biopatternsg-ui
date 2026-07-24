@@ -18,9 +18,9 @@
  */
 import { Header } from "@/components/organisms/Header";
 import { HeroSection } from "@/components/organisms/HeroSection";
-import { BentoSection } from "@/components/organisms/BentoSection";
-import { StatsSection } from "@/components/organisms/StatsSection";
-import { CTASection } from "@/components/organisms/CTASection";
+import { WorkflowSection } from "@/components/organisms/WorkflowSection";
+import { BenefitsSection } from "@/components/organisms/BenefitsSection";
+import { TrustBadges } from "@/components/organisms/TrustBadges";
 import { Footer } from "@/components/organisms/Footer";
 
 /**
@@ -28,9 +28,9 @@ import { Footer } from "@/components/organisms/Footer";
  * Assembles all organisms into the full page layout.
  *
  * Atomic Design hierarchy used:
- *   Atoms   → Button, Input, Label, Badge, NavLink
- *   Molecules → FormField, StatCard, BentoFeatureCard, BentoSideCard, BenefitCard
- *   Organisms → Header, LoginForm, HeroSection, BentoSection, StatsSection, CTASection, Footer
+ *   Atoms   → Button, Input, Label, Badge, NavLink, Breadcrumb
+ *   Molecules → FormField, BenefitCard, SuccessModal, ErrorModal
+ *   Organisms → Header, LoginForm, HeroSection, WorkflowSection, BenefitsSection, TrustBadges, Footer
  */
 const Landing = () => (
   <div className="bg-background text-on-background font-body min-h-screen">
@@ -42,14 +42,15 @@ const Landing = () => (
       {/* 1. Hero: asymmetric layout + glassmorphic login */}
       <HeroSection />
 
-      {/* 2. Bento Grid: Analytics Suite preview */}
-      <BentoSection />
+      {/* 2. Benefits */}
+      <WorkflowSection />
 
-      {/* 3. Stats + Benefits */}
-      <StatsSection />
+      {/* 3. Workflow: Automated pipeline overview */}
+      <BenefitsSection />
 
-      {/* 4. CTA: gradient full-bleed block */}
-      <CTASection />
+      {/* 4. Trusted Data Sources */}
+      <TrustBadges />
+
     </main>
 
     {/* Footer */}

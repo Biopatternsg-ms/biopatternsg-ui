@@ -19,17 +19,17 @@
 import { Globe, Terminal } from "lucide-react";
 
 const platformLinks = [
-  { label: "Pipeline Management", href: "#" },
-  { label: "Cloud Storage", href: "#" },
-  { label: "API Reference", href: "#" },
-  { label: "Lab Management", href: "#" },
+  { label: "Dashboard", href: "#" },
+  { label: "Networks", href: "#" },
+  { label: "Experiments", href: "#" },
+  { label: "Integrations", href: "#" },
 ];
 
 const researchLinks = [
-  { label: "Case Studies", href: "#" },
-  { label: "Whitepapers", href: "#" },
-  { label: "Clinical Trials", href: "#" },
-  { label: "Open Data", href: "#" },
+  { label: "Documentation", href: "#" },
+  { label: "GitHub", href: "https://github.com/biopatternsg" },
+  { label: "Publications", href: "#" },
+  { label: "API Reference", href: "#" },
 ];
 
 const legalLinks = [
@@ -77,8 +77,7 @@ const Footer = () => (
           Biopatternsg
         </div>
         <p className="text-sm text-surface-variant opacity-70 leading-relaxed">
-          Advancing human longevity through high-precision bioinformatics and
-          clinical collaboration.
+          Automating the construction of Gene Regulatory Networks with Generative AI and Logic Programming.
         </p>
         <div className="flex gap-4">
           <div className="w-8 h-8 rounded-full bg-surface-variant/20 flex items-center justify-center">
@@ -91,7 +90,7 @@ const Footer = () => (
       </div>
 
       <FooterColumn heading="Platform" links={platformLinks} />
-      <FooterColumn heading="Research" links={researchLinks} />
+      <FooterColumn heading="Resources" links={researchLinks} />
       <FooterColumn heading="Legal" links={legalLinks} />
     </div>
 
