@@ -20,7 +20,7 @@ import { Database, Brain, GitMerge } from "lucide-react";
 
 export const WorkflowSection = () => {
   return (
-    <section className="px-8 pt-10 pb-24 max-w-screen-2xl mx-auto">
+    <section className="px-8 pt-10 pb-12 max-w-screen-2xl mx-auto">
       {/* Video Presentation & Overview Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center mb-24 bg-surface-container-low rounded-3xl p-8 lg:p-12 border border-outline-variant/15 shadow-ambient">
         <div className="lg:col-span-6 space-y-6">

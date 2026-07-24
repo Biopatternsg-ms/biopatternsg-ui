@@ -16,18 +16,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Database } from "lucide-react";
+import { Database, Dna, Activity, BookOpen, type LucideIcon } from "lucide-react";
 
 interface TrustSource {
   name: string;
   url: string;
+  icon: LucideIcon;
 }
 
 const sources: TrustSource[] = [
-  { name: "HGNC", url: "https://rest.genenames.org" },
-  { name: "Uniprot", url: "https://rest.uniprot.org" },
-  { name: "TFBind", url: "https://tfbind.hgc.jp" },
-  { name: "Pubmed", url: "https://pubmed.ncbi.nlm.nih.gov/" },
+  { name: "HGNC", url: "https://rest.genenames.org", icon: Database },
+  { name: "Uniprot", url: "https://rest.uniprot.org", icon: Dna },
+  { name: "TFBind", url: "https://tfbind.hgc.jp", icon: Activity },
+  { name: "Pubmed", url: "https://pubmed.ncbi.nlm.nih.gov/", icon: BookOpen },
 ];
 
 /**
@@ -37,31 +38,31 @@ const sources: TrustSource[] = [
  * Each badge links to the source URL and opens in a new tab.
  */
 const TrustBadges = () => (
-  <section className="py-24 px-8 max-w-screen-2xl mx-auto">
+  <section className="pt-8 pb-24 px-8 max-w-screen-2xl mx-auto">
     <div className="text-center mb-12">
-      <h2 className="font-headline text-3xl font-black text-on-surface tracking-tighter">
+      <h2 className="font-headline text-3xl md:text-4xl font-bold text-on-surface tracking-tight">
         Trusted Data Sources
       </h2>
-      <p className="mt-3 text-on-surface-variant font-body text-sm max-w-xl mx-auto leading-relaxed">
+      <p className="mt-3 text-on-surface-variant font-body text-base max-w-xl mx-auto leading-relaxed">
         We integrate authoritative genomic and literature databases to ensure
         every insight is traceable to its original source.
       </p>
     </div>
 
     <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-      {sources.map((source) => (
+      {sources.map(({ name, url, icon: Icon }) => (
         <a
-          key={source.name}
-          href={source.url}
+          key={name}
+          href={url}
           target="_blank"
           rel="noopener noreferrer"
           className="group flex flex-col items-center justify-center gap-4 p-6 rounded-2xl border border-outline-variant/15 bg-surface-card/50 hover:bg-surface-container-low transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
         >
           <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-300">
-            <Database className="w-8 h-8 text-primary" />
+            <Icon className="w-8 h-8 text-primary" />
           </div>
           <span className="font-label text-sm font-bold text-on-surface tracking-wide">
-            {source.name}
+            {name}
           </span>
         </a>
       ))}

@@ -16,27 +16,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface BenefitCardProps {
+  icon?: LucideIcon;
   title: string;
   description: string;
+  tag?: string;
   className?: string;
 }
 
 /**
  * Benefit / feature card used in the 3-column grid.
- * "No-Line" rule: bg depth used for visual separation.
+ * Clinical Lens style with depth, subtle border, hover elevation, and icon anchor.
  */
-const BenefitCard = ({ title, description, className }: BenefitCardProps) => (
+const BenefitCard = ({ icon: Icon, title, description, tag, className }: BenefitCardProps) => (
   <div
     className={cn(
-      "p-8 rounded-xl bg-surface-container-high/30 space-y-4",
+      "p-8 rounded-2xl bg-surface-card border border-outline-variant/15 shadow-ambient-sm hover:shadow-ambient hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-6",
       className
     )}
   >
-    <h4 className="font-bold text-lg">{title}</h4>
-    <p className="text-sm text-on-surface-variant leading-relaxed">{description}</p>
+    <div className="space-y-4">
+      {Icon && (
+        <div className="w-12 h-12 bg-primary-container/15 rounded-xl flex items-center justify-center text-primary">
+          <Icon className="w-6 h-6" />
+        </div>
+      )}
+      <h4 className="font-bold text-lg font-headline text-on-surface">{title}</h4>
+      <p className="text-sm text-on-surface-variant leading-relaxed">{description}</p>
+    </div>
+
+    {tag && (
+      <div className="pt-2">
+        <span className="px-2.5 py-1 bg-surface-container-highest text-on-surface text-[10px] font-label uppercase tracking-widest font-bold rounded">
+          {tag}
+        </span>
+      </div>
+    )}
   </div>
 );
 
