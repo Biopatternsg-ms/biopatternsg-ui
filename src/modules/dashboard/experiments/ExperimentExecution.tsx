@@ -371,13 +371,7 @@ const ExperimentExecutionView = () => {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-6 border-b border-outline-variant/10">
                   {/* Left: Step Info */}
                   <div className="flex gap-4">
-                    <div className={`p-3 rounded-2xl shrink-0 self-start shadow-sm ${
-                      selectedStep.status === "COMPLETED"
-                        ? "bg-emerald-500/10 text-emerald-500"
-                        : selectedStep.status === "ACTIVE"
-                        ? "bg-amber-500/10 text-amber-500 ring-2 ring-amber-500/20"
-                        : "bg-secondary-container text-primary-container"
-                    }`}>
+                    <div className="p-3 bg-secondary-container text-primary-container rounded-2xl shrink-0 self-start shadow-sm">
                       <StepIcon name={selectedStep.iconName} className="w-6 h-6" />
                     </div>
                     <div>
