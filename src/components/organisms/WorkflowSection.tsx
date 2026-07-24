@@ -20,7 +20,42 @@ import { Database, Brain, GitMerge } from "lucide-react";
 
 export const WorkflowSection = () => {
   return (
-    <section className="px-8 py-24 max-w-screen-2xl mx-auto border-t border-outline-variant/15">
+    <section className="px-8 pt-10 pb-24 max-w-screen-2xl mx-auto">
+      {/* Video Presentation & Overview Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center mb-24 bg-surface-container-low rounded-3xl p-8 lg:p-12 border border-outline-variant/15 shadow-ambient">
+        <div className="lg:col-span-6 space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary-container/15 text-primary rounded-full text-xs font-semibold tracking-wide uppercase">
+            Project Overview
+          </div>
+          <h2 className="text-3xl md:text-4xl font-headline font-bold text-on-surface leading-tight tracking-tight">
+            Biopatterns: Hybrid Artificial Intelligence for Modeling Biological Networks
+          </h2>
+          <div className="space-y-4 text-on-surface-variant text-base leading-relaxed">
+            <p>
+              Research in biological sciences today faces a volume of scientific literature that exceeds manual analysis capabilities. Discovering new regulatory pathways or identifying hidden therapeutic targets across thousands of abstracts requires tools that go beyond simple keyword searches.
+            </p>
+            <p>
+              Biopatterns is an open-source methodological testbed that addresses this challenge by fusing two computational approaches: the agility of Generative Artificial Intelligence and the mathematical rigor of Logic Artificial Intelligence.
+            </p>
+            <p>
+              Designed specifically to assist bioinformatics researchers, our pipeline automates the review of the state of the art without sacrificing documentary rigor.
+            </p>
+          </div>
+        </div>
+
+        <div className="lg:col-span-6">
+          <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-ambient-md border border-outline-variant/20 bg-surface-container-highest">
+            <iframe
+              className="w-full h-full border-0"
+              src="https://www.youtube-nocookie.com/embed/U7t_uounHcU"
+              title="Biopatterns: Hybrid Artificial Intelligence for Modeling Biological Networks"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      </div>
+
       <div className="text-center mb-16">
         <h2 className="text-4xl md:text-5xl font-headline font-bold text-on-surface tracking-tight mb-4">
           Automated Discovery Pipeline
