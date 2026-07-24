@@ -32,7 +32,8 @@ import {
   Loader2,
   Microscope,
   Info,
-  Clock
+  Clock,
+  type LucideIcon
 } from "lucide-react";
 import { experimentService } from "@/services/experimentService";
 import type { ExperimentExecution } from "@/services/models/Experiment";
@@ -40,7 +41,7 @@ import { Button } from "@/components/atoms/Button";
 import { Breadcrumb } from "@/components/atoms/Breadcrumb";
 import { Badge } from "@/components/atoms/Badge";
 
-const stepIcons: Record<string, any> = {
+const stepIcons: Record<string, LucideIcon> = {
   Sliders: Sliders,
   GitBranch: GitBranch,
   Cpu: Cpu,
@@ -112,7 +113,7 @@ const ExperimentExecutionView = () => {
   // Live timer states
   const [totalSeconds, setTotalSeconds] = useState(0);
   const [phaseSeconds, setPhaseSeconds] = useState(0);
-  const timerRef = useRef<any>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (!experimentId) return;
