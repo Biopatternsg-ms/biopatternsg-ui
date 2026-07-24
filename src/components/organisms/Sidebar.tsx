@@ -108,25 +108,6 @@ const Sidebar = () => {
           );
         })}
       </div>
-
-      {/* System Status */}
-      {isCollapsed ? (
-        <div className="flex justify-center p-2 bg-[#e2ebf9] rounded-xl">
-          <span className="w-2.5 h-2.5 rounded-full bg-tertiary-fixed-dim animate-pulse" title="Core API: Stable" />
-        </div>
-      ) : (
-        <div className="bg-[#e2ebf9] rounded-xl p-4 mt-auto">
-          <span className="font-label text-[10px] tracking-widest uppercase text-on-surface-variant font-bold block mb-2">
-            System Status
-          </span>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
-            <span className="font-body text-[13px] text-on-surface font-medium">
-              Core API: Stable
-            </span>
-          </div>
-        </div>
-      )}
     </nav>
     </>
   );

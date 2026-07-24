@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { type LucideIcon, Network, Microscope, Users, UserPlus } from "lucide-react";
+import { type LucideIcon, Network, Users, UserPlus } from "lucide-react";
 
 export type AppRole = "admin" | "admin-user" | "researcher";
 
@@ -35,34 +35,34 @@ export interface RoleConfig {
 }
 
 const NAV_USERS: RoleNavItem = {
-  label: "Usuarios", href: "/dashboard/admin/users", icon: Users,
+  label: "Users", href: "/dashboard/admin/users", icon: Users,
 };
 const NAV_CREATE_USER: RoleNavItem = {
-  label: "Crear Usuario", href: "/dashboard/admin/users/create", icon: UserPlus,
+  label: "Create user", href: "/dashboard/admin/users/create", icon: UserPlus,
 };
 const NAV_NETWORKS: RoleNavItem = {
-  label: "Redes", href: "/dashboard/network", icon: Network,
+  label: "Networks", href: "/dashboard/network", icon: Network,
 };
-const NAV_EXPERIMENTS: RoleNavItem = {
-  label: "Experimentos", href: "/dashboard/experiments",
+/* const NAV_EXPERIMENTS: RoleNavItem = {
+  label: "Experiments", href: "/dashboard/experiments",
   matchPath: "/dashboard/experiments", icon: Microscope,
-};
+}; */
 
 export const ROLE_CONFIGS: Record<AppRole, RoleConfig> = {
   admin: {
     homePath: "/dashboard/admin/users",
-    navItems: [NAV_USERS, NAV_CREATE_USER, NAV_NETWORKS, NAV_EXPERIMENTS],
-    allowedRoutes: ["/dashboard/admin", "/dashboard/network", "/dashboard/experiments"],
+    navItems: [NAV_USERS, NAV_CREATE_USER, NAV_NETWORKS/*, NAV_EXPERIMENTS*/],
+    allowedRoutes: ["/dashboard/admin", "/dashboard/network"/*, /*"/dashboard/experiments"*/],
   },
   "admin-user": {
     homePath: "/dashboard/admin/users",
-    navItems: [NAV_USERS, NAV_CREATE_USER, NAV_NETWORKS, NAV_EXPERIMENTS],
-    allowedRoutes: ["/dashboard/admin", "/dashboard/network", "/dashboard/experiments"],
+    navItems: [NAV_USERS, NAV_CREATE_USER, NAV_NETWORKS/*, NAV_EXPERIMENTS*/],
+    allowedRoutes: ["/dashboard/admin", "/dashboard/network"/*, "/dashboard/experiments"*/],
   },
   researcher: {
     homePath: "/dashboard/network",
-    navItems: [NAV_NETWORKS, NAV_EXPERIMENTS],
-    allowedRoutes: ["/dashboard/network", "/dashboard/experiments"],
+    navItems: [NAV_NETWORKS/*, NAV_EXPERIMENTS*/],
+    allowedRoutes: ["/dashboard/network"/*, "/dashboard/experiments"*/],
   },
 };
 

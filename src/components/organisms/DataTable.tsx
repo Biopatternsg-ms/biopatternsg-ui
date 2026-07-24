@@ -43,7 +43,7 @@ export function DataTable<T>({
   columns,
   loading = false,
   error = null,
-  emptyMessage = "No hay datos disponibles.",
+  emptyMessage = "No data available.",
   keyExtractor,
 }: DataTableProps<T>) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -63,7 +63,7 @@ export function DataTable<T>({
   if (loading) {
     return (
       <div className="flex justify-center p-12 text-on-surface-variant font-body">
-        Cargando...
+        Loading...
       </div>
     );
   }

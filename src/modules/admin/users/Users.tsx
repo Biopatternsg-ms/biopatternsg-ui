@@ -80,22 +80,22 @@ const Users = () => {
 
   const columns: ColumnDef<UserModel>[] = [
     {
-      header: "Usuario",
+      header: "Username",
       className: "col-span-2 text-on-surface truncate font-semibold",
       accessor: "username",
     },
     {
-      header: "Nombre",
+      header: "First Name",
       className: "col-span-2 text-on-surface-variant truncate",
       accessor: "firstName",
     },
     {
-      header: "Apellido",
+      header: "Last Name",
       className: "col-span-2 text-on-surface-variant truncate",
       accessor: "lastName",
     },
     {
-      header: "Estado",
+      header: "Status",
       className: "col-span-2",
       render: (item) => {
         const isEnabled = item.enabled === true || item.enabled === "true";
@@ -104,12 +104,12 @@ const Users = () => {
             {isEnabled ? (
               <span className="flex items-center gap-1 text-sm font-medium text-green-600 bg-green-50 px-2 py-1 rounded-md border border-green-200">
                 <CheckCircle2 className="w-4 h-4" />
-                Habilitado
+                Enabled
               </span>
             ) : (
               <span className="flex items-center gap-1 text-sm font-medium text-red-600 bg-red-50 px-2 py-1 rounded-md border border-red-200">
                 <XCircle className="w-4 h-4" />
-                Deshabilitado
+                Disabled
               </span>
             )}
           </div>
@@ -117,12 +117,12 @@ const Users = () => {
       },
     },
     {
-      header: "Fecha de creación",
+      header: "Creation Date",
       className: "col-span-2 text-on-surface-variant whitespace-nowrap",
       render: (item) => formatUnixTime(item.createdTimestamp),
     },
     {
-      header: "Opciones",
+      header: "Options",
       className: "col-span-2 text-right",
       render: (item) => (
         <div className="flex justify-end gap-2">
@@ -130,7 +130,7 @@ const Users = () => {
             variant="icon"
             size="icon"
             onClick={() => handleRecoveryPassword(item.username)}
-            title="Recuperar contraseña"
+            title="Recover Password"
           >
             <Key className="w-[18px] h-[18px]" />
           </Button>
@@ -138,7 +138,7 @@ const Users = () => {
             variant="icon"
             size="icon"
             onClick={() => handleEdit(item.id)}
-            title="Editar"
+            title="Edit"
           >
             <Pencil className="w-[18px] h-[18px]" />
           </Button>
@@ -146,7 +146,7 @@ const Users = () => {
             variant="icon"
             size="icon"
             onClick={() => handleToggleEnabled(item.id, item.enabled)}
-            title={item.enabled === true || item.enabled === "true" ? "Deshabilitar" : "Habilitar"}
+            title={item.enabled === true || item.enabled === "true" ? "Disable" : "Enable"}
           >
             <Power className={cn("w-[18px] h-[18px]", (item.enabled === true || item.enabled === "true") ? "text-red-500 hover:text-red-600" : "text-green-500 hover:text-green-600")} />
           </Button>
