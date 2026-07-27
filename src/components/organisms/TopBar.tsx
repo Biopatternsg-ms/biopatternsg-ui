@@ -59,7 +59,7 @@ const TopBar = ({ title = "Dashboard" }: TopBarProps) => {
       {/* Right Actions */}
       <div className="flex items-center gap-5">
         {/* Icons */}
-        <div className="flex items-center gap-3 text-on-surface-variant">
+        <div className="hidden flex items-center gap-3 text-on-surface-variant">
           <button className="hover:text-primary transition-all duration-300 p-2 rounded-lg hover:bg-surface-container-low">
             <Bell className="w-5 h-5" />
           </button>

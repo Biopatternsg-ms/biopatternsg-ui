@@ -17,11 +17,14 @@
  * limitations under the License.
  */
 import { useEffect, useState } from "react";
-import { Users as UsersIcon, Plus, Key, Pencil, Power, CheckCircle2, XCircle } from "lucide-react";
+import { Users as UsersIcon, Plus, Key, Power, CheckCircle2, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/atoms/Button";
 import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
 import { getAdminUsers, type UserModel } from "@/services/userService";
+import { recoverPassword } from "@/services/authService";
+import { SuccessModal } from "@/components/molecules/SuccessModal";
+import { ErrorModal } from "@/components/molecules/ErrorModal";
 import { cn } from "@/lib/utils";
 
 const formatUnixTime = (unixSeconds: number) => {
@@ -39,11 +42,14 @@ const Users = () => {
   const [users, setUsers] = useState<UserModel[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  
+
+  const [successModalOpen, setSuccessModalOpen] = useState<boolean>(false);
+  const [errorModalOpen, setErrorModalOpen] = useState<boolean>(false);
+
   // Basic pagination state (could be expanded to be controlled by DataTable)
   const [page] = useState(0);
   const [size] = useState(10);
-  
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -63,14 +69,20 @@ const Users = () => {
     fetchUsers();
   }, [page, size]);
 
-  const handleRecoveryPassword = (username: string) => {
-    console.log("Recuperar contraseña para:", username);
-    // TODO: Connect with actual API
-  };
-
-  const handleEdit = (id: string) => {
-    console.log("Editar usuario:", id);
-    // TODO: navigate to edit page or open modal
+  const handleRecoveryPassword = async (username: string) => {
+    try {
+      setLoading(true);
+      const response = await recoverPassword({ username });
+      if (response.ok) {
+        setSuccessModalOpen(true);
+      } else {
+        setErrorModalOpen(true);
+      }
+    } catch {
+      setErrorModalOpen(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleToggleEnabled = (id: string, currentState: boolean | string) => {
@@ -80,22 +92,22 @@ const Users = () => {
 
   const columns: ColumnDef<UserModel>[] = [
     {
-      header: "Usuario",
+      header: "Username",
       className: "col-span-2 text-on-surface truncate font-semibold",
       accessor: "username",
     },
     {
-      header: "Nombre",
+      header: "First Name",
       className: "col-span-2 text-on-surface-variant truncate",
       accessor: "firstName",
     },
     {
-      header: "Apellido",
+      header: "Last Name",
       className: "col-span-2 text-on-surface-variant truncate",
       accessor: "lastName",
     },
     {
-      header: "Estado",
+      header: "Status",
       className: "col-span-2",
       render: (item) => {
         const isEnabled = item.enabled === true || item.enabled === "true";
@@ -104,12 +116,12 @@ const Users = () => {
             {isEnabled ? (
               <span className="flex items-center gap-1 text-sm font-medium text-green-600 bg-green-50 px-2 py-1 rounded-md border border-green-200">
                 <CheckCircle2 className="w-4 h-4" />
-                Habilitado
+                Enabled
               </span>
             ) : (
               <span className="flex items-center gap-1 text-sm font-medium text-red-600 bg-red-50 px-2 py-1 rounded-md border border-red-200">
                 <XCircle className="w-4 h-4" />
-                Deshabilitado
+                Disabled
               </span>
             )}
           </div>
@@ -117,12 +129,12 @@ const Users = () => {
       },
     },
     {
-      header: "Fecha de creación",
+      header: "Creation Date",
       className: "col-span-2 text-on-surface-variant whitespace-nowrap",
       render: (item) => formatUnixTime(item.createdTimestamp),
     },
     {
-      header: "Opciones",
+      header: "Options",
       className: "col-span-2 text-right",
       render: (item) => (
         <div className="flex justify-end gap-2">
@@ -130,23 +142,15 @@ const Users = () => {
             variant="icon"
             size="icon"
             onClick={() => handleRecoveryPassword(item.username)}
-            title="Recuperar contraseña"
+            title="Recover Password"
           >
             <Key className="w-[18px] h-[18px]" />
           </Button>
           <Button
             variant="icon"
             size="icon"
-            onClick={() => handleEdit(item.id)}
-            title="Editar"
-          >
-            <Pencil className="w-[18px] h-[18px]" />
-          </Button>
-          <Button
-            variant="icon"
-            size="icon"
             onClick={() => handleToggleEnabled(item.id, item.enabled)}
-            title={item.enabled === true || item.enabled === "true" ? "Deshabilitar" : "Habilitar"}
+            title={item.enabled === true || item.enabled === "true" ? "Disable" : "Enable"}
           >
             <Power className={cn("w-[18px] h-[18px]", (item.enabled === true || item.enabled === "true") ? "text-red-500 hover:text-red-600" : "text-green-500 hover:text-green-600")} />
           </Button>
@@ -196,6 +200,20 @@ const Users = () => {
           keyExtractor={(item) => item.id}
         />
       </div>
+
+      <SuccessModal
+        open={successModalOpen}
+        title="Check Your Inbox!"
+        message="We have sent you an email. Please check your inbox for instructions."
+        onClose={() => setSuccessModalOpen(false)}
+      />
+
+      <ErrorModal
+        open={errorModalOpen}
+        title="Recovery Error"
+        message="An issue occurred while recovering your password."
+        onClose={() => setErrorModalOpen(false)}
+      />
     </div>
   );
 };

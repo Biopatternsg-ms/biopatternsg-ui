@@ -62,7 +62,7 @@ const Network = () => {
 
   const columns: ColumnDef<NetworkModel>[] = [
     {
-      header: "Nombre",
+      header: "Name",
       className: "col-span-3",
       render: (item, index) => (
         <div className="flex items-center gap-3">
@@ -79,17 +79,17 @@ const Network = () => {
       ),
     },
     {
-      header: "Descripción",
+      header: "Description",
       className: "col-span-4 text-on-surface-variant truncate",
       accessor: "description",
     },
     {
-      header: "Fecha de creación",
+      header: "Creation Date",
       className: "col-span-3 text-on-surface-variant whitespace-nowrap",
       render: (item) => formatUnixTime(item.createdAt),
     },
     {
-      header: "Opciones",
+      header: "Options",
       className: "col-span-2 text-right",
       render: (item) => (
         <div className="flex justify-end gap-2">
@@ -97,21 +97,21 @@ const Network = () => {
             variant="icon"
             size="icon"
             onClick={() => navigate(`/dashboard/experiments/${item.id}`)}
-            title="Abrir"
+            title="Open"
           >
             <FolderOpen className="w-[18px] h-[18px]" />
           </Button>
           <Button
             variant="icon"
             size="icon"
-            title="Editar"
+            title="Edit"
           >
             <Pencil className="w-[18px] h-[18px]" />
           </Button>
           <Button
             variant="iconDestructive"
             size="icon"
-            title="Eliminar"
+            title="Delete"
           >
             <Trash2 className="w-[18px] h-[18px]" />
           </Button>
@@ -129,7 +129,7 @@ const Network = () => {
           <div className="flex items-center gap-3">
             <NetworkIcon className="text-primary-container w-7 h-7" />
             <h2 className="font-headline text-2xl font-black text-on-surface tracking-tighter">
-              Redes
+              Networks
             </h2>
           </div>
           <p className="text-on-surface-variant font-body text-sm max-w-lg leading-relaxed">
