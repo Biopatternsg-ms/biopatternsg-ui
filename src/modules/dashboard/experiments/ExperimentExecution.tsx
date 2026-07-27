@@ -101,6 +101,38 @@ function formatLocalDateTime(isoTimeStr?: string): string {
   });
 }
 
+const STAGE_DEFINITIONS = [
+  {
+    id: "INIT",
+    name: "Initialization",
+    description: "Configures initial pipeline parameters, validates input payload, and sets up network metadata.",
+    iconName: "Sliders",
+    stepIds: ["step-configuration", "step-launched", "step-1", "step-2"],
+  },
+  {
+    id: "BIOLOGICAL_OBJECT",
+    name: "Biological Objects",
+    description: "Extracts transcription factors, processes expert biological objects, and configures hierarchy levels.",
+    iconName: "Cpu",
+    stepIds: ["step-transcription_factor", "step-expert_objects", "step-search_levels", "step-3"],
+  },
+  {
+    id: "PUBMED_INTEGRATION",
+    name: "PubMed Integration",
+    description: "Generates combinations, queries PubMed identifiers, extracts PubTator annotations, and builds the knowledge base graph.",
+    iconName: "GitBranch",
+    stepIds: [
+      "step-combinations",
+      "step-search_pubmed_ids",
+      "step-search_pubtator",
+      "step-build_knowledge_base",
+      "step-generate_aligned_objects",
+      "step-4",
+      "step-5",
+    ],
+  },
+];
+
 const ExperimentExecutionView = () => {
   const { networkId, experimentId } = useParams<{ networkId: string; experimentId: string }>();
   const navigate = useNavigate();
@@ -108,46 +140,65 @@ const ExperimentExecutionView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<ExperimentExecution | null>(null);
-  const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
+  const [selectedStageId, setSelectedStageId] = useState<string | null>(null);
 
-  // Live timer states
+  // Live timer & polling states
   const [totalSeconds, setTotalSeconds] = useState(0);
   const [phaseSeconds, setPhaseSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
+  const fetchExecutionData = async (isInitial = false) => {
     if (!experimentId) return;
+    try {
+      if (isInitial) setLoading(true);
+      const executionData = await experimentService.getExperimentExecution(experimentId);
+      setData(executionData);
 
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        const executionData = await experimentService.getExperimentExecution(experimentId);
-        setData(executionData);
+      if (isInitial) {
+        const computedStages = STAGE_DEFINITIONS.map((def) => {
+          const sSteps = executionData.steps.filter((s) => def.stepIds.includes(s.id));
+          const hasActive = sSteps.some((s) => s.status === "ACTIVE");
+          return { id: def.id, hasActive, count: sSteps.length };
+        }).filter((s) => s.count > 0);
 
-        // Find the active step or default to the first one
-        const activeStep = executionData.steps.find((s) => s.status === "ACTIVE");
-        const defaultStep = activeStep || executionData.steps[executionData.steps.length - 1] || executionData.steps[0];
-        setSelectedStepId(defaultStep?.id || null);
-
-        // Initialize ticking timers
-        setTotalSeconds(parseTimeToSeconds(executionData.totalExecutionTime));
-        setPhaseSeconds(parseTimeToSeconds(executionData.currentPhaseDuration));
-      } catch (err) {
-        setError("Error loading execution details");
-        console.error(err);
-      } finally {
-        setLoading(false);
+        const activeStg = computedStages.find((s) => s.hasActive);
+        const defaultStg = activeStg || computedStages[0];
+        setSelectedStageId(defaultStg?.id || "INIT");
       }
-    };
 
-    loadData();
+      setTotalSeconds(parseTimeToSeconds(executionData.totalExecutionTime));
+      setPhaseSeconds(parseTimeToSeconds(executionData.currentPhaseDuration));
+    } catch (err) {
+      if (isInitial) setError("Error loading execution details");
+      console.error("Error polling execution status", err);
+    } finally {
+      if (isInitial) setLoading(false);
+    }
+  };
 
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
+  // Initial load
+  useEffect(() => {
+    fetchExecutionData(true);
   }, [experimentId]);
 
-  // Set up ticker for active execution
+  // Polling loop for active execution (fetches every 3 seconds when pipeline or any step is ACTIVE)
+  useEffect(() => {
+    if (!data) return;
+
+    const isPipelineActive =
+      data.status === "ACTIVE" ||
+      data.steps.some((step) => step.status === "ACTIVE");
+
+    if (!isPipelineActive) return;
+
+    const pollInterval = setInterval(() => {
+      fetchExecutionData(false);
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [data?.status, experimentId]);
+
+  // Ticker for live UI counter
   useEffect(() => {
     if (!data || data.status !== "ACTIVE") {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -187,11 +238,60 @@ const ExperimentExecutionView = () => {
     );
   }
 
-  const selectedStep = data.steps.find((s) => s.id === selectedStepId);
-
   // Format dynamic ticking values
   const displayTotalTime = formatSecondsToHms(totalSeconds);
   const displayPhaseTime = formatSecondsToMs(phaseSeconds);
+
+  // Group steps by stages
+  const matchedStepIds = new Set(STAGE_DEFINITIONS.flatMap((def) => def.stepIds));
+  const unmatchedSteps = data ? data.steps.filter((step) => !matchedStepIds.has(step.id)) : [];
+
+  const stages = STAGE_DEFINITIONS.map((def) => {
+    const stageSteps = data ? data.steps.filter((step) => def.stepIds.includes(step.id)) : [];
+    let status: "COMPLETED" | "ACTIVE" | "PENDING" | "FAILED" = "PENDING";
+    if (stageSteps.length > 0) {
+      const hasFailed = stageSteps.some((s) => s.status === "FAILED");
+      const hasActive = stageSteps.some((s) => s.status === "ACTIVE");
+      const allCompleted = stageSteps.every((s) => s.status === "COMPLETED");
+      const allPending = stageSteps.every((s) => s.status === "PENDING");
+
+      if (hasFailed) status = "FAILED";
+      else if (hasActive) status = "ACTIVE";
+      else if (allCompleted) status = "COMPLETED";
+      else if (allPending) status = "PENDING";
+      else status = "ACTIVE";
+    }
+    return {
+      ...def,
+      steps: stageSteps,
+      status,
+    };
+  });
+
+  if (unmatchedSteps.length > 0 && stages.length > 0) {
+    const lastStage = stages[stages.length - 1];
+    lastStage.steps = [...lastStage.steps, ...unmatchedSteps];
+    const hasFailed = lastStage.steps.some((s) => s.status === "FAILED");
+    const hasActive = lastStage.steps.some((s) => s.status === "ACTIVE");
+    const allCompleted = lastStage.steps.every((s) => s.status === "COMPLETED");
+    const allPending = lastStage.steps.every((s) => s.status === "PENDING");
+    if (hasFailed) lastStage.status = "FAILED";
+    else if (hasActive) lastStage.status = "ACTIVE";
+    else if (allCompleted) lastStage.status = "COMPLETED";
+    else if (allPending) lastStage.status = "PENDING";
+    else lastStage.status = "ACTIVE";
+  }
+
+  const activeStages = stages.filter((stage) => stage.steps.length > 0);
+  const selectedStage = activeStages.find((s) => s.id === selectedStageId) || activeStages[0];
+
+  const selectedStageStartTime = selectedStage
+    ? selectedStage.steps.find((step) => step.startTime)?.startTime
+    : undefined;
+
+  const stageMetrics = selectedStage
+    ? selectedStage.steps.flatMap((step) => step.metrics || [])
+    : [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -250,7 +350,7 @@ const ExperimentExecutionView = () => {
         </div>
       </div>
 
-      {/* Main Grid: Left Timeline Sidebar & Right Phase View */}
+      {/* Main Grid: Left Timeline Sidebar & Right Stage View */}
       <div className="flex flex-col lg:flex-row items-stretch gap-6 mt-2">
         {/* Left: Pipeline Sequence Timeline */}
         <div className="w-full lg:w-1/3 flex flex-col gap-4">
@@ -262,33 +362,38 @@ const ExperimentExecutionView = () => {
             {/* Stepper Steps Container */}
             <div className="relative flex flex-col gap-6 pl-4 flex-1">
               {/* Vertical line through timeline steps */}
-              <div className="absolute left-[29px] top-4 bottom-4 w-[2px] bg-outline-variant/20 z-0" />
+              <div className="absolute left-[33px] top-6 bottom-6 w-[2px] bg-outline-variant/20 z-0" />
 
-              {data.steps.map((step) => {
-                const isSelected = step.id === selectedStepId;
-                const isCompleted = step.status === "COMPLETED";
-                const isActive = step.status === "ACTIVE";
-                const isPending = step.status === "PENDING";
+              {activeStages.map((stage) => {
+                const isSelectedStage = stage.id === selectedStage?.id;
+                const isStageCompleted = stage.status === "COMPLETED";
+                const isStageActive = stage.status === "ACTIVE";
+                const isStagePending = stage.status === "PENDING";
+                const isStageFailed = stage.status === "FAILED";
 
                 return (
                   <div
-                    key={step.id}
-                    onClick={() => setSelectedStepId(step.id)}
-                    className={`relative z-10 flex gap-4 cursor-pointer group transition-all rounded-xl p-3 select-none -mx-2 ${
-                      isSelected
-                        ? "bg-primary/5 border border-primary/10 shadow-sm"
-                        : "hover:bg-surface-container-low border border-transparent"
+                    key={stage.id}
+                    onClick={() => setSelectedStageId(stage.id)}
+                    className={`relative z-10 flex gap-4 cursor-pointer group transition-all rounded-2xl p-3.5 select-none -mx-2 border ${
+                      isSelectedStage
+                        ? "bg-primary/5 border-primary/20 shadow-sm"
+                        : "hover:bg-surface-container-low border-transparent"
                     }`}
                   >
                     {/* Bullet Indicator */}
                     <div className="flex items-start justify-center pt-0.5">
-                      {isCompleted ? (
+                      {isStageCompleted ? (
                         <div className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm shrink-0">
                           <Check className="w-3.5 h-3.5 font-bold" />
                         </div>
-                      ) : isActive ? (
+                      ) : isStageActive ? (
                         <div className="w-6 h-6 rounded-full bg-amber-500 ring-4 ring-amber-500/20 flex items-center justify-center shrink-0">
                           <span className="w-2.5 h-2.5 rounded-full bg-white animate-pulse" />
+                        </div>
+                      ) : isStageFailed ? (
+                        <div className="w-6 h-6 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-sm shrink-0">
+                          <AlertTriangle className="w-3.5 h-3.5 font-bold" />
                         </div>
                       ) : (
                         <div className="w-6 h-6 rounded-full bg-surface border border-outline-variant text-on-surface-variant flex items-center justify-center shrink-0">
@@ -297,61 +402,70 @@ const ExperimentExecutionView = () => {
                       )}
                     </div>
 
-                    {/* Step Information */}
-                    <div className="flex-1 flex flex-col gap-1">
+                    {/* Stage Information */}
+                    <div className="flex-1 flex flex-col gap-1.5">
                       <h4
-                        className={`font-headline text-sm font-semibold tracking-tight transition-colors ${
-                          isSelected
-                            ? "text-primary font-black"
-                            : isPending
+                        className={`font-headline text-sm font-bold tracking-tight transition-colors ${
+                          isSelectedStage
+                            ? "text-primary"
+                            : isStagePending
                             ? "text-on-surface-variant/50"
-                            : "text-on-surface group-hover:text-primary-container"
+                            : "text-on-surface group-hover:text-primary"
                         }`}
                       >
-                        {step.name}
+                        {stage.name}
                       </h4>
 
-                      {/* Completed / Active Metrics labels */}
-                      {isCompleted && step.outputText && (
-                        <p className="text-[11px] font-body text-on-surface-variant/80 font-medium leading-relaxed">
-                          {step.outputText}
-                        </p>
-                      )}
+                      {/* List of steps belonging to this stage */}
+                      <div className="flex flex-col gap-1.5 pl-1 mt-1">
+                        {stage.steps.map((step) => {
+                          const isStepCompleted = step.status === "COMPLETED";
+                          const isStepActive = step.status === "ACTIVE";
+                          const isStepPending = step.status === "PENDING";
+                          const isStepFailed = step.status === "FAILED";
 
-                      {isActive && (
-                        <div className="flex flex-col gap-1.5 mt-1 text-[11px] font-body text-on-surface-variant/80 font-medium">
-                          {step.startTime && <p>Start: {formatLocalDateTime(step.startTime)}</p>}
-                          <p>Duration: {displayPhaseTime} (Active)</p>
-                          {step.subSteps && step.subSteps.length > 0 && (
-                            <ul className="flex flex-col gap-1 mt-2 pl-1 border-l border-primary/20 bg-primary/5 rounded-lg p-2">
-                              {step.subSteps.map((sub, sIdx) => (
-                                <li key={sIdx} className="flex items-center gap-1.5">
-                                  {sub.status === "COMPLETED" ? (
-                                    <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                                  ) : sub.status === "ACTIVE" ? (
-                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
-                                  ) : (
-                                    <span className="w-1.5 h-1.5 rounded-full bg-outline-variant shrink-0" />
-                                  )}
-                                  <span
-                                    className={`${
-                                      sub.status === "PENDING" ? "text-on-surface-variant/40" : "text-on-surface-variant"
-                                    }`}
-                                  >
-                                    {sub.name}
+                          return (
+                            <div
+                              key={step.id}
+                              className="flex items-center justify-between gap-3 px-2 py-1 rounded-lg transition-all"
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                {isStepCompleted ? (
+                                  <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                                ) : isStepActive ? (
+                                  <Loader2 className="w-3.5 h-3.5 text-amber-500 animate-spin shrink-0" />
+                                ) : isStepFailed ? (
+                                  <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                                ) : (
+                                  <Circle className="w-3.5 h-3.5 text-outline-variant/60 shrink-0" />
+                                )}
+                                <span
+                                  className={`text-[12px] truncate ${
+                                    isStepPending
+                                      ? "text-on-surface-variant/40"
+                                      : "text-on-surface/90 font-medium"
+                                  }`}
+                                >
+                                  {step.name}
+                                </span>
+                              </div>
+                              <span className="text-[10px] text-on-surface-variant/60 font-medium whitespace-nowrap">
+                                {isStepActive ? (
+                                  <span className="text-amber-500 font-semibold animate-pulse">
+                                    {displayPhaseTime}
                                   </span>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      )}
-
-                      {isPending && (
-                        <p className="text-[11px] font-body text-on-surface-variant/40 italic">
-                          Awaiting processing
-                        </p>
-                      )}
+                                ) : step.duration ? (
+                                  step.duration
+                                ) : isStepPending ? (
+                                  "Awaiting"
+                                ) : (
+                                  ""
+                                )}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 );
@@ -360,82 +474,114 @@ const ExperimentExecutionView = () => {
           </div>
         </div>
 
-        {/* Right: Selected Phase Status View */}
+        {/* Right: Selected Stage Status View */}
         <div className="w-full lg:w-2/3">
           <div className="bg-surface-card p-8 rounded-3xl border border-outline-variant/15 shadow-xl relative overflow-hidden h-full flex flex-col justify-between">
             {/* Background glowing orb design */}
             <div className="absolute top-0 right-0 w-48 h-48 bg-primary-container/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
 
-            {selectedStep ? (
+            {selectedStage ? (
               <div className="flex-1 flex flex-col gap-6">
                 {/* Detail Section Title, Description, and Timers */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-6 border-b border-outline-variant/10">
-                  {/* Left: Step Info */}
+                  {/* Left: Stage Info */}
                   <div className="flex gap-4">
                     <div className="p-3 bg-secondary-container text-primary-container rounded-2xl shrink-0 self-start shadow-sm">
-                      <StepIcon name={selectedStep.iconName} className="w-6 h-6" />
+                      <StepIcon name={selectedStage.iconName} className="w-6 h-6" />
                     </div>
                     <div>
-                      <h2 className="font-headline text-2xl font-black text-on-surface tracking-tighter">
-                        {selectedStep.name}
-                      </h2>
+                      <div className="flex items-center gap-2">
+                        <h2 className="font-headline text-2xl font-black text-on-surface tracking-tighter">
+                          {selectedStage.name}
+                        </h2>
+                        <Badge
+                          variant={
+                            selectedStage.status === "ACTIVE"
+                              ? "inProgress"
+                              : selectedStage.status === "COMPLETED"
+                              ? "completed"
+                              : selectedStage.status === "FAILED"
+                              ? "failed"
+                              : "pending"
+                          }
+                          className="text-[9px] px-2 py-0.5"
+                        >
+                          {selectedStage.status}
+                        </Badge>
+                      </div>
                       <p className="text-on-surface-variant font-body text-sm max-w-xl mt-1.5 leading-relaxed">
-                        {selectedStep.description}
+                        {selectedStage.description}
                       </p>
-                      {selectedStep.startTime && (
+                      {selectedStageStartTime && (
                         <p className="text-xs font-semibold text-primary-container mt-2 font-label">
-                          Start Time: {formatLocalDateTime(selectedStep.startTime)}
+                          Start Time: {formatLocalDateTime(selectedStageStartTime)}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  {/* Right: Global & Phase Timers */}
+                  {/* Right: Global & Stage Timers */}
                   <div className="text-right flex flex-col min-w-[140px] border-l md:border-l border-t md:border-t-0 border-outline-variant/10 pt-4 md:pt-0 pl-0 md:pl-6 self-stretch md:self-auto justify-center">
                     <span className="font-label font-bold text-[10px] tracking-widest text-on-surface-variant uppercase">
                       Total Execution Time
                     </span>
                     <span className="font-headline text-3xl font-black text-on-surface tracking-tight mt-1 font-label">
-                      {selectedStep.status === "ACTIVE" ? displayTotalTime : data.totalExecutionTime}
+                      {selectedStage.status === "ACTIVE" ? displayTotalTime : data.totalExecutionTime}
                     </span>
-                    {selectedStep.status === "ACTIVE" && (
+                    {selectedStage.status === "ACTIVE" && (
                       <span className="text-[11px] font-semibold text-primary mt-1 font-label">
-                        Current Phase: {displayPhaseTime}
+                        Current Stage: {displayPhaseTime}
                       </span>
                     )}
                   </div>
                 </div>
 
-                {/* Sub-steps Checklist details (only shown if step is active and has them) */}
-                {selectedStep.subSteps && selectedStep.subSteps.length > 0 && (
+                {/* Sub-steps Checklist details for Stage */}
+                {selectedStage.steps && selectedStage.steps.length > 0 && (
                   <div className="flex flex-col gap-3 mt-2 bg-surface-container-low p-5 rounded-2xl border border-outline-variant/10">
                     <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-                      Phase Checklist
+                      Stage Pipeline Steps
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-1">
-                      {selectedStep.subSteps.map((sub, sIdx) => (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
+                      {selectedStage.steps.map((step, sIdx) => (
                         <div
                           key={sIdx}
-                          className="flex items-center gap-3 bg-surface-card p-3.5 rounded-xl border border-outline-variant/15 shadow-sm"
+                          className="flex items-start gap-3 bg-surface-card p-3.5 rounded-xl border border-outline-variant/15 shadow-sm"
                         >
-                          {sub.status === "COMPLETED" ? (
-                            <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                          {step.status === "COMPLETED" ? (
+                            <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 mt-0.5">
                               <Check className="w-3 h-3 font-black" />
                             </div>
-                          ) : sub.status === "ACTIVE" ? (
-                            <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 animate-pulse">
+                          ) : step.status === "ACTIVE" ? (
+                            <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 animate-pulse mt-0.5">
                               <Loader2 className="w-3 h-3 animate-spin" />
                             </div>
+                          ) : step.status === "FAILED" ? (
+                            <div className="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+                              <AlertTriangle className="w-3 h-3 font-black" />
+                            </div>
                           ) : (
-                            <div className="w-5 h-5 rounded-full border border-outline-variant shrink-0" />
+                            <div className="w-5 h-5 rounded-full border border-outline-variant shrink-0 mt-0.5" />
                           )}
-                          <span
-                            className={`text-xs font-medium ${
-                              sub.status === "PENDING" ? "text-on-surface-variant/40" : "text-on-surface"
-                            }`}
-                          >
-                            {sub.name}
-                          </span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <span
+                                className={`text-xs font-bold truncate ${
+                                  step.status === "PENDING" ? "text-on-surface-variant/40" : "text-on-surface"
+                                }`}
+                              >
+                                {step.name}
+                              </span>
+                              {step.duration && (
+                                <span className="text-[10px] text-on-surface-variant/60 font-medium whitespace-nowrap">
+                                  {step.duration}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-on-surface-variant/70 mt-1 leading-snug">
+                              {step.description}
+                            </p>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -445,20 +591,20 @@ const ExperimentExecutionView = () => {
                 {/* Metrics Section */}
                 <div className="flex-1 flex flex-col gap-4">
                   <h3 className="font-headline text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-                    Execution Metrics
+                    Stage Execution Metrics
                   </h3>
 
-                  {selectedStep.status === "PENDING" ? (
+                  {selectedStage.status === "PENDING" ? (
                     <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-outline-variant/20 rounded-2xl flex-1 bg-surface-container-lowest/50">
                       <Clock className="w-10 h-10 text-outline-variant/40 mb-3" />
-                      <p className="text-on-surface font-semibold text-sm">Este paso está en espera</p>
+                      <p className="text-on-surface font-semibold text-sm">Esta etapa está en espera</p>
                       <p className="text-on-surface-variant text-xs mt-1 max-w-[280px]">
-                        Las métricas y telemetría de ejecución se generarán automáticamente en cuanto se inicie esta fase.
+                        Las métricas y telemetría de ejecución se generarán automáticamente en cuanto se inicie esta etapa.
                       </p>
                     </div>
-                  ) : selectedStep.metrics && selectedStep.metrics.length > 0 ? (
+                  ) : stageMetrics.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {selectedStep.metrics.map((metric, mIdx) => {
+                      {stageMetrics.map((metric, mIdx) => {
                         return (
                           <div
                             key={mIdx}
@@ -529,14 +675,14 @@ const ExperimentExecutionView = () => {
                     </div>
                   ) : (
                     <div className="flex items-center justify-center py-12 text-on-surface-variant/60 text-sm italic">
-                      No hay métricas específicas para esta fase.
+                      No hay métricas específicas registradas para esta etapa.
                     </div>
                   )}
                 </div>
               </div>
             ) : (
               <div className="flex items-center justify-center py-20 text-on-surface-variant italic">
-                Selecciona una fase para ver sus detalles.
+                Selecciona una etapa para ver sus detalles.
               </div>
             )}
           </div>
