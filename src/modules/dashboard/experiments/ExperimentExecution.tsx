@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 import { experimentService } from "@/services/experimentService";
 import { networkService } from "@/services/networkService";
-import type { ExperimentExecution } from "@/services/models/Experiment";
+import type { ExperimentExecution, MetricCard } from "@/services/models/Experiment";
 import { Button } from "@/components/atoms/Button";
 import { Breadcrumb } from "@/components/atoms/Breadcrumb";
 import { Badge } from "@/components/atoms/Badge";
@@ -102,22 +102,25 @@ interface ParsedMetricItem {
   progress?: number;
 }
 
-function parseRawMetrics(rawMetrics?: any): ParsedMetricItem[] {
+type RawMetricInput = MetricCard[] | Record<string, string | number | boolean | null | undefined>;
+
+function parseRawMetrics(rawMetrics?: RawMetricInput): ParsedMetricItem[] {
   if (!rawMetrics) return [];
   if (Array.isArray(rawMetrics)) {
-    return rawMetrics.map((m: any) => {
+    return rawMetrics.map((m) => {
       const label = String(m.label || "");
       const value = String(m.value || "");
       return {
         ...m,
+        label,
+        value,
         isLongText: label.length > 20 || value.length > 25,
       };
     });
   }
-  if (typeof rawMetrics !== "object") return [];
 
   return Object.entries(rawMetrics)
-    .filter(([_, val]) => val !== null && val !== undefined && val !== "")
+    .filter(([, val]) => val !== null && val !== undefined && val !== "")
     .map(([key, val]) => {
       const label = METRIC_LABELS[key] || key.replace(/([A-Z])/g, " $1").toUpperCase();
       const stringVal = formatMetricValue(String(val));
@@ -246,43 +249,48 @@ const ExperimentExecutionView = () => {
   const [phaseSeconds, setPhaseSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const fetchExecutionData = async (isInitial = false) => {
-    if (!experimentId) return;
-    try {
-      if (isInitial) setLoading(true);
-      const executionData = await experimentService.getExperimentExecution(experimentId);
-      setData(executionData);
-
-      if (isInitial) {
-        const computedStages = STAGE_DEFINITIONS.map((def) => {
-          const sSteps = executionData.steps.filter((s) => def.stepIds.includes(s.id));
-          const hasActive = sSteps.some((s) => s.status === "ACTIVE");
-          return { id: def.id, hasActive, count: sSteps.length };
-        }).filter((s) => s.count > 0);
-
-        const activeStg = computedStages.find((s) => s.hasActive);
-        const defaultStg = activeStg || computedStages[0];
-        setSelectedStageId(defaultStg?.id || "INIT");
-      }
-
-      setTotalSeconds(parseTimeToSeconds(executionData.totalExecutionTime));
-      setPhaseSeconds(parseTimeToSeconds(executionData.currentPhaseDuration));
-    } catch (err) {
-      if (isInitial) setError("Error loading execution details");
-      console.error("Error polling execution status", err);
-    } finally {
-      if (isInitial) setLoading(false);
-    }
-  };
-
   // Initial load
   useEffect(() => {
-    fetchExecutionData(true);
+    let ignore = false;
+    async function loadInitialData() {
+      if (!experimentId) return;
+      try {
+        const executionData = await experimentService.getExperimentExecution(experimentId);
+        if (!ignore) {
+          setData(executionData);
+
+          const computedStages = STAGE_DEFINITIONS.map((def) => {
+            const sSteps = executionData.steps.filter((s) => def.stepIds.includes(s.id));
+            const hasActive = sSteps.some((s) => s.status === "ACTIVE");
+            return { id: def.id, hasActive, count: sSteps.length };
+          }).filter((s) => s.count > 0);
+
+          const activeStg = computedStages.find((s) => s.hasActive);
+          const defaultStg = activeStg || computedStages[0];
+          setSelectedStageId(defaultStg?.id || "INIT");
+
+          setTotalSeconds(parseTimeToSeconds(executionData.totalExecutionTime));
+          setPhaseSeconds(parseTimeToSeconds(executionData.currentPhaseDuration));
+          setLoading(false);
+        }
+      } catch (err) {
+        if (!ignore) {
+          setError("Error loading execution details");
+          console.error("Error loading execution details", err);
+          setLoading(false);
+        }
+      }
+    }
+
+    loadInitialData();
+    return () => {
+      ignore = true;
+    };
   }, [experimentId]);
 
   // Polling loop for active execution (fetches every 3 seconds when pipeline or any step is ACTIVE)
   useEffect(() => {
-    if (!data) return;
+    if (!data || !experimentId) return;
 
     const isPipelineActive =
       data.status === "ACTIVE" ||
@@ -290,12 +298,25 @@ const ExperimentExecutionView = () => {
 
     if (!isPipelineActive) return;
 
-    const pollInterval = setInterval(() => {
-      fetchExecutionData(false);
+    let ignore = false;
+    const pollInterval = setInterval(async () => {
+      try {
+        const executionData = await experimentService.getExperimentExecution(experimentId);
+        if (!ignore) {
+          setData(executionData);
+          setTotalSeconds(parseTimeToSeconds(executionData.totalExecutionTime));
+          setPhaseSeconds(parseTimeToSeconds(executionData.currentPhaseDuration));
+        }
+      } catch (err) {
+        console.error("Error polling execution status", err);
+      }
     }, 3000);
 
-    return () => clearInterval(pollInterval);
-  }, [data?.status, experimentId]);
+    return () => {
+      ignore = true;
+      clearInterval(pollInterval);
+    };
+  }, [data, experimentId]);
 
   // Ticker for live UI counter
   useEffect(() => {
