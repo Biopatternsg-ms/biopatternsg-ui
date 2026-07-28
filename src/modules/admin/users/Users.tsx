@@ -21,7 +21,7 @@ import { Users as UsersIcon, Plus, Key, Power, CheckCircle2, XCircle } from "luc
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/atoms/Button";
 import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
-import { getAdminUsers, type UserModel } from "@/services/userService";
+import { getAdminUsers, setAdminUserStatus, type UserModel } from "@/services/userService";
 import { recoverPassword } from "@/services/authService";
 import { SuccessModal } from "@/components/molecules/SuccessModal";
 import { ErrorModal } from "@/components/molecules/ErrorModal";
@@ -45,6 +45,8 @@ const Users = () => {
 
   const [successModalOpen, setSuccessModalOpen] = useState<boolean>(false);
   const [errorModalOpen, setErrorModalOpen] = useState<boolean>(false);
+  const [successContent, setSuccessContent] = useState<{ title: string; message: string }>({ title: "", message: "" });
+  const [errorContent, setErrorContent] = useState<{ title: string; message: string }>({ title: "", message: "" });
 
   // Basic pagination state (could be expanded to be controlled by DataTable)
   const [page] = useState(0);
@@ -71,23 +73,56 @@ const Users = () => {
 
   const handleRecoveryPassword = async (username: string) => {
     try {
-      setLoading(true);
       const response = await recoverPassword({ username });
       if (response.ok) {
+        setSuccessContent({
+          title: "Check Your Inbox!",
+          message: "We have sent you an email. Please check your inbox for instructions.",
+        });
         setSuccessModalOpen(true);
       } else {
+        setErrorContent({
+          title: "Recovery Error",
+          message: "An issue occurred while recovering your password.",
+        });
         setErrorModalOpen(true);
       }
     } catch {
+      setErrorContent({
+        title: "Recovery Error",
+        message: "An issue occurred while recovering your password.",
+      });
       setErrorModalOpen(true);
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleToggleEnabled = (id: string, currentState: boolean | string) => {
-    console.log("Cambiar estado de usuario:", id, "Estado actual:", currentState);
-    // TODO: Connect with actual API
+  const handleToggleEnabled = async (id: string, currentState: boolean) => {
+    const newState = !currentState;
+    try {
+      const response = await setAdminUserStatus(id, newState);
+      if (response.ok) {
+        setUsers((prev) =>
+          prev.map((user) => (user.id === id ? { ...user, enabled: newState } : user))
+        );
+        setSuccessContent({
+          title: newState ? "Usuario habilitado" : "Usuario deshabilitado",
+          message: `El usuario fue ${newState ? "habilitado" : "deshabilitado"} exitosamente.`,
+        });
+        setSuccessModalOpen(true);
+      } else {
+        setErrorContent({
+          title: "Error de estado",
+          message: "No se pudo cambiar el estado del usuario.",
+        });
+        setErrorModalOpen(true);
+      }
+    } catch {
+      setErrorContent({
+        title: "Error de estado",
+        message: "No se pudo cambiar el estado del usuario.",
+      });
+      setErrorModalOpen(true);
+    }
   };
 
   const columns: ColumnDef<UserModel>[] = [
@@ -110,7 +145,7 @@ const Users = () => {
       header: "Status",
       className: "col-span-2",
       render: (item) => {
-        const isEnabled = item.enabled === true || item.enabled === "true";
+        const isEnabled = item.enabled;
         return (
           <div className="flex items-center gap-2">
             {isEnabled ? (
@@ -150,9 +185,9 @@ const Users = () => {
             variant="icon"
             size="icon"
             onClick={() => handleToggleEnabled(item.id, item.enabled)}
-            title={item.enabled === true || item.enabled === "true" ? "Disable" : "Enable"}
+            title={item.enabled ? "Disable" : "Enable"}
           >
-            <Power className={cn("w-[18px] h-[18px]", (item.enabled === true || item.enabled === "true") ? "text-red-500 hover:text-red-600" : "text-green-500 hover:text-green-600")} />
+            <Power className={cn("w-[18px] h-[18px]", item.enabled ? "text-red-500 hover:text-red-600" : "text-green-500 hover:text-green-600")} />
           </Button>
         </div>
       ),
@@ -203,15 +238,15 @@ const Users = () => {
 
       <SuccessModal
         open={successModalOpen}
-        title="Check Your Inbox!"
-        message="We have sent you an email. Please check your inbox for instructions."
+        title={successContent.title}
+        message={successContent.message}
         onClose={() => setSuccessModalOpen(false)}
       />
 
       <ErrorModal
         open={errorModalOpen}
-        title="Recovery Error"
-        message="An issue occurred while recovering your password."
+        title={errorContent.title}
+        message={errorContent.message}
         onClose={() => setErrorModalOpen(false)}
       />
     </div>

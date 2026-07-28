@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { USERS_ENDPOINT, ADMIN_USERS_ENDPOINT, CREATE_ADMIN_USER_ENDPOINT } from "@/services/apiConfig";
+import { USERS_ENDPOINT, ADMIN_USERS_ENDPOINT, CREATE_ADMIN_USER_ENDPOINT, adminUserStatusEndpoint } from "@/services/apiConfig";
 import type { RegisterPayload, CreateAdminUserPayload } from "@/domain/models/User";
 import { baseFetch, authFetch } from "@/core/http/httpClient";
 
@@ -40,7 +40,7 @@ export interface UserModel {
   username: string;
   firstName: string;
   lastName: string;
-  enabled: boolean | string;
+  enabled: boolean;
   createdTimestamp: number;
 }
 
@@ -64,5 +64,19 @@ export async function createAdminUser(payload: CreateAdminUserPayload): Promise<
   return authFetch(CREATE_ADMIN_USER_ENDPOINT, {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Toggles the enabled status of a user (admin operation).
+ * PUT /config-and-control/admin/user/{userId}/status
+ * Body: { enabled: boolean } — the new desired state.
+ *
+ * Returns the raw Fetch Response so the caller can inspect the status code.
+ */
+export async function setAdminUserStatus(userId: string, enabled: boolean): Promise<Response> {
+  return authFetch(adminUserStatusEndpoint(userId), {
+    method: "PUT",
+    body: JSON.stringify({ enabled }),
   });
 }
