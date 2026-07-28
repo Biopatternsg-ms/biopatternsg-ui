@@ -29,10 +29,8 @@ import {
   FileText,
   AlertTriangle,
   ArrowLeft,
-  Loader2,
-  Microscope,
+  Loader2,  Microscope,
   Info,
-  Clock,
   Hash,
   Network as NetworkIcon,
   type LucideIcon
@@ -49,7 +47,7 @@ const stepIcons: Record<string, LucideIcon> = {
   GitBranch: GitBranch,
   Cpu: Cpu,
   Activity: Activity,
-  FileText: FileText
+  FileText: FileText,
 };
 
 function StepIcon({ name, className }: { name: string; className?: string }) {
@@ -88,7 +86,7 @@ const METRIC_LABELS: Record<string, string> = {
   notAlignedObjects: "UNALIGNED OBJECTS",
 };
 
-function formatMetricValue(key: string, value: string): string {
+function formatMetricValue(value: string): string {
   if (value === "true") return "Yes";
   if (value === "false") return "No";
   return value;
@@ -122,7 +120,7 @@ function parseRawMetrics(rawMetrics?: any): ParsedMetricItem[] {
     .filter(([_, val]) => val !== null && val !== undefined && val !== "")
     .map(([key, val]) => {
       const label = METRIC_LABELS[key] || key.replace(/([A-Z])/g, " $1").toUpperCase();
-      const stringVal = formatMetricValue(key, String(val));
+      const stringVal = formatMetricValue(String(val));
       const isLongText =
         label.length > 20 ||
         stringVal.length > 25 ||
