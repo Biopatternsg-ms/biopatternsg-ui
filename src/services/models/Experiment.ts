@@ -67,7 +67,7 @@ export interface PipelineStepExecution {
   description: string;
   iconName: string;
   subSteps?: SubStep[];
-  metrics?: MetricCard[];
+  metrics?: MetricCard[] | Record<string, string>;
 }
 
 export interface ExperimentExecution {

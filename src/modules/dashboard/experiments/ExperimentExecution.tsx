@@ -54,6 +54,87 @@ function StepIcon({ name, className }: { name: string; className?: string }) {
   return <IconComponent className={className} />;
 }
 
+const METRIC_LABELS: Record<string, string> = {
+  // Initialization Stage
+  expertObjectsConfigured: "CONFIGURED EXPERT OBJECTS",
+  expertObjectSymbols: "EXPERT OBJECTS",
+  searchLevels: "SEARCH LEVELS",
+  retMax: "PUBMED LIMIT (RETMAX)",
+  maxComplexes: "MAX COMPLEXES",
+  useOnlyPrincipalName: "USE ONLY PRINCIPAL NAME",
+  tfSources: "TF SOURCES",
+  promoterRegion: "PROMOTER REGION",
+  genome: "REGISTERED GENOME",
+  chromosome: "CHROMOSOME",
+
+  // Biological Objects Stage
+  transcriptionFactorsFound: "TRANSCRIPTION FACTORS FOUND",
+  expertObjectsValidated: "EXPERT OBJECTS VALIDATED",
+  totalMinedObjects: "TOTAL MINED OBJECTS",
+
+  // PubMed Integration Stage
+  combinationsGenerated: "PUBMED COMBINATIONS GENERATED",
+  pubmedIdsFound: "PUBMED IDS FOUND",
+  pairsSearched: "PAIRS SEARCHED",
+  pmidsAnnotated: "ANNOTATED PMIDS (PUBTATOR)",
+  pmidsNotFound: "PMIDS WITHOUT EVENTS",
+  kbEventsGenerated: "KNOWLEDGE BASE EVENTS",
+  pmidsProcessed: "PMIDS PROCESSED (KB)",
+  pmidsWithErrors: "PMIDS WITH ERRORS (KB)",
+  alignedObjects: "ALIGNED OBJECTS",
+  notAlignedObjects: "UNALIGNED OBJECTS",
+};
+
+function formatMetricValue(key: string, value: string): string {
+  if (value === "true") return "Yes";
+  if (value === "false") return "No";
+  return value;
+}
+
+interface ParsedMetricItem {
+  label: string;
+  value: string;
+  isLongText?: boolean;
+  hasWarnings?: boolean;
+  subLabel?: string;
+  subLabelColor?: string;
+  progress?: number;
+}
+
+function parseRawMetrics(rawMetrics?: any): ParsedMetricItem[] {
+  if (!rawMetrics) return [];
+  if (Array.isArray(rawMetrics)) {
+    return rawMetrics.map((m: any) => {
+      const label = String(m.label || "");
+      const value = String(m.value || "");
+      return {
+        ...m,
+        isLongText: label.length > 20 || value.length > 25,
+      };
+    });
+  }
+  if (typeof rawMetrics !== "object") return [];
+
+  return Object.entries(rawMetrics)
+    .filter(([_, val]) => val !== null && val !== undefined && val !== "")
+    .map(([key, val]) => {
+      const label = METRIC_LABELS[key] || key.replace(/([A-Z])/g, " $1").toUpperCase();
+      const stringVal = formatMetricValue(key, String(val));
+      const isLongText =
+        label.length > 20 ||
+        stringVal.length > 25 ||
+        key === "promoterRegion" ||
+        key === "expertObjectSymbols" ||
+        key === "tfSources";
+
+      return {
+        label,
+        value: stringVal,
+        isLongText,
+      };
+    });
+}
+
 // Helper to parse "hh:mm:ss" to total seconds
 function parseTimeToSeconds(timeStr?: string): number {
   if (!timeStr) return 0;
@@ -219,7 +300,7 @@ const ExperimentExecutionView = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <p className="text-on-surface-variant text-sm font-medium">Cargando detalles de ejecución...</p>
+        <p className="text-on-surface-variant text-sm font-medium">Loading execution details...</p>
       </div>
     );
   }
@@ -230,9 +311,9 @@ const ExperimentExecutionView = () => {
         <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center">
           <AlertTriangle className="w-6 h-6" />
         </div>
-        <p className="text-on-surface font-semibold text-lg">{error || "No se pudieron cargar los datos"}</p>
+        <p className="text-on-surface font-semibold text-lg">{error || "Failed to load execution details"}</p>
         <Button variant="ghost" onClick={() => navigate(`/dashboard/experiments/${networkId}`)}>
-          Volver a Experimentos
+          Back to Experiments
         </Button>
       </div>
     );
@@ -289,10 +370,6 @@ const ExperimentExecutionView = () => {
     ? selectedStage.steps.find((step) => step.startTime)?.startTime
     : undefined;
 
-  const stageMetrics = selectedStage
-    ? selectedStage.steps.flatMap((step) => step.metrics || [])
-    : [];
-
   return (
     <div className="flex flex-col gap-6">
       {/* Breadcrumb Navigation & Back Actions */}
@@ -316,7 +393,7 @@ const ExperimentExecutionView = () => {
           className="gap-2 hover:bg-surface-container-high text-on-surface-variant font-medium text-xs rounded-lg border border-outline-variant/15"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          Volver a Experimentos
+          Back to Experiments
         </Button>
       </div>
 
@@ -543,146 +620,79 @@ const ExperimentExecutionView = () => {
                       Stage Pipeline Steps
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
-                      {selectedStage.steps.map((step, sIdx) => (
-                        <div
-                          key={sIdx}
-                          className="flex items-start gap-3 bg-surface-card p-3.5 rounded-xl border border-outline-variant/15 shadow-sm"
-                        >
-                          {step.status === "COMPLETED" ? (
-                            <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 mt-0.5">
-                              <Check className="w-3 h-3 font-black" />
-                            </div>
-                          ) : step.status === "ACTIVE" ? (
-                            <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 animate-pulse mt-0.5">
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                            </div>
-                          ) : step.status === "FAILED" ? (
-                            <div className="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0 mt-0.5">
-                              <AlertTriangle className="w-3 h-3 font-black" />
-                            </div>
-                          ) : (
-                            <div className="w-5 h-5 rounded-full border border-outline-variant shrink-0 mt-0.5" />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2">
-                              <span
-                                className={`text-xs font-bold truncate ${
-                                  step.status === "PENDING" ? "text-on-surface-variant/40" : "text-on-surface"
-                                }`}
-                              >
-                                {step.name}
-                              </span>
-                              {step.duration && (
-                                <span className="text-[10px] text-on-surface-variant/60 font-medium whitespace-nowrap">
-                                  {step.duration}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-[11px] text-on-surface-variant/70 mt-1 leading-snug">
-                              {step.description}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                      {selectedStage.steps.map((step, sIdx) => {
+                        const stepMetrics = parseRawMetrics(step.metrics);
 
-                {/* Metrics Section */}
-                <div className="flex-1 flex flex-col gap-4">
-                  <h3 className="font-headline text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-                    Stage Execution Metrics
-                  </h3>
-
-                  {selectedStage.status === "PENDING" ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-outline-variant/20 rounded-2xl flex-1 bg-surface-container-lowest/50">
-                      <Clock className="w-10 h-10 text-outline-variant/40 mb-3" />
-                      <p className="text-on-surface font-semibold text-sm">Esta etapa está en espera</p>
-                      <p className="text-on-surface-variant text-xs mt-1 max-w-[280px]">
-                        Las métricas y telemetría de ejecución se generarán automáticamente en cuanto se inicie esta etapa.
-                      </p>
-                    </div>
-                  ) : stageMetrics.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {stageMetrics.map((metric, mIdx) => {
                         return (
                           <div
-                            key={mIdx}
-                            className={`p-6 rounded-2xl border flex flex-col justify-between min-h-[140px] shadow-sm relative overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md ${
-                              metric.hasWarnings
-                                ? "bg-rose-50/20 border-rose-200/50 dark:border-rose-900/30 shadow-sm"
-                                : "bg-surface-container border-outline-variant/15"
-                            }`}
+                            key={sIdx}
+                            className="flex flex-col bg-surface-card p-4 rounded-xl border border-outline-variant/15 shadow-sm gap-3"
                           >
-                            <div>
-                              <div className="flex justify-between items-start gap-3">
-                                <span className="font-label font-bold text-[10px] tracking-widest text-on-surface-variant/75 uppercase">
-                                  {metric.label}
-                                </span>
-                                {metric.hasWarnings && (
-                                  <div className="flex gap-1">
-                                    <div className="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                                      <AlertTriangle className="w-3.5 h-3.5" />
-                                    </div>
-                                    <div className="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-xs">
-                                      !
-                                    </div>
-                                  </div>
-                                )}
+                            <div className="flex items-start gap-3">
+                              {step.status === "COMPLETED" ? (
+                                <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+                                  <Check className="w-3 h-3 font-black" />
+                                </div>
+                              ) : step.status === "ACTIVE" ? (
+                                <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 animate-pulse mt-0.5">
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                </div>
+                              ) : step.status === "FAILED" ? (
+                                <div className="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+                                  <AlertTriangle className="w-3 h-3 font-black" />
+                                </div>
+                              ) : (
+                                <div className="w-5 h-5 rounded-full border border-outline-variant shrink-0 mt-0.5" />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span
+                                    className={`text-xs font-bold truncate ${
+                                      step.status === "PENDING" ? "text-on-surface-variant/40" : "text-on-surface"
+                                    }`}
+                                  >
+                                    {step.name}
+                                  </span>
+                                  {step.duration && (
+                                    <span className="text-[10px] text-on-surface-variant/60 font-medium whitespace-nowrap">
+                                      {step.duration}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-on-surface-variant/70 mt-1 leading-snug">
+                                  {step.description}
+                                </p>
                               </div>
-                              <h3
-                                className={`text-3xl font-headline font-black mt-2 tracking-tight ${
-                                  metric.hasWarnings ? "text-amber-600 dark:text-amber-400" : "text-on-surface"
-                                }`}
-                              >
-                                {metric.value}
-                              </h3>
                             </div>
 
-                            {/* Sublabel / Trend */}
-                            {metric.subLabel && (
-                              <p
-                                className={`text-xs font-semibold mt-3 ${
-                                  metric.subLabelColor === "green"
-                                    ? "text-emerald-600 dark:text-emerald-400"
-                                    : metric.subLabelColor === "red"
-                                    ? "text-rose-600 dark:text-rose-400"
-                                    : metric.subLabelColor === "blue"
-                                    ? "text-primary"
-                                    : "text-on-surface-variant"
-                                }`}
-                              >
-                                {metric.subLabel}
-                              </p>
-                            )}
-
-                            {/* Optional Progress Bar */}
-                            {metric.progress !== undefined && (
-                              <div className="w-full mt-4">
-                                <div className="h-1.5 w-full bg-outline-variant/25 rounded-full overflow-hidden">
+                            {/* Render step metrics directly inside the step card */}
+                            {stepMetrics.length > 0 && (
+                              <div className="pt-3 border-t border-outline-variant/10 flex flex-col gap-2.5 mt-1">
+                                {stepMetrics.map((metric, mIdx) => (
                                   <div
-                                    className={`h-full rounded-full transition-all duration-500 ${
-                                      metric.hasWarnings ? "bg-amber-500" : "bg-primary"
-                                    }`}
-                                    style={{ width: `${metric.progress}%` }}
-                                  />
-                                </div>
+                                    key={mIdx}
+                                    className="bg-surface-container-low/70 p-2.5 rounded-lg border border-outline-variant/10 flex flex-col w-full gap-1.5"
+                                  >
+                                    <span className="font-label font-bold text-[9px] tracking-wider text-on-surface-variant/75 uppercase break-words">
+                                      {metric.label}
+                                    </span>
+                                    <div className="max-h-24 overflow-y-auto font-mono text-[11px] font-semibold text-on-surface bg-surface-container-lowest/90 p-2 rounded-md border border-outline-variant/15 break-all select-all leading-relaxed custom-scrollbar">
+                                      {metric.value}
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
                             )}
                           </div>
                         );
                       })}
                     </div>
-                  ) : (
-                    <div className="flex items-center justify-center py-12 text-on-surface-variant/60 text-sm italic">
-                      No hay métricas específicas registradas para esta etapa.
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center justify-center py-20 text-on-surface-variant italic">
-                Selecciona una etapa para ver sus detalles.
+                Select a stage to view its details.
               </div>
             )}
           </div>
