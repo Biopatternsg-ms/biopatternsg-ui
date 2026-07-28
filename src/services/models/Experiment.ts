@@ -73,6 +73,7 @@ export interface PipelineStepExecution {
 export interface ExperimentExecution {
   experimentId: string;
   experimentName: string;
+  networkId?: string;
   status: "ACTIVE" | "COMPLETED" | "FAILED" | "PENDING";
   totalExecutionTime: string;
   currentPhaseDuration: string;

@@ -18,7 +18,7 @@
  */
 
 import { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   Check,
   Circle,
@@ -33,9 +33,12 @@ import {
   Microscope,
   Info,
   Clock,
+  Hash,
+  Network as NetworkIcon,
   type LucideIcon
 } from "lucide-react";
 import { experimentService } from "@/services/experimentService";
+import { networkService } from "@/services/networkService";
 import type { ExperimentExecution } from "@/services/models/Experiment";
 import { Button } from "@/components/atoms/Button";
 import { Breadcrumb } from "@/components/atoms/Breadcrumb";
@@ -222,6 +225,23 @@ const ExperimentExecutionView = () => {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<ExperimentExecution | null>(null);
   const [selectedStageId, setSelectedStageId] = useState<string | null>(null);
+  const [networkName, setNetworkName] = useState<string | null>(null);
+
+  // Fetch Network details
+  useEffect(() => {
+    const targetNetworkId = networkId || data?.networkId;
+    if (targetNetworkId) {
+      networkService
+        .getNetworks()
+        .then((networks) => {
+          const found = networks.find((n) => n.id === targetNetworkId);
+          if (found) {
+            setNetworkName(found.name);
+          }
+        })
+        .catch((err) => console.warn("Failed to fetch network details", err));
+    }
+  }, [networkId, data?.networkId]);
 
   // Live timer & polling states
   const [totalSeconds, setTotalSeconds] = useState(0);
@@ -423,7 +443,28 @@ const ExperimentExecutionView = () => {
               {data.status}
             </Badge>
           </div>
-          <p className="text-xs text-on-surface-variant mt-0.5">ID: {data.experimentId}</p>
+            <div className="flex items-center gap-3 mt-2 flex-wrap text-xs text-on-surface-variant">
+              <div className="flex items-center gap-1.5 bg-surface-container-high px-2.5 py-1 rounded-lg border border-outline-variant/15 text-xs">
+                <Hash className="w-3.5 h-3.5 text-primary" />
+                <span className="text-on-surface-variant font-medium">ID:</span>
+                <code className="font-mono font-bold text-primary text-xs select-all">
+                  {data.experimentId}
+                </code>
+              </div>
+
+              {(networkId || data.networkId) && (
+                <div className="flex items-center gap-1.5 bg-surface-container-high px-2.5 py-1 rounded-lg border border-outline-variant/15 text-xs">
+                  <NetworkIcon className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-on-surface-variant font-medium">Network:</span>
+                  <Link
+                    to={`/dashboard/experiments/${networkId || data.networkId}`}
+                    className="font-bold hover:underline text-primary"
+                  >
+                    {networkName || networkId || data.networkId}
+                  </Link>
+                </div>
+              )}
+            </div>
         </div>
       </div>
 

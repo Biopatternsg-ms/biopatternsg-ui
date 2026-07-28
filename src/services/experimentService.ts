@@ -144,10 +144,12 @@ export const experimentService = {
    */
   async getExperimentExecution(experimentId: string): Promise<ExperimentExecution> {
     let experimentName = "Protein Folding Analysis";
+    let networkId = "";
     try {
       const exp = await this.getPipelineById(experimentId);
-      if (exp && exp.name) {
-        experimentName = exp.name;
+      if (exp) {
+        if (exp.name) experimentName = exp.name;
+        if (exp.networkId) networkId = exp.networkId;
       }
     } catch (err) {
       console.warn("Failed to fetch experiment details for name, using default name", err);
@@ -156,13 +158,20 @@ export const experimentService = {
     try {
       const response = await authFetch(`${PIPELINES_ENDPOINT}/${experimentId}/execution`);
       if (response.ok) {
-        return await response.json();
+        const data = await response.json();
+        return {
+          ...data,
+          networkId: data.networkId || networkId,
+        };
       }
     } catch (err) {
       console.warn("Failed to fetch execution details from backend, falling back to mock data", err);
     }
 
-    return getMockExecutionData(experimentId, experimentName);
+    return {
+      ...getMockExecutionData(experimentId, experimentName),
+      networkId,
+    };
   },
 };
 
