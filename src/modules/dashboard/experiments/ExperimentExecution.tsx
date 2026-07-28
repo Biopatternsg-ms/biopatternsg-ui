@@ -364,10 +364,10 @@ const ExperimentExecutionView = () => {
 
   // Group steps by stages
   const matchedStepIds = new Set(STAGE_DEFINITIONS.flatMap((def) => def.stepIds));
-  const unmatchedSteps = data ? data.steps.filter((step) => !matchedStepIds.has(step.id)) : [];
+  const unmatchedSteps = data.steps.filter((step) => !matchedStepIds.has(step.id));
 
   const stages = STAGE_DEFINITIONS.map((def) => {
-    const stageSteps = data ? data.steps.filter((step) => def.stepIds.includes(step.id)) : [];
+    const stageSteps = data.steps.filter((step) => def.stepIds.includes(step.id));
     let status: "COMPLETED" | "ACTIVE" | "PENDING" | "FAILED" = "PENDING";
     if (stageSteps.length > 0) {
       const hasFailed = stageSteps.some((s) => s.status === "FAILED");
