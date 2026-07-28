@@ -36,6 +36,9 @@ export interface DataTableProps<T> {
   error?: string | null;
   emptyMessage?: string;
   keyExtractor: (item: T) => string | number;
+  totalCount?: number;
+  pageIndex?: number;
+  onPageChange?: (page: number) => void;
 }
 
 export function DataTable<T>({
@@ -45,18 +48,32 @@ export function DataTable<T>({
   error = null,
   emptyMessage = "No data available.",
   keyExtractor,
+  totalCount,
+  pageIndex,
+  onPageChange,
 }: DataTableProps<T>) {
-  const [currentPage, setCurrentPage] = useState(1);
+  const [internalPage, setInternalPage] = useState(1);
 
-  const totalPages = Math.max(1, Math.ceil(data.length / ROWS_PER_PAGE));
-  const paginatedData = data.slice(
-    (currentPage - 1) * ROWS_PER_PAGE,
-    currentPage * ROWS_PER_PAGE
-  );
+  const isServerSide = totalCount !== undefined && pageIndex !== undefined && onPageChange !== undefined;
+  
+  const currentPage = isServerSide ? pageIndex + 1 : internalPage;
+  const actualTotalCount = isServerSide ? totalCount : data.length;
+  
+  const totalPages = Math.max(1, Math.ceil(actualTotalCount / ROWS_PER_PAGE));
+  const paginatedData = isServerSide 
+    ? data 
+    : data.slice(
+        (currentPage - 1) * ROWS_PER_PAGE,
+        currentPage * ROWS_PER_PAGE
+      );
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
+      if (isServerSide) {
+        onPageChange(page - 1);
+      } else {
+        setInternalPage(page);
+      }
     }
   };
 
@@ -128,10 +145,10 @@ export function DataTable<T>({
       </div>
 
       {/* Pagination */}
-      {data.length > 0 && (
+      {(isServerSide ? actualTotalCount > 0 : data.length > 0) && (
         <div className="flex items-center justify-between px-2 mt-6">
           <span className="font-body text-sm text-on-surface-variant">
-            Showing {paginatedData.length} of {data.length} items
+            Showing {paginatedData.length} of {actualTotalCount} items
           </span>
 
           <div className="flex items-center gap-1">

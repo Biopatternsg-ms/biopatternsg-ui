@@ -28,13 +28,18 @@ export interface Network {
   createdAt: number;
 }
 
+export interface PaginatedResponse<T> {
+  count: number;
+  list: T[];
+}
+
 export const networkService = {
   /**
    * Retrieves the list of networks using authFetch, which automatically
    * injects the Authorization: Bearer token into the headers.
    */
-  async getNetworks(): Promise<Network[]> {
-    const response = await authFetch(NETWORKS_ENDPOINT);
+  async getNetworks(page: number = 0, size: number = 10): Promise<PaginatedResponse<Network>> {
+    const response = await authFetch(`${NETWORKS_ENDPOINT}?page=${page}&size=${size}`);
 
     if (!response.ok) {
       throw new Error("Failed to fetch networks");

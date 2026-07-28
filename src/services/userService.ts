@@ -44,10 +44,15 @@ export interface UserModel {
   createdTimestamp: number;
 }
 
+export interface PaginatedResponse<T> {
+  count: number;
+  list: T[];
+}
+
 /**
  * Fetches the paginated list of users for the admin dashboard.
  */
-export async function getAdminUsers(page: number = 0, size: number = 10): Promise<UserModel[]> {
+export async function getAdminUsers(page: number = 0, size: number = 10): Promise<PaginatedResponse<UserModel>> {
   const response = await authFetch(`${ADMIN_USERS_ENDPOINT}?page=${page}&size=${size}`, {
     method: "GET",
   });

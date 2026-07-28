@@ -40,6 +40,7 @@ const formatUnixTime = (unixSeconds: number) => {
 
 const Users = () => {
   const [users, setUsers] = useState<UserModel[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,7 +50,7 @@ const Users = () => {
   const [errorContent, setErrorContent] = useState<{ title: string; message: string }>({ title: "", message: "" });
 
   // Basic pagination state (could be expanded to be controlled by DataTable)
-  const [page] = useState(0);
+  const [page, setPage] = useState(0);
   const [size] = useState(10);
 
   const navigate = useNavigate();
@@ -59,7 +60,8 @@ const Users = () => {
       try {
         setLoading(true);
         const data = await getAdminUsers(page, size);
-        setUsers(data);
+        setUsers(data.list);
+        setTotalCount(data.count);
       } catch (err) {
         setError("Error al cargar los usuarios");
         console.error(err);
@@ -228,6 +230,9 @@ const Users = () => {
       <div className="mt-8">
         <DataTable
           data={users}
+          totalCount={totalCount}
+          pageIndex={page}
+          onPageChange={setPage}
           columns={columns}
           loading={loading}
           error={error}

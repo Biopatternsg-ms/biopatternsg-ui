@@ -41,8 +41,11 @@ const Experiments = () => {
   const navigate = useNavigate();
 
   const [pipelines, setPipelines] = useState<Experiment[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState<number>(0);
+  const [size] = useState<number>(10);
 
   const [prevNetworkId, setPrevNetworkId] = useState(networkId);
 
@@ -53,23 +56,25 @@ const Experiments = () => {
 
   const fetchPipelines = useCallback(async () => {
     try {
-      const data = await experimentService.getPipelines(networkId);
-      setPipelines(data);
+      const data = await experimentService.getPipelines(networkId, page, size);
+      setPipelines(data.list);
+      setTotalCount(data.count);
     } catch (err) {
       setError("Error loading experiments");
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [networkId]);
+  }, [networkId, page, size]);
 
   useEffect(() => {
     let isMounted = true;
     const load = async () => {
       try {
-        const data = await experimentService.getPipelines(networkId);
+        const data = await experimentService.getPipelines(networkId, page, size);
         if (isMounted) {
-          setPipelines(data);
+          setPipelines(data.list);
+          setTotalCount(data.count);
         }
       } catch (err) {
         if (isMounted) {
@@ -86,7 +91,7 @@ const Experiments = () => {
     return () => {
       isMounted = false;
     };
-  }, [networkId]);
+  }, [networkId, page, size]);
 
   const handleLaunch = async (pipelineId: string) => {
     try {
@@ -237,6 +242,9 @@ const Experiments = () => {
       {/* Pipelines Data Table */}
       <DataTable
         data={pipelines}
+        totalCount={totalCount}
+        pageIndex={page}
+        onPageChange={setPage}
         columns={columns}
         loading={loading}
         error={error}
