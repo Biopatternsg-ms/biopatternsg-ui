@@ -29,7 +29,8 @@ import {
   FileText,
   AlertTriangle,
   ArrowLeft,
-  Loader2,  Microscope,
+  Loader2,
+  Microscope,
   Info,
   Hash,
   Network as NetworkIcon,
@@ -196,14 +197,14 @@ const STAGE_DEFINITIONS = [
   },
   {
     id: "BIOLOGICAL_OBJECT",
-    name: "Biological Objects",
+    name: "Discovery Biological Objects",
     description: "Extracts transcription factors, processes expert biological objects, and configures hierarchy levels.",
     iconName: "Cpu",
     stepIds: ["step-transcription_factor", "step-expert_objects", "step-search_levels", "step-3"],
   },
   {
     id: "PUBMED_INTEGRATION",
-    name: "PubMed Integration",
+    name: "Build Knowledge Bases",
     description: "Generates combinations, queries PubMed identifiers, extracts PubTator annotations, and builds the knowledge base graph.",
     iconName: "GitBranch",
     stepIds: [
