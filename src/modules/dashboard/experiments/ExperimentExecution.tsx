@@ -235,8 +235,8 @@ const ExperimentExecutionView = () => {
     if (targetNetworkId) {
       networkService
         .getNetworks()
-        .then((networks) => {
-          const found = networks.find((n) => n.id === targetNetworkId);
+        .then((response) => {
+          const found = response.list.find((n) => n.id === targetNetworkId);
           if (found) {
             setNetworkName(found.name);
           }
