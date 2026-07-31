@@ -227,19 +227,17 @@ const Users = () => {
       </div>
 
       {/* Users Data Table */}
-      <div className="mt-8">
-        <DataTable
-          data={users}
-          totalCount={totalCount}
-          pageIndex={page}
-          onPageChange={setPage}
-          columns={columns}
-          loading={loading}
-          error={error}
-          emptyMessage="No hay usuarios disponibles."
-          keyExtractor={(item) => item.id}
-        />
-      </div>
+      <DataTable
+        data={users}
+        totalCount={totalCount}
+        pageIndex={page}
+        onPageChange={setPage}
+        columns={columns}
+        loading={loading}
+        error={error}
+        emptyMessage="No hay usuarios disponibles."
+        keyExtractor={(item) => item.id}
+      />
 
       <SuccessModal
         open={successModalOpen}
