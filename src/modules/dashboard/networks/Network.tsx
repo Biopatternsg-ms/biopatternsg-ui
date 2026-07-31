@@ -100,7 +100,14 @@ const Network = () => {
           <Button
             variant="icon"
             size="icon"
-            onClick={() => navigate(`/dashboard/experiments/${item.id}`)}
+            onClick={() =>
+              navigate(`/dashboard/experiments/${item.id}`, {
+                state: {
+                  networkName: item.name,
+                  networkDescription: item.description,
+                },
+              })
+            }
             title="Open"
           >
             <FolderOpen className="w-[18px] h-[18px]" />

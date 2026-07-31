@@ -60,17 +60,17 @@ export function DataTable<T>({
   const [internalPage, setInternalPage] = useState(1);
 
   const isServerSide = totalCount !== undefined && pageIndex !== undefined && onPageChange !== undefined;
-  
+
   const currentPage = isServerSide ? pageIndex + 1 : internalPage;
   const actualTotalCount = isServerSide ? totalCount : data.length;
-  
+
   const totalPages = Math.max(1, Math.ceil(actualTotalCount / ROWS_PER_PAGE));
-  const paginatedData = isServerSide 
-    ? data 
+  const paginatedData = isServerSide
+    ? data
     : data.slice(
-        (currentPage - 1) * ROWS_PER_PAGE,
-        currentPage * ROWS_PER_PAGE
-      );
+      (currentPage - 1) * ROWS_PER_PAGE,
+      currentPage * ROWS_PER_PAGE
+    );
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -128,23 +128,43 @@ export function DataTable<T>({
                   className="bg-surface-container-lowest rounded-2xl p-5 shadow-ambient flex flex-col gap-3.5 border border-outline-variant/10"
                 >
                   {/* Data Fields */}
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2 min-w-0">
                     {dataCols.map((col, colIdx) => {
                       const val = col.render
                         ? col.render(item, globalIndex)
                         : col.accessor
-                        ? String(item[col.accessor] ?? "")
-                        : null;
+                          ? String(item[col.accessor] ?? "")
+                          : null;
+
+                      const isLongText = typeof val === "string" && val.length > 25;
+
+                      if (isLongText) {
+                        return (
+                          <div
+                            key={colIdx}
+                            className="flex flex-col gap-1 text-sm py-2 border-b border-outline-variant/10 last:border-0 w-full min-w-0"
+                          >
+                            <span className="font-headline text-[12px] font-bold tracking-wider uppercase text-on-surface-variant/80">
+                              {col.header}
+                            </span>
+                            <div className="font-body text-on-surface text-left font-medium min-w-0 w-full break-words leading-relaxed pt-0.5">
+                              {val}
+                            </div>
+                          </div>
+                        );
+                      }
 
                       return (
                         <div
                           key={colIdx}
-                          className="flex justify-between items-center text-sm py-1.5 border-b border-outline-variant/10 last:border-0 gap-4"
+                          className="flex justify-between items-center text-sm py-1.5 border-b border-outline-variant/10 last:border-0 gap-4 min-w-0"
                         >
                           <span className="font-headline text-[12px] font-bold tracking-wider uppercase text-on-surface-variant/80 shrink-0">
                             {col.header}
                           </span>
-                          <div className="font-body text-on-surface text-right font-medium truncate">{val}</div>
+                          <div className="font-body text-on-surface text-right font-medium min-w-0 flex-1 break-words flex justify-end">
+                            {val}
+                          </div>
                         </div>
                       );
                     })}
@@ -162,8 +182,8 @@ export function DataTable<T>({
                             {col.render
                               ? col.render(item, globalIndex)
                               : col.accessor
-                              ? String(item[col.accessor] ?? "")
-                              : null}
+                                ? String(item[col.accessor] ?? "")
+                                : null}
                           </div>
                         ))}
                       </div>
@@ -203,8 +223,8 @@ export function DataTable<T>({
                           {col.render
                             ? col.render(item, globalIndex)
                             : col.accessor
-                            ? String(item[col.accessor] ?? "")
-                            : null}
+                              ? String(item[col.accessor] ?? "")
+                              : null}
                         </div>
                       ))}
                     </div>
