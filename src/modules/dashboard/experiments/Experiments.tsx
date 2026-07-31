@@ -236,15 +236,17 @@ const Experiments = () => {
 
         {/* Right: Create experiment button */}
         {networkId && (
-          <Button
-            variant="primary"
-            size="md"
-            onClick={() => navigate(`/dashboard/experiments/${networkId}/create`, { state: location.state })}
-            className="hover:shadow-primary-glow transition-all transform hover:-translate-y-0.5"
-          >
-            <Plus className="w-[18px] h-[18px]" />
-            Create experiment
-          </Button>
+          <div className="flex items-center justify-end w-full lg:w-auto">
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => navigate(`/dashboard/experiments/${networkId}/create`, { state: location.state })}
+              className="hover:shadow-primary-glow transition-all transform hover:-translate-y-0.5"
+            >
+              <Plus className="w-[18px] h-[18px]" />
+              Create experiment
+            </Button>
+          </div>
         )}
       </div>
 

@@ -149,7 +149,7 @@ const Network = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-end w-full lg:w-auto gap-3">
           <Button
             variant="primary"
             size="md"
