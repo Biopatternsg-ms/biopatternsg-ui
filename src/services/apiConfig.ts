@@ -43,8 +43,12 @@ export const ADMIN_USERS_PATH = "config-and-control/admin/users";
 export const ADMIN_USERS_ENDPOINT = `${CONFIG_AND_CONTROL}/${ADMIN_USERS_PATH}`;
 
 /** Endpoint path for creating admin user. */
-export const CREATE_ADMIN_USER_PATH = "config-and-control/admin/users";
+export const CREATE_ADMIN_USER_PATH = "config-and-control/admin/create-user";
 export const CREATE_ADMIN_USER_ENDPOINT = `${CONFIG_AND_CONTROL}/${CREATE_ADMIN_USER_PATH}`;
+
+/** Endpoint path for toggling an admin user's enabled status (dynamic userId). */
+export const adminUserStatusEndpoint = (userId: string) =>
+  `${CONFIG_AND_CONTROL}/config-and-control/admin/user/${userId}/status`;
 
 export const LOGIN_PATH = "config-and-control/users/login";
 export const LOGIN_ENDPOINT = `${CONFIG_AND_CONTROL}/${LOGIN_PATH}`;

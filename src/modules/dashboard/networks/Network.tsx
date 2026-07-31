@@ -39,16 +39,20 @@ const getStatusColor = (index: number): string => {
 
 const Network = () => {
   const [networks, setNetworks] = useState<NetworkModel[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState<number>(0);
+  const [size] = useState<number>(10);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchNetworks = async () => {
       try {
         setLoading(true);
-        const data = await networkService.getNetworks();
-        setNetworks(data);
+        const data = await networkService.getNetworks(page, size);
+        setNetworks(data.list);
+        setTotalCount(data.count);
       } catch (err) {
         setError("Error al cargar las redes");
         console.error(err);
@@ -58,7 +62,7 @@ const Network = () => {
     };
 
     fetchNetworks();
-  }, []);
+  }, [page, size]);
 
   const columns: ColumnDef<NetworkModel>[] = [
     {
@@ -154,6 +158,9 @@ const Network = () => {
       {/* Networks Data Table */}
       <DataTable
         data={networks}
+        totalCount={totalCount}
+        pageIndex={page}
+        onPageChange={setPage}
         columns={columns}
         loading={loading}
         error={error}

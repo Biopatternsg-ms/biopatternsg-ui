@@ -28,15 +28,20 @@ import {
 
 import type { Experiment, ExpertObject, TranscriptionFactorConfig, ExperimentExecution } from "./models/Experiment";
 
+export interface PaginatedResponse<T> {
+  count: number;
+  list: T[];
+}
+
 export const experimentService = {
   /**
    * Retrieves the list of pipelines for a given network using authFetch,
    * which automatically injects the Authorization: Bearer token into the headers.
    */
-  async getPipelines(networkId?: string | null): Promise<Experiment[]> {
+  async getPipelines(networkId?: string | null, page: number = 0, size: number = 10): Promise<PaginatedResponse<Experiment>> {
     const url = networkId
-      ? `${PIPELINES_ENDPOINT}?networkId=${encodeURIComponent(networkId)}`
-      : PIPELINES_ENDPOINT;
+      ? `${PIPELINES_ENDPOINT}?networkId=${encodeURIComponent(networkId)}&page=${page}&size=${size}`
+      : `${PIPELINES_ENDPOINT}?page=${page}&size=${size}`;
 
     const response = await authFetch(url);
 
