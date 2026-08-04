@@ -44,6 +44,19 @@ export interface DataTableProps<T> {
   className?: string;
 }
 
+function extractTextFromNode(node: React.ReactNode): string {
+  if (node === null || node === undefined || typeof node === "boolean") return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(extractTextFromNode).join(" ");
+  if (typeof node === "object" && node !== null && "props" in node) {
+    const props = (node as { props?: { children?: React.ReactNode } }).props;
+    if (props && props.children) {
+      return extractTextFromNode(props.children);
+    }
+  }
+  return "";
+}
+
 export function DataTable<T>({
   data,
   columns,
@@ -136,7 +149,9 @@ export function DataTable<T>({
                           ? String(item[col.accessor] ?? "")
                           : null;
 
-                      const isLongText = typeof val === "string" && val.length > 25;
+                      const textContent = extractTextFromNode(val);
+                      const hasLongWord = textContent.split(/\s+/).some((word) => word.length > 14);
+                      const isLongText = textContent.length > 25 || hasLongWord;
 
                       if (isLongText) {
                         return (
@@ -147,7 +162,7 @@ export function DataTable<T>({
                             <span className="font-headline text-[12px] font-bold tracking-wider uppercase text-on-surface-variant/80">
                               {col.header}
                             </span>
-                            <div className="font-body text-on-surface text-left font-medium min-w-0 w-full break-words leading-relaxed pt-0.5">
+                            <div className="font-body text-on-surface text-left font-medium min-w-0 w-full break-all leading-relaxed pt-0.5">
                               {val}
                             </div>
                           </div>
@@ -162,7 +177,7 @@ export function DataTable<T>({
                           <span className="font-headline text-[12px] font-bold tracking-wider uppercase text-on-surface-variant/80 shrink-0">
                             {col.header}
                           </span>
-                          <div className="font-body text-on-surface text-right font-medium min-w-0 flex-1 break-words flex justify-end">
+                          <div className="font-body text-on-surface text-right font-medium min-w-0 flex-1 break-all flex justify-end">
                             {val}
                           </div>
                         </div>
