@@ -43,9 +43,9 @@ function parseJwtPayload(token: string) {
 export const loginSchema = z.object({
   username: z
     .string()
-    .min(1, "El usuario es requerido.")
-    .email("Ingresa un correo electrónico válido."),
-  password: z.string().min(1, "La contraseña es requerida."),
+    .min(1, "Email address is required.")
+    .email("Enter a valid email address."),
+  password: z.string().min(1, "Password is required."),
 });
 
 /**

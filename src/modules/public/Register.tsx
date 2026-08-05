@@ -28,20 +28,20 @@ import type { DataFormConfig } from "@/components/organisms/DataFormConfig";
 export const registerSchema = z.object({
   email: z
     .string()
-    .min(1, "El correo electrónico es requerido.")
-    .email("Ingresa un correo institucional válido."),
+    .min(1, "Email address is required.")
+    .email("Enter a valid email address."),
   firstName: z
     .string()
-    .min(2, "El nombre debe tener al menos 2 caracteres.")
-    .max(50, "El nombre es demasiado largo."),
+    .min(2, "First name must be at least 2 characters.")
+    .max(50, "First name is too long."),
   lastName: z
     .string()
-    .min(2, "El apellido debe tener al menos 2 caracteres.")
-    .max(50, "El apellido es demasiado largo."),
+    .min(2, "Last name must be at least 2 characters.")
+    .max(50, "Last name is too long."),
   password: z
     .string()
-    .min(8, "La contraseña debe tener al menos 8 caracteres.")
-    .max(128, "La contraseña es demasiado larga."),
+    .min(8, "Password must be at least 8 characters.")
+    .max(128, "Password is too long."),
 });
 
 /**
@@ -64,7 +64,7 @@ const Register = () => {
     fields: [
       {
         name: "email",
-        label: "Institutional Email",
+        label: "Email Address",
         type: "email",
         placeholder: "name@institute.edu",
         colSpan: "full",
@@ -113,8 +113,8 @@ const Register = () => {
       navigate("/");
     },
     footerLink: {
-      text: "¿Ya eres investigador registrado?",
-      label: "Volver al portal de acceso",
+      text: "Already a registered researcher?",
+      label: "Return to login portal",
       to: "/",
     },
   };

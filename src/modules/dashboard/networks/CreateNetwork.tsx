@@ -25,8 +25,8 @@ import { networkService } from "@/services/networkService";
 import type { DataFormConfig } from "@/components/organisms/DataFormConfig";
 
 const createNetworkSchema = z.object({
-  name: z.string().min(1, "El nombre de la red es requerido."),
-  description: z.string().min(1, "La descripción es requerida."),
+  name: z.string().min(1, "Network name is required."),
+  description: z.string().min(1, "Description is required."),
 });
 
 const CreateNetwork = () => {

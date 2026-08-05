@@ -244,7 +244,7 @@ const Experiments = () => {
               className="hover:shadow-primary-glow transition-all transform hover:-translate-y-0.5"
             >
               <Plus className="w-[18px] h-[18px]" />
-              Create experiment
+              Create Experiment
             </Button>
           </div>
         )}

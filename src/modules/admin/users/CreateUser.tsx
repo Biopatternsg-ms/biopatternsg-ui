@@ -27,16 +27,16 @@ import { Breadcrumb } from "@/components/atoms/Breadcrumb";
 export const createUserSchema = z.object({
   email: z
     .string()
-    .min(1, "El correo electrónico es requerido.")
-    .email("Ingresa un correo válido."),
+    .min(1, "Email address is required.")
+    .email("Enter a valid email address."),
   firstName: z
     .string()
-    .min(2, "El nombre debe tener al menos 2 caracteres.")
-    .max(50, "El nombre es demasiado largo."),
+    .min(2, "First name must be at least 2 characters.")
+    .max(50, "First name is too long."),
   lastName: z
     .string()
-    .min(2, "El apellido debe tener al menos 2 caracteres.")
-    .max(50, "El apellido es demasiado largo."),
+    .min(2, "Last name must be at least 2 characters.")
+    .max(50, "Last name is too long."),
 });
 
 const CreateUser = () => {
@@ -98,8 +98,8 @@ const CreateUser = () => {
         <Breadcrumb
           className="mb-6"
           items={[
-            { label: "Usuarios", href: "/dashboard/admin/users" },
-            { label: "Crear Usuario" },
+            { label: "Users", href: "/dashboard/admin/users" },
+            { label: "Create User" },
           ]}
         />
 

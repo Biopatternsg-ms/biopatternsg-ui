@@ -54,7 +54,7 @@ const Network = () => {
         setNetworks(data.list);
         setTotalCount(data.count);
       } catch (err) {
-        setError("Error al cargar las redes");
+        setError("Error loading networks");
         console.error(err);
       } finally {
         setLoading(false);
@@ -157,7 +157,7 @@ const Network = () => {
             className="hover:shadow-primary-glow transition-all transform hover:-translate-y-0.5"
           >
             <Plus className="w-[18px] h-[18px]" />
-            Crear red
+            Create Network
           </Button>
         </div>
       </div>
@@ -171,7 +171,7 @@ const Network = () => {
         columns={columns}
         loading={loading}
         error={error}
-        emptyMessage="No hay redes disponibles."
+        emptyMessage="No networks available."
         keyExtractor={(item) => item.id}
       />
     </div>
