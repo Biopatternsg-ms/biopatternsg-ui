@@ -48,7 +48,7 @@ function extractTextFromNode(node: React.ReactNode): string {
   if (node === null || node === undefined || typeof node === "boolean") return "";
   if (typeof node === "string" || typeof node === "number") return String(node);
   if (Array.isArray(node)) return node.map(extractTextFromNode).join(" ");
-  if (typeof node === "object" && node !== null && "props" in node) {
+  if (typeof node === "object" && "props" in node) {
     const props = (node as { props?: { children?: React.ReactNode } }).props;
     if (props && props.children) {
       return extractTextFromNode(props.children);
