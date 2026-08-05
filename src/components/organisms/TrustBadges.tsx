@@ -20,6 +20,11 @@ import badgeHgnc from "@/assets/badge_hgnc.svg";
 import badgeUniprot from "@/assets/badge_uniprot.png";
 import badgeTfbind from "@/assets/badge_tfbind.svg";
 import badgePubmed from "@/assets/badge_pubmed.png";
+import badgePdb from "@/assets/badge_pdb.png";
+import badgeJaspar from "@/assets/badge_jaspar.png";
+import badgeQuickgo from "@/assets/badge_quickgo.png";
+import badgeMesh from "@/assets/badge_mesh.png";
+import badgeGeneontology from "@/assets/badge_geneontology.png";
 
 interface TrustSource {
   name: string;
@@ -32,6 +37,11 @@ const sources: TrustSource[] = [
   { name: "Uniprot", url: "https://rest.uniprot.org", logo: badgeUniprot },
   { name: "TFBind", url: "https://tfbind.hgc.jp", logo: badgeTfbind },
   { name: "Pubmed", url: "https://pubmed.ncbi.nlm.nih.gov/", logo: badgePubmed },
+  { name: "PDB", url: "https://www.rcsb.org/", logo: badgePdb },
+  { name: "JASPAR", url: "https://jaspar.elixir.no/", logo: badgeJaspar },
+  { name: "QuickGO", url: "https://www.ebi.ac.uk/QuickGO/", logo: badgeQuickgo },
+  { name: "MeSH", url: "https://www.ncbi.nlm.nih.gov/mesh/", logo: badgeMesh },
+  { name: "GeneOntology", url: "https://geneontology.org/", logo: badgeGeneontology },
 ];
 
 /**
@@ -52,7 +62,7 @@ const TrustBadges = () => (
       </p>
     </div>
 
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
       {sources.map(({ name, url, logo }) => (
         <a
           key={name}
