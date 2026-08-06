@@ -159,8 +159,48 @@ export const experimentService = {
       const response = await authFetch(`${PIPELINES_ENDPOINT}/${experimentId}/execution`);
       if (response.ok) {
         const data = await response.json();
+        const steps = (data.steps || []).map((s: any) => ({
+          ...s,
+          id: s.id || s.step || s.name,
+        }));
+
+        // Ensure "Update Aligned Objects" manual step is present right after "Generate Aligned Objects"
+        const hasUpdateAligned = steps.some(
+          (s: any) =>
+            s.id === "step-update_aligned_objects" ||
+            s.id === "UPDATE_ALIGNED_OBJECTS" ||
+            s.name === "Update Aligned Objects"
+        );
+
+        if (!hasUpdateAligned) {
+          const genIndex = steps.findIndex(
+            (s: any) =>
+              s.id === "step-generate_aligned_objects" ||
+              s.id === "GENERATE_ALIGNED_OBJECTS" ||
+              s.name === "Generate Aligned Objects"
+          );
+
+          const updateStep = {
+            id: "step-update_aligned_objects",
+            name: "Update Aligned Objects",
+            status: "PENDING",
+            duration: "Manual",
+            outputText: "Manual Action Required",
+            description: "Manual step to review, modify, and align biological objects, synonyms, and identifiers.",
+            iconName: "GitBranch",
+            isManual: true,
+          };
+
+          if (genIndex !== -1) {
+            steps.splice(genIndex + 1, 0, updateStep);
+          } else {
+            steps.push(updateStep);
+          }
+        }
+
         return {
           ...data,
+          steps,
           networkId: data.networkId || networkId,
         };
       }
@@ -231,21 +271,43 @@ export function getMockExecutionData(experimentId: string, experimentName = "Pro
       {
         id: "step-4",
         name: "Variant Calling",
-        status: "ACTIVE",
+        status: "COMPLETED",
         startTime: "14:59:27",
         duration: "18m 42s",
-        outputText: "(Active)",
-        description: "Identifying genetic variations from aligned sequences using the GATK HaplotypeCaller engine. Currently processing chromosome 14.",
+        outputText: "Completed",
+        description: "Identifying genetic variations from aligned sequences using the GATK HaplotypeCaller engine.",
         iconName: "Activity",
-        subSteps: [
-          { name: "Haplotype Engine Init", status: "COMPLETED" },
-          { name: "Chr 14 Processing", status: "ACTIVE" },
-          { name: "VCF Generation", status: "PENDING" }
-        ],
         metrics: [
-          { label: "TOTAL READS", value: "42.8M", progress: 75 },
+          { label: "TOTAL READS", value: "42.8M", progress: 100 },
           { label: "MAPPING QUALITY", value: "98.4%", subLabel: "↑ 0.2% from baseline", subLabelColor: "green" },
-          { label: "WARNINGS DETECTED", value: "02", hasWarnings: true, warningCount: 2 }
+        ]
+      },
+      {
+        id: "step-generate_aligned_objects",
+        name: "Generate Aligned Objects",
+        status: "COMPLETED",
+        startTime: "15:20:00",
+        duration: "05m 10s",
+        outputText: "Completed • 142 Aligned Objects",
+        description: "Automatically generates initial aligned biological objects from mined literature and databases.",
+        iconName: "GitBranch",
+        metrics: [
+          { label: "ALIGNED OBJECTS", value: "142" },
+          { label: "UNALIGNED OBJECTS", value: "8" }
+        ]
+      },
+      {
+        id: "step-update_aligned_objects",
+        name: "Update Aligned Objects",
+        status: "PENDING",
+        duration: "Manual",
+        outputText: "Manual Action Required",
+        description: "Manual step to review, modify, and align biological objects, synonyms, and identifiers.",
+        iconName: "GitBranch",
+        isManual: true,
+        metrics: [
+          { label: "STATUS", value: "Awaiting Manual Update" },
+          { label: "TARGET OBJECTS", value: "150" }
         ]
       },
       {

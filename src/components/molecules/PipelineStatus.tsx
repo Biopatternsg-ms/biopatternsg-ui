@@ -32,6 +32,7 @@ const STEP_LABELS: Record<string, string> = {
   SEARCH_PUBTATOR: "Search PubTator",
   BUILD_KNOWLEDGE_BASE: "Build Knowledge Base",
   GENERATE_ALIGNED_OBJECTS: "Generate Aligned Objects",
+  UPDATE_ALIGNED_OBJECTS: "Update Aligned Objects",
   UPDATE_SYNONYMS: "Update Synonyms",
 };
 

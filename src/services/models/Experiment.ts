@@ -66,6 +66,8 @@ export interface PipelineStepExecution {
   outputText?: string;
   description: string;
   iconName: string;
+  isManual?: boolean;
+  actionRoute?: string;
   subSteps?: SubStep[];
   metrics?: MetricCard[] | Record<string, string>;
 }
