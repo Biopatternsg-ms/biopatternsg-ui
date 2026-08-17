@@ -19,6 +19,7 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
 
 const ROWS_PER_PAGE = 10;
 
@@ -79,9 +80,14 @@ export function DataTable<T>({
 
   if (loading) {
     return (
-      <div className="flex justify-center p-12 text-on-surface-variant font-body">
-        Loading...
-      </div>
+      <LoadingSpinner
+        backdrop
+        size="lg"
+        variant="primary"
+        label="Loading experiments..."
+        sublabel="Fetching records and pipeline data"
+        className="min-h-[300px]"
+      />
     );
   }
 

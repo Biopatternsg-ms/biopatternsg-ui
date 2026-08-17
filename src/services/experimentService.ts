@@ -22,11 +22,24 @@ import {
   PIPELINES_DESCRIPTION_ENDPOINT,
   PIPELINES_TRANSCRIPTION_FACTOR_ENDPOINT,
   PIPELINES_EXPERT_OBJECTS_ENDPOINT,
+  PIPELINES_ALIGNED_EXPERT_OBJECTS_ENDPOINT,
   PIPELINES_SEARCH_CONFIG_ENDPOINT,
   PIPELINES_LAUNCH_ENDPOINT,
+  PUBMED_ALIGNED_RESULTS_ENDPOINT,
+  PUBMED_SYNONYMS_BY_NAME_ENDPOINT,
+  PUBMED_KB_EVENTS_BY_TERM_ENDPOINT,
+  PUBMED_GENERATE_KB_ENDPOINT,
 } from "./apiConfig";
 
-import type { Experiment, ExpertObject, TranscriptionFactorConfig, ExperimentExecution } from "./models/Experiment";
+import type {
+  Experiment,
+  ExpertObject,
+  TranscriptionFactorConfig,
+  ExperimentExecution,
+  AlignedResultResponse,
+  PipelineSynonymResponse,
+  KbEventResponse,
+} from "./models/Experiment";
 
 export interface PaginatedResponse<T> {
   count: number;
@@ -110,6 +123,33 @@ export const experimentService = {
     return authFetch(PIPELINES_EXPERT_OBJECTS_ENDPOINT, {
       method: "PUT",
       body: JSON.stringify({ id, expertObjects }),
+    });
+  },
+
+  /**
+   * Updates the aligned expert objects list (symbols) of an existing pipeline.
+   * PUT /config-and-control/pipelines/aligned-expert-objects
+   * Body: { id, alignedExpertObjects }
+   */
+  async saveAlignedExpertObjects(
+    id: string,
+    alignedExpertObjects: string[]
+  ): Promise<Response> {
+    return authFetch(PIPELINES_ALIGNED_EXPERT_OBJECTS_ENDPOINT, {
+      method: "PUT",
+      body: JSON.stringify({ id, alignedExpertObjects }),
+    });
+  },
+
+  /**
+   * Re-triggers the Knowledge Base Generation step for a pipeline.
+   * POST /pubmed/generate-kb
+   * Body: { pipelineId }
+   */
+  async generateKnowledgeBase(pipelineId: string): Promise<Response> {
+    return authFetch(PUBMED_GENERATE_KB_ENDPOINT, {
+      method: "POST",
+      body: JSON.stringify({ pipelineId }),
     });
   },
 
@@ -217,6 +257,41 @@ export const experimentService = {
       ...getMockExecutionData(experimentId, experimentName),
       networkId,
     };
+  },
+
+  /**
+   * Fetches aligned results for a given pipelineId from pubmed-integration endpoint.
+   */
+  async getAlignedResults(pipelineId: string): Promise<AlignedResultResponse> {
+    const response = await authFetch(`${PUBMED_ALIGNED_RESULTS_ENDPOINT}/${pipelineId}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch aligned results for pipeline ${pipelineId}`);
+    }
+    return response.json();
+  },
+
+  /**
+   * Fetches synonyms for a given pipelineId and object name from pubmed-integration endpoint.
+   */
+  async getSynonymsByName(pipelineId: string, name: string): Promise<PipelineSynonymResponse> {
+    const url = `${PUBMED_SYNONYMS_BY_NAME_ENDPOINT}/${pipelineId}/by-name/${encodeURIComponent(name)}`;
+    const response = await authFetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch synonyms for pipeline ${pipelineId} and name ${name}`);
+    }
+    return response.json();
+  },
+
+  /**
+   * Fetches kb_events for a given pipelineId and term from pubmed-integration endpoint.
+   */
+  async getKbEventsByTerm(pipelineId: string, term: string): Promise<KbEventResponse[]> {
+    const url = `${PUBMED_KB_EVENTS_BY_TERM_ENDPOINT}/${pipelineId}/by-term/${encodeURIComponent(term)}`;
+    const response = await authFetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch kb_events for pipeline ${pipelineId} and term ${term}`);
+    }
+    return response.json();
   },
 };
 

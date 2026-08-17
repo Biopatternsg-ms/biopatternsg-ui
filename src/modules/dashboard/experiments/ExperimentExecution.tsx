@@ -40,6 +40,7 @@ import {
   Edit3,
   type LucideIcon
 } from "lucide-react";
+import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
 import { experimentService } from "@/services/experimentService";
 import { networkService } from "@/services/networkService";
 import type { ExperimentExecution, MetricCard } from "@/services/models/Experiment";
@@ -383,10 +384,13 @@ const ExperimentExecutionView = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <p className="text-on-surface-variant text-sm font-medium">Loading execution details...</p>
-      </div>
+      <LoadingSpinner
+        backdrop
+        size="lg"
+        variant="primary"
+        label="Loading execution details..."
+        sublabel="Fetching pipeline sequence and execution status"
+      />
     );
   }
 

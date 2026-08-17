@@ -98,3 +98,27 @@ export interface Experiment {
   status?: PipelineStatus;
   useOnlyPrincipalName?: boolean;
 }
+
+export interface AlignedAsItem {
+  expertObjectName: string;
+  alternativeIds: string[];
+}
+
+export interface AlignedResultResponse {
+  pipelineId: string;
+  aligned: string[];
+  noAligned: string[];
+  alignedAs: AlignedAsItem[];
+}
+
+export interface PipelineSynonymResponse {
+  name: string;
+  synonyms: string[];
+}
+
+export interface KbEventResponse {
+  first: string;
+  relation: string;
+  second: string;
+  pubmedIds: string[];
+}
