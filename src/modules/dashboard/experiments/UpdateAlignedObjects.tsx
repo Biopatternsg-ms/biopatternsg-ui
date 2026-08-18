@@ -57,14 +57,6 @@ interface AlignedObjectItem {
   synonyms: string[];
 }
 
-export interface ModifiedExpertObjectRecord {
-  action: "REPLACE_SYMBOL" | "ADD_NEW_SYMBOL" | "DELETE_SYMBOL";
-  originalSymbol?: string;
-  newSymbol: string;
-  synonymUsed: string;
-  timestamp: string;
-}
-
 const INITIAL_ALIGNED_OBJECTS: AlignedObjectItem[] = [
   {
     id: "obj-1",
@@ -161,16 +153,6 @@ const UpdateAlignedObjects = () => {
 
     setObjects(prev => [newItem, ...prev]);
 
-    setModifiedExpertObjects(prev => [
-      ...prev,
-      {
-        action: "ADD_NEW_SYMBOL",
-        newSymbol: trimmedSymbol,
-        synonymUsed: trimmedSymbol,
-        timestamp: new Date().toISOString(),
-      },
-    ]);
-
     setNewSymbolInput("");
     setNewSymbolError("");
     setIsAddSymbolModalOpen(false);
@@ -257,7 +239,8 @@ const UpdateAlignedObjects = () => {
   };
 
   useEffect(() => {
-    if (!experimentId) return;
+    const expId = experimentId;
+    if (!expId) return;
 
     let ignore = false;
     async function loadData() {
@@ -265,8 +248,8 @@ const UpdateAlignedObjects = () => {
         setLoading(true);
 
         const [execData, alignedResultsData] = await Promise.allSettled([
-          experimentService.getExperimentExecution(experimentId),
-          experimentService.getAlignedResults(experimentId),
+          experimentService.getExperimentExecution(expId),
+          experimentService.getAlignedResults(expId),
         ]);
 
         if (ignore) return;
@@ -393,16 +376,6 @@ const UpdateAlignedObjects = () => {
           : obj
       )
     );
-    setModifiedExpertObjects((prev) => [
-      ...prev,
-      {
-        action: "REPLACE_SYMBOL",
-        originalSymbol: currentSymbol,
-        newSymbol: synonym,
-        synonymUsed: synonym,
-        timestamp: new Date().toISOString(),
-      },
-    ]);
   };
 
   const handleAddSynonymAsNewSymbol = (synonym: string) => {
@@ -413,29 +386,10 @@ const UpdateAlignedObjects = () => {
       synonyms: [],
     };
     setObjects((prev) => [...prev, newObj]);
-    setModifiedExpertObjects((prev) => [
-      ...prev,
-      {
-        action: "ADD_NEW_SYMBOL",
-        newSymbol: synonym,
-        synonymUsed: synonym,
-        timestamp: new Date().toISOString(),
-      },
-    ]);
   };
 
-  const handleDeleteObject = (itemId: string, symbol: string) => {
+  const handleDeleteObject = (itemId: string) => {
     setObjects((prev) => prev.filter((obj) => obj.id !== itemId));
-    setModifiedExpertObjects((prev) => [
-      ...prev,
-      {
-        action: "DELETE_SYMBOL",
-        originalSymbol: symbol,
-        newSymbol: "",
-        synonymUsed: "",
-        timestamp: new Date().toISOString(),
-      },
-    ]);
   };
 
   const [isConfirmRegenerateModalOpen, setIsConfirmRegenerateModalOpen] = useState(false);
@@ -1251,7 +1205,7 @@ const UpdateAlignedObjects = () => {
                 variant="primary"
                 size="sm"
                 onClick={() => {
-                  handleDeleteObject(deleteConfirmItem.id, deleteConfirmItem.symbol);
+                  handleDeleteObject(deleteConfirmItem.id);
                   setDeleteConfirmItem(null);
                 }}
                 className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold gap-1 px-3"

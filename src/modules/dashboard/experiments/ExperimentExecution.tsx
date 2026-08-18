@@ -271,8 +271,8 @@ const ExperimentExecutionView = () => {
     if (targetNetworkId) {
       networkService
         .getNetworks()
-        .then((networks) => {
-          const found = networks.find((n) => n.id === targetNetworkId);
+        .then((res) => {
+          const found = res?.list?.find((n) => n.id === targetNetworkId);
           if (found) {
             setNetworkName(found.name);
           }
@@ -790,7 +790,7 @@ const ExperimentExecutionView = () => {
                                   <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 mt-0.5">
                                     <Check className="w-3 h-3 font-black" />
                                   </div>
-                                ) : isManualStep && step.status !== "COMPLETED" ? (
+                                ) : isManualStep ? (
                                   <div className="w-5 h-5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-300/60 flex items-center justify-center shrink-0 mt-0.5">
                                     <Clock className="w-3 h-3 font-bold" />
                                   </div>
