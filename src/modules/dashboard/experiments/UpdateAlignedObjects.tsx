@@ -441,40 +441,74 @@ const UpdateAlignedObjects = () => {
     ]);
   };
 
-  const [isConfirmStepModalOpen, setIsConfirmStepModalOpen] = useState(false);
+  const [isConfirmRegenerateModalOpen, setIsConfirmRegenerateModalOpen] = useState(false);
+  const [isConfirmCompleteModalOpen, setIsConfirmCompleteModalOpen] = useState(false);
+  const [successModalData, setSuccessModalData] = useState<{ title: string; message: string } | null>(null);
 
-  const handleSaveAndCompleteStep = () => {
-    setIsConfirmStepModalOpen(true);
-  };
-
-  const handleConfirmSaveAndCompleteStep = async () => {
-    setIsConfirmStepModalOpen(false);
+  const handleConfirmSaveAndRegenerate = async () => {
+    setIsConfirmRegenerateModalOpen(false);
     setIsSubmitting(true);
     try {
       const pipeId = experimentId || "pipeline-demo-123";
       const symbolList = objects.map((o) => o.symbol);
 
-      // 1. Save alignedExpertObjects in config-and-control
+      // Save alignedExpertObjects in config-and-control
       await experimentService.saveAlignedExpertObjects(pipeId, symbolList);
 
-      // 2. Re-trigger Knowledge Base Construction step
+      // Re-trigger aligned objects generation
       try {
-        await experimentService.generateKnowledgeBase(pipeId);
-      } catch (kbErr) {
-        console.warn("Knowledge base generation endpoint warning:", kbErr);
+        await experimentService.regenerateAlignedObjects(pipeId);
+      } catch (regErr) {
+        console.warn("Regenerate endpoint warning, falling back to step update:", regErr);
+        await experimentService.updatePipelineStep(pipeId, "UPDATE_ALIGNED_OBJECTS", "PENDING");
       }
 
       setIsSubmitting(false);
-      setSuccessModalOpen(true);
+      setSuccessModalData({
+        title: "Regeneration Initiated",
+        message: "Aligned objects have been saved and the alignment process has been re-triggered with the updated symbols.",
+      });
     } catch (err) {
-      console.error("Error saving aligned expert objects:", err);
+      console.error("Error saving and regenerating aligned objects:", err);
       setIsSubmitting(false);
       alert("Error saving aligned expert objects. Please check backend connection.");
     }
   };
 
+  const handleConfirmSaveAndComplete = async () => {
+    setIsConfirmCompleteModalOpen(false);
+    setIsSubmitting(true);
+    try {
+      const pipeId = experimentId || "pipeline-demo-123";
+      const symbolList = objects.map((o) => o.symbol);
+
+      // Save alignedExpertObjects and complete step with metrics
+      await experimentService.saveAlignedExpertObjects(pipeId, symbolList);
+
+      try {
+        await experimentService.updatePipelineStep(pipeId, "UPDATE_ALIGNED_OBJECTS", "COMPLETED", {
+          totalAlignedObjects: String(symbolList.length),
+          alignedSymbols: symbolList.join(", "),
+          statusMessage: "Manual alignment confirmed by expert",
+        });
+      } catch (stepErr) {
+        console.warn("Update step endpoint warning:", stepErr);
+      }
+
+      setIsSubmitting(false);
+      setSuccessModalData({
+        title: "Step Completed",
+        message: "Manual step completed successfully. Aligned objects have been saved and step summary recorded.",
+      });
+    } catch (err) {
+      console.error("Error completing step:", err);
+      setIsSubmitting(false);
+      alert("Error completing step. Please check backend connection.");
+    }
+  };
+
   const handleSuccessClose = () => {
-    setSuccessModalOpen(false);
+    setSuccessModalData(null);
     navigate(`/dashboard/experiments/${networkId || experimentData?.networkId}/execution/${experimentId}`);
   };
 
@@ -572,9 +606,24 @@ const UpdateAlignedObjects = () => {
           </Button>
 
           <Button
+            variant="ghost"
+            size="md"
+            onClick={() => setIsConfirmRegenerateModalOpen(true)}
+            disabled={isSubmitting}
+            className="gap-2 font-bold text-xs border border-outline-variant/30 hover:bg-surface-container-high text-on-surface rounded-xl"
+          >
+            {isSubmitting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+            Save and Regenerate Aligned Objects
+          </Button>
+
+          <Button
             variant="primary"
             size="md"
-            onClick={handleSaveAndCompleteStep}
+            onClick={() => setIsConfirmCompleteModalOpen(true)}
             disabled={isSubmitting}
             className="gap-2 shadow-primary-glow font-bold"
           >
@@ -583,7 +632,7 @@ const UpdateAlignedObjects = () => {
             ) : (
               <CheckCircle2 className="w-4 h-4" />
             )}
-            Save & Complete Step
+            Save and Complete
           </Button>
         </div>
       </div>
@@ -793,9 +842,9 @@ const UpdateAlignedObjects = () => {
       </div>
 
       <SuccessModal
-        open={successModalOpen}
-        title="Aligned Objects Updated"
-        message="Manual step completed successfully. Aligned objects, references, and custom synonyms have been updated."
+        open={!!successModalData}
+        title={successModalData?.title || "Step Completed"}
+        message={successModalData?.message || "Manual step completed successfully."}
         onClose={handleSuccessClose}
       />
 
@@ -1293,27 +1342,27 @@ const UpdateAlignedObjects = () => {
         </div>
       )}
 
-      {/* Save & Complete Step Confirmation Modal */}
-      {isConfirmStepModalOpen && (
+      {/* Save & Regenerate Aligned Objects Confirmation Modal */}
+      {isConfirmRegenerateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="bg-surface-card p-6 rounded-3xl border border-primary/20 shadow-2xl max-w-md w-full flex flex-col gap-5">
             <div className="flex justify-between items-start pb-3 border-b border-outline-variant/10">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-2xl bg-primary/10 text-primary shrink-0 shadow-xs">
-                  <Activity className="w-5 h-5" />
+                  <RefreshCw className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Re-ejecución de paso</span>
-                    <Badge variant="inProgress" className="text-[9px]">Knowledge Base</Badge>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Regenerate Step</span>
+                    <Badge variant="inProgress" className="text-[9px]">Aligned Objects</Badge>
                   </div>
                   <h3 className="font-headline text-base font-bold text-on-surface">
-                    Confirmar Guardado y Re-ejecución
+                    Save & Regenerate Aligned Objects
                   </h3>
                 </div>
               </div>
               <button
-                onClick={() => setIsConfirmStepModalOpen(false)}
+                onClick={() => setIsConfirmRegenerateModalOpen(false)}
                 className="text-on-surface-variant hover:text-on-surface p-1 rounded-lg hover:bg-surface-container-high transition-colors"
               >
                 <X className="w-4 h-4" />
@@ -1322,12 +1371,12 @@ const UpdateAlignedObjects = () => {
 
             <div className="text-xs text-on-surface-variant flex flex-col gap-3 leading-relaxed bg-surface-container-low p-4 rounded-2xl border border-outline-variant/10">
               <p>
-                Al confirmar esta acción, se guardará la lista de <strong className="text-on-surface font-semibold">{objects.length} símbolos</strong> de la columna <span className="font-mono text-primary font-bold">Symbol</span> como un nuevo campo <code className="bg-surface-card px-1.5 py-0.5 rounded border border-outline-variant/15 text-primary font-mono font-bold">alignedExpertObjects</code> en la colección de pipelines.
+                By confirming this action, the list of <strong className="text-on-surface font-semibold">{objects.length} symbols</strong> will be saved as <code className="bg-surface-card px-1.5 py-0.5 rounded border border-outline-variant/15 text-primary font-mono font-bold">alignedExpertObjects</code> and the aligned objects generation process will be re-run in the background.
               </p>
-              <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/20 text-amber-700 dark:text-amber-300 text-[11px] font-medium flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+              <div className="p-3 bg-primary/10 rounded-xl border border-primary/20 text-primary text-[11px] font-medium flex items-start gap-2">
+                <RefreshCw className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                 <span>
-                  Se ejecutará de nuevo el paso de <strong>Construcción de la Base de Conocimiento</strong> (Knowledge Base Construction) para procesar estos objetos alineados.
+                  The alignment step will transition to <strong>IN_PROGRESS</strong> while generating updated mappings.
                 </span>
               </div>
             </div>
@@ -1336,19 +1385,80 @@ const UpdateAlignedObjects = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsConfirmStepModalOpen(false)}
+                onClick={() => setIsConfirmRegenerateModalOpen(false)}
                 className="text-xs"
               >
-                Cancelar
+                Cancel
               </Button>
               <Button
                 variant="primary"
                 size="sm"
-                onClick={handleConfirmSaveAndCompleteStep}
+                onClick={handleConfirmSaveAndRegenerate}
                 className="text-xs font-bold gap-1.5 shadow-sm"
               >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Confirm & Regenerate
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Save & Complete Confirmation Modal */}
+      {isConfirmCompleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-surface-card p-6 rounded-3xl border border-emerald-500/20 shadow-2xl max-w-md w-full flex flex-col gap-5">
+            <div className="flex justify-between items-start pb-3 border-b border-outline-variant/10">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0 shadow-xs">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Complete Step</span>
+                    <Badge variant="completed" className="text-[9px]">Confirmed</Badge>
+                  </div>
+                  <h3 className="font-headline text-base font-bold text-on-surface">
+                    Save and Complete Step
+                  </h3>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsConfirmCompleteModalOpen(false)}
+                className="text-on-surface-variant hover:text-on-surface p-1 rounded-lg hover:bg-surface-container-high transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="text-xs text-on-surface-variant flex flex-col gap-3 leading-relaxed bg-surface-container-low p-4 rounded-2xl border border-outline-variant/10">
+              <p>
+                By confirming, the confirmed list of <strong className="text-on-surface font-semibold">{objects.length} biological symbols</strong> will be saved and this manual alignment step will be marked as <strong className="text-emerald-600 dark:text-emerald-400 font-semibold">COMPLETED</strong>.
+              </p>
+              <div className="p-3 bg-surface-card rounded-xl border border-outline-variant/15 text-[11px] flex flex-col gap-1">
+                <span className="font-bold text-on-surface">Step Results Summary:</span>
+                <span className="text-on-surface-variant">• Total Aligned Objects: <strong>{objects.length}</strong></span>
+                <span className="text-on-surface-variant font-mono truncate text-[10px]">• Symbols: {objects.slice(0, 5).map(o => o.symbol).join(", ")}{objects.length > 5 ? ` (+${objects.length - 5} more)` : ""}</span>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-outline-variant/10 flex justify-end gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsConfirmCompleteModalOpen(false)}
+                className="text-xs"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleConfirmSaveAndComplete}
+                className="text-xs font-bold gap-1.5 shadow-sm bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                Confirmar y Ejecutar Paso
+                Confirm & Complete
               </Button>
             </div>
           </div>

@@ -142,6 +142,32 @@ export const experimentService = {
   },
 
   /**
+   * Re-triggers the aligned objects generation step.
+   * POST /config-and-control/pipelines/{id}/regenerate-aligned-objects
+   */
+  async regenerateAlignedObjects(id: string): Promise<Response> {
+    return authFetch(`${PIPELINES_ENDPOINT}/${id}/regenerate-aligned-objects`, {
+      method: "POST",
+    });
+  },
+
+  /**
+   * Updates a specific pipeline step status and metrics.
+   * PATCH /config-and-control/pipelines/update-step
+   */
+  async updatePipelineStep(
+    id: string,
+    step: string,
+    status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED",
+    metrics?: Record<string, string>
+  ): Promise<Response> {
+    return authFetch(`${PIPELINES_ENDPOINT}/update-step`, {
+      method: "PATCH",
+      body: JSON.stringify({ id, step, status, metrics }),
+    });
+  },
+
+  /**
    * Re-triggers the Knowledge Base Generation step for a pipeline.
    * POST /pubmed/generate-kb
    * Body: { pipelineId }
