@@ -16,19 +16,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Database, Dna, Activity, BookOpen, type LucideIcon } from "lucide-react";
+import badgeHgnc from "@/assets/badge_hgnc.svg";
+import badgeUniprot from "@/assets/badge_uniprot.png";
+import badgeTfbind from "@/assets/badge_tfbind.svg";
+import badgePubmed from "@/assets/badge_pubmed.png";
+import badgePdb from "@/assets/badge_pdb.png";
+import badgeJaspar from "@/assets/badge_jaspar.png";
+import badgeQuickgo from "@/assets/badge_quickgo.png";
+import badgeMesh from "@/assets/badge_mesh.png";
+import badgeGeneontology from "@/assets/badge_geneontology.png";
 
 interface TrustSource {
   name: string;
   url: string;
-  icon: LucideIcon;
+  logo: string;
 }
 
 const sources: TrustSource[] = [
-  { name: "HGNC", url: "https://rest.genenames.org", icon: Database },
-  { name: "Uniprot", url: "https://rest.uniprot.org", icon: Dna },
-  { name: "TFBind", url: "https://tfbind.hgc.jp", icon: Activity },
-  { name: "Pubmed", url: "https://pubmed.ncbi.nlm.nih.gov/", icon: BookOpen },
+  { name: "HGNC", url: "https://rest.genenames.org", logo: badgeHgnc },
+  { name: "Uniprot", url: "https://rest.uniprot.org", logo: badgeUniprot },
+  { name: "TFBind", url: "https://tfbind.hgc.jp", logo: badgeTfbind },
+  { name: "Pubmed", url: "https://pubmed.ncbi.nlm.nih.gov/", logo: badgePubmed },
+  { name: "PDB", url: "https://www.rcsb.org/", logo: badgePdb },
+  { name: "JASPAR", url: "https://jaspar.elixir.no/", logo: badgeJaspar },
+  { name: "QuickGO", url: "https://www.ebi.ac.uk/QuickGO/", logo: badgeQuickgo },
+  { name: "MeSH", url: "https://www.ncbi.nlm.nih.gov/mesh/", logo: badgeMesh },
+  { name: "GeneOntology", url: "https://geneontology.org/", logo: badgeGeneontology },
 ];
 
 /**
@@ -49,8 +62,8 @@ const TrustBadges = () => (
       </p>
     </div>
 
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-      {sources.map(({ name, url, icon: Icon }) => (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
+      {sources.map(({ name, url, logo }) => (
         <a
           key={name}
           href={url}
@@ -58,8 +71,12 @@ const TrustBadges = () => (
           rel="noopener noreferrer"
           className="group flex flex-col items-center justify-center gap-4 p-6 rounded-2xl border border-outline-variant/15 bg-surface-card/50 hover:bg-surface-container-low transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
         >
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors duration-300">
-            <Icon className="w-8 h-8 text-primary" />
+          <div className="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center overflow-hidden p-2.5 group-hover:bg-primary/10 transition-colors duration-300">
+            <img
+              src={logo}
+              alt={`${name} logo`}
+              className="w-full h-full object-contain rounded-full"
+            />
           </div>
           <span className="font-label text-sm font-bold text-on-surface tracking-wide">
             {name}

@@ -28,8 +28,8 @@ import type { DataFormConfig } from "@/components/organisms/DataFormConfig";
 export const recoverySchema = z.object({
   email: z
     .string()
-    .min(1, "El correo electrónico es requerido.")
-    .email("Ingresa un correo electrónico válido."),
+    .min(1, "Email address is required.")
+    .email("Enter a valid email address."),
 });
 
 /**
@@ -46,7 +46,7 @@ const RecoveryPassword = () => {
     fields: [
       {
         name: "email",
-        label: "Institutional Email",
+        label: "Email Address",
         type: "email",
         placeholder: "name@institute.edu",
         autoComplete: "email",

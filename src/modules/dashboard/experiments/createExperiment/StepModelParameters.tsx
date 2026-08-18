@@ -80,9 +80,9 @@ export function StepModelParameters({
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <h3 className="text-lg font-bold text-on-surface">Parámetros del Modelo</h3>
+      <h3 className="text-lg font-bold text-on-surface">Model Parameters</h3>
       <p className="text-sm text-on-surface-variant">
-        Configura las fuentes genómicas y los parámetros de la región promotora.
+        Configure genomic sources and promoter region parameters.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormField
@@ -94,7 +94,7 @@ export function StepModelParameters({
           options={[
             { value: "JASPAR", label: "JASPAR" },
             { value: "TFBIND", label: "TFBIND" },
-            { value: "BOTH", label: "Ambos" },
+            { value: "BOTH", label: "Both" },
           ]}
         />
 

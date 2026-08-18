@@ -28,7 +28,7 @@ export interface ErrorModalProps {
 }
 
 const ErrorModal = React.forwardRef<HTMLDivElement, ErrorModalProps>(
-  ({ open, message, onClose, title = "Error de autenticación" }, ref) => {
+  ({ open, message, onClose, title = "Authentication Error" }, ref) => {
     React.useEffect(() => {
       if (open) {
         document.body.style.overflow = "hidden";
@@ -85,7 +85,7 @@ const ErrorModal = React.forwardRef<HTMLDivElement, ErrorModalProps>(
         >
           <button
             onClick={onClose}
-            aria-label="Cerrar modal"
+            aria-label="Close modal"
             className="absolute top-4 right-4 text-on-surface-variant hover:text-on-surface transition-colors rounded-lg p-1 hover:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
             <X className="w-4 h-4" />

@@ -28,6 +28,7 @@ export interface ColumnDef<T> {
   accessor?: keyof T;
   className: string; // e.g. "col-span-3 text-right"
   render?: (item: T, index: number) => React.ReactNode;
+  isAction?: boolean;
 }
 
 export interface DataTableProps<T> {
@@ -40,6 +41,21 @@ export interface DataTableProps<T> {
   totalCount?: number;
   pageIndex?: number;
   onPageChange?: (page: number) => void;
+  renderMobileCard?: (item: T, index: number) => React.ReactNode;
+  className?: string;
+}
+
+function extractTextFromNode(node: React.ReactNode): string {
+  if (node === null || node === undefined || typeof node === "boolean") return "";
+  if (typeof node === "string" || typeof node === "number") return String(node);
+  if (Array.isArray(node)) return node.map(extractTextFromNode).join(" ");
+  if (typeof node === "object" && "props" in node) {
+    const props = (node as { props?: { children?: React.ReactNode } }).props;
+    if (props && props.children) {
+      return extractTextFromNode(props.children);
+    }
+  }
+  return "";
 }
 
 export function DataTable<T>({
@@ -52,21 +68,23 @@ export function DataTable<T>({
   totalCount,
   pageIndex,
   onPageChange,
+  renderMobileCard,
+  className,
 }: DataTableProps<T>) {
   const [internalPage, setInternalPage] = useState(1);
 
   const isServerSide = totalCount !== undefined && pageIndex !== undefined && onPageChange !== undefined;
-  
+
   const currentPage = isServerSide ? pageIndex + 1 : internalPage;
   const actualTotalCount = isServerSide ? totalCount : data.length;
-  
+
   const totalPages = Math.max(1, Math.ceil(actualTotalCount / ROWS_PER_PAGE));
-  const paginatedData = isServerSide 
-    ? data 
+  const paginatedData = isServerSide
+    ? data
     : data.slice(
-        (currentPage - 1) * ROWS_PER_PAGE,
-        currentPage * ROWS_PER_PAGE
-      );
+      (currentPage - 1) * ROWS_PER_PAGE,
+      currentPage * ROWS_PER_PAGE
+    );
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -100,55 +118,144 @@ export function DataTable<T>({
   }
 
   return (
-    <div className="flex flex-col">
-      {/* Wrapper to control gap between header and table */}
-      <div className="flex flex-col gap-2">
-        {/* Table Header (Fuera de la tarjeta) */}
-        <div className="grid grid-cols-12 gap-4 px-8 pb-2 pt-4 font-headline text-[13px] font-bold tracking-widest uppercase text-on-surface-variant">
-          {columns.map((col, idx) => (
-            <div key={idx} className={col.className}>
-              {col.header}
-            </div>
-          ))}
+    <div className={cn("flex flex-col mt-6 md:mt-8", className)}>
+      {paginatedData.length === 0 ? (
+        <div className="bg-surface-container-lowest rounded-2xl p-10 text-center text-on-surface-variant font-body shadow-ambient">
+          {emptyMessage}
         </div>
-
-        {/* Table Container */}
-        <div className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-ambient">
-
-        {/* Table Body */}
-        <div className="flex flex-col">
-          {paginatedData.length === 0 ? (
-            <div className="p-10 text-center text-on-surface-variant font-body">
-              {emptyMessage}
-            </div>
-          ) : (
-            paginatedData.map((item, index) => {
-              // We need the global index to pass down to render if needed
+      ) : (
+        <>
+          {/* Mobile Card View (< md) */}
+          <div className="flex flex-col gap-4 md:hidden">
+            {paginatedData.map((item, index) => {
               const globalIndex = (currentPage - 1) * ROWS_PER_PAGE + index;
+              if (renderMobileCard) {
+                return <div key={keyExtractor(item)}>{renderMobileCard(item, globalIndex)}</div>;
+              }
+
+              const isActionCol = (col: ColumnDef<T>) =>
+                col.isAction ||
+                !col.header ||
+                ["options", "opciones", "actions", "acciones"].includes(col.header.toLowerCase().trim());
+
+              const actionCols = columns.filter(isActionCol);
+              const dataCols = columns.filter((col) => !isActionCol(col));
+
               return (
                 <div
                   key={keyExtractor(item)}
-                  className={cn(
-                    "grid grid-cols-12 gap-4 px-8 py-6 items-center transition-all duration-300 font-body text-[15px]",
-                    "hover:bg-surface-container-high"
-                  )}
+                  className="bg-surface-container-lowest rounded-2xl p-5 shadow-ambient flex flex-col gap-3.5 border border-outline-variant/10"
                 >
-                  {columns.map((col, colIdx) => (
-                    <div key={colIdx} className={col.className}>
-                      {col.render
+                  {/* Data Fields */}
+                  <div className="flex flex-col gap-2 min-w-0">
+                    {dataCols.map((col, colIdx) => {
+                      const val = col.render
                         ? col.render(item, globalIndex)
                         : col.accessor
-                        ? String(item[col.accessor] ?? "")
-                        : null}
+                          ? String(item[col.accessor] ?? "")
+                          : null;
+
+                      const textContent = extractTextFromNode(val);
+                      const hasLongWord = textContent.split(/\s+/).some((word) => word.length > 14);
+                      const isLongText = textContent.length > 25 || hasLongWord;
+
+                      if (isLongText) {
+                        return (
+                          <div
+                            key={colIdx}
+                            className="flex flex-col gap-1 text-sm py-2 border-b border-outline-variant/10 last:border-0 w-full min-w-0"
+                          >
+                            <span className="font-headline text-[12px] font-bold tracking-wider uppercase text-on-surface-variant/80">
+                              {col.header}
+                            </span>
+                            <div className="font-body text-on-surface text-left font-medium min-w-0 w-full break-all leading-relaxed pt-0.5">
+                              {val}
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div
+                          key={colIdx}
+                          className="flex justify-between items-center text-sm py-1.5 border-b border-outline-variant/10 last:border-0 gap-4 min-w-0"
+                        >
+                          <span className="font-headline text-[12px] font-bold tracking-wider uppercase text-on-surface-variant/80 shrink-0">
+                            {col.header}
+                          </span>
+                          <div className="font-body text-on-surface text-right font-medium min-w-0 flex-1 break-all flex justify-end">
+                            {val}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Actions Footer */}
+                  {actionCols.length > 0 && (
+                    <div className="pt-3 mt-1 border-t border-outline-variant/15 flex items-center justify-between gap-3">
+                      <span className="font-headline text-[11px] font-bold tracking-wider uppercase text-on-surface-variant/70">
+                        {actionCols[0]?.header || "Options"}
+                      </span>
+                      <div className="flex items-center gap-1.5 bg-surface-container-low px-3 py-1.5 rounded-xl border border-outline-variant/15 shadow-sm">
+                        {actionCols.map((col, colIdx) => (
+                          <div key={colIdx} className="flex items-center gap-1">
+                            {col.render
+                              ? col.render(item, globalIndex)
+                              : col.accessor
+                                ? String(item[col.accessor] ?? "")
+                                : null}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
+                  )}
                 </div>
               );
-            })
-          )}
-        </div>
-      </div>
-      </div>
+            })}
+          </div>
+
+          {/* Desktop Table View (>= md) */}
+          <div className="hidden md:flex md:flex-col md:gap-2">
+            {/* Table Header (Fuera de la tarjeta) */}
+            <div className="grid grid-cols-12 gap-4 px-8 pb-2 pt-4 font-headline text-[13px] font-bold tracking-widest uppercase text-on-surface-variant">
+              {columns.map((col, idx) => (
+                <div key={idx} className={col.className}>
+                  {col.header}
+                </div>
+              ))}
+            </div>
+
+            {/* Table Container */}
+            <div className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-ambient">
+              <div className="flex flex-col">
+                {paginatedData.map((item, index) => {
+                  const globalIndex = (currentPage - 1) * ROWS_PER_PAGE + index;
+                  return (
+                    <div
+                      key={keyExtractor(item)}
+                      className={cn(
+                        "grid grid-cols-12 gap-4 px-8 py-6 items-center transition-all duration-300 font-body text-[15px]",
+                        "hover:bg-surface-container-high"
+                      )}
+                    >
+                      {columns.map((col, colIdx) => (
+                        <div key={colIdx} className={col.className}>
+                          {col.render
+                            ? col.render(item, globalIndex)
+                            : col.accessor
+                              ? String(item[col.accessor] ?? "")
+                              : null}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Pagination */}
       {(isServerSide ? actualTotalCount > 0 : data.length > 0) && (

@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 import { useCallback, useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Microscope, Pencil, Trash2, Plus, Play, Eye } from "lucide-react";
 import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
 import { PipelineStatus, getFriendlyStepLabel } from "@/components/molecules/PipelineStatus";
@@ -34,11 +34,13 @@ const formatUnixTime = (unixSeconds: number) => {
   return `${day}/${month}/${year}`;
 };
 
-
-
 const Experiments = () => {
   const { networkId } = useParams<{ networkId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const { networkName, networkDescription } =
+    (location.state as { networkName?: string; networkDescription?: string }) || {};
 
   const [pipelines, setPipelines] = useState<Experiment[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
@@ -151,7 +153,7 @@ const Experiments = () => {
                 title="View Execution"
                 onClick={() => {
                   if (netId) {
-                    navigate(`/dashboard/experiments/${netId}/execution/${item.id}`);
+                    navigate(`/dashboard/experiments/${netId}/execution/${item.id}`, { state: location.state });
                   }
                 }}
               >
@@ -174,7 +176,7 @@ const Experiments = () => {
                   title="Edit"
                   onClick={() => {
                     if (netId) {
-                      navigate(`/dashboard/experiments/${netId}/update/${item.id}`);
+                      navigate(`/dashboard/experiments/${netId}/update/${item.id}`, { state: location.state });
                     }
                   }}
                 >
@@ -203,9 +205,9 @@ const Experiments = () => {
         items={
           networkId
             ? [
-                { label: "Networks", href: "/dashboard/network" },
-                { label: "Experiments" },
-              ]
+              { label: "Networks", href: "/dashboard/network" },
+              { label: "Experiments" },
+            ]
             : [{ label: "Experiments" }]
         }
       />
@@ -221,21 +223,30 @@ const Experiments = () => {
             </h2>
           </div>
           <p className="text-on-surface-variant font-body text-sm max-w-lg leading-relaxed">
-            View executing or completed pipelines and simulations for the selected network.
+            {networkName || networkDescription ? (
+              <>
+                {networkName && <span className="font-semibold text-on-surface mr-1.5">{networkName}:</span>}
+                {networkDescription || "View executing or completed pipelines and simulations for the selected network."}
+              </>
+            ) : (
+              "View executing or completed pipelines and simulations for the selected network."
+            )}
           </p>
         </div>
 
         {/* Right: Create experiment button */}
         {networkId && (
-          <Button
-            variant="primary"
-            size="md"
-            onClick={() => navigate(`/dashboard/experiments/${networkId}/create`)}
-            className="hover:shadow-primary-glow transition-all transform hover:-translate-y-0.5"
-          >
-            <Plus className="w-[18px] h-[18px]" />
-            Create experiment
-          </Button>
+          <div className="flex items-center justify-end w-full lg:w-auto">
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => navigate(`/dashboard/experiments/${networkId}/create`, { state: location.state })}
+              className="hover:shadow-primary-glow transition-all transform hover:-translate-y-0.5"
+            >
+              <Plus className="w-[18px] h-[18px]" />
+              Create Experiment
+            </Button>
+          </div>
         )}
       </div>
 

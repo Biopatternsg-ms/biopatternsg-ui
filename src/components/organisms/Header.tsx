@@ -43,7 +43,7 @@ const Header = () => {
         <button
           onClick={() => navigate("/")}
           className="justify-self-start text-2xl font-black tracking-tighter text-primary hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary/40 rounded-lg px-1.5"
-          aria-label="Ir a la página de inicio"
+          aria-label="Go to home page"
         >
           Biopatternsg
         </button>

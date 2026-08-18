@@ -41,7 +41,7 @@ export interface SuccessModalProps {
  *   - Accessibility: role="dialog", aria-modal="true", traps focus, and listens to the Escape key.
  */
 const SuccessModal = React.forwardRef<HTMLDivElement, SuccessModalProps>(
-  ({ open, message, onClose, title = "¡Registro exitoso!" }, ref) => {
+  ({ open, message, onClose, title = "Registration Successful!" }, ref) => {
     // Prevent background scrolling when open
     React.useEffect(() => {
       if (open) {
@@ -103,7 +103,7 @@ const SuccessModal = React.forwardRef<HTMLDivElement, SuccessModalProps>(
           {/* Close button X */}
           <button
             onClick={onClose}
-            aria-label="Cerrar modal"
+            aria-label="Close modal"
             className="absolute top-4 right-4 text-on-surface-variant hover:text-on-surface transition-colors rounded-lg p-1 hover:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
             <X className="w-4 h-4" />

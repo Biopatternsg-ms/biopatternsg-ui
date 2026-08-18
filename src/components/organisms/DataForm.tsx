@@ -86,7 +86,7 @@ export const DataForm = <T extends FieldValues>({ config }: DataFormProps<T>) =>
       const message =
         err instanceof Error && err.message
           ? err.message
-          : "No se pudo conectar con el servidor. Verifique su conexión de red.";
+          : "Could not connect to the server. Please check your network connection.";
       setErrorMessage(message);
       setErrorModalOpen(true);
     }

@@ -54,7 +54,7 @@ const Network = () => {
         setNetworks(data.list);
         setTotalCount(data.count);
       } catch (err) {
-        setError("Error al cargar las redes");
+        setError("Error loading networks");
         console.error(err);
       } finally {
         setLoading(false);
@@ -100,7 +100,14 @@ const Network = () => {
           <Button
             variant="icon"
             size="icon"
-            onClick={() => navigate(`/dashboard/experiments/${item.id}`)}
+            onClick={() =>
+              navigate(`/dashboard/experiments/${item.id}`, {
+                state: {
+                  networkName: item.name,
+                  networkDescription: item.description,
+                },
+              })
+            }
             title="Open"
           >
             <FolderOpen className="w-[18px] h-[18px]" />
@@ -142,7 +149,7 @@ const Network = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-end w-full lg:w-auto gap-3">
           <Button
             variant="primary"
             size="md"
@@ -150,7 +157,7 @@ const Network = () => {
             className="hover:shadow-primary-glow transition-all transform hover:-translate-y-0.5"
           >
             <Plus className="w-[18px] h-[18px]" />
-            Crear red
+            Create Network
           </Button>
         </div>
       </div>
@@ -164,7 +171,7 @@ const Network = () => {
         columns={columns}
         loading={loading}
         error={error}
-        emptyMessage="No hay redes disponibles."
+        emptyMessage="No networks available."
         keyExtractor={(item) => item.id}
       />
     </div>

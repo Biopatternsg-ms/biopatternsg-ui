@@ -63,7 +63,7 @@ const Users = () => {
         setUsers(data.list);
         setTotalCount(data.count);
       } catch (err) {
-        setError("Error al cargar los usuarios");
+        setError("Error loading users");
         console.error(err);
       } finally {
         setLoading(false);
@@ -107,21 +107,21 @@ const Users = () => {
           prev.map((user) => (user.id === id ? { ...user, enabled: newState } : user))
         );
         setSuccessContent({
-          title: newState ? "Usuario habilitado" : "Usuario deshabilitado",
-          message: `El usuario fue ${newState ? "habilitado" : "deshabilitado"} exitosamente.`,
+          title: newState ? "User enabled" : "User disabled",
+          message: `User was ${newState ? "enabled" : "disabled"} successfully.`,
         });
         setSuccessModalOpen(true);
       } else {
         setErrorContent({
-          title: "Error de estado",
-          message: "No se pudo cambiar el estado del usuario.",
+          title: "Status Error",
+          message: "Could not change user status.",
         });
         setErrorModalOpen(true);
       }
     } catch {
       setErrorContent({
-        title: "Error de estado",
-        message: "No se pudo cambiar el estado del usuario.",
+        title: "Status Error",
+        message: "Could not change user status.",
       });
       setErrorModalOpen(true);
     }
@@ -205,15 +205,15 @@ const Users = () => {
           <div className="flex items-center gap-3">
             <UsersIcon className="text-primary-container w-7 h-7" />
             <h2 className="font-headline text-2xl font-black text-on-surface tracking-tighter">
-              Usuarios
+              Users
             </h2>
           </div>
           <p className="text-on-surface-variant font-body text-sm max-w-lg leading-relaxed">
-            Gestione los usuarios de la plataforma, administre accesos y recupere credenciales.
+            Manage platform users, administer access, and recover credentials.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-end w-full lg:w-auto gap-3">
           <Button
             variant="primary"
             size="md"
@@ -221,25 +221,23 @@ const Users = () => {
             className="hover:shadow-primary-glow transition-all transform hover:-translate-y-0.5"
           >
             <Plus className="w-[18px] h-[18px]" />
-            Crear usuario
+            Create User
           </Button>
         </div>
       </div>
 
       {/* Users Data Table */}
-      <div className="mt-8">
-        <DataTable
-          data={users}
-          totalCount={totalCount}
-          pageIndex={page}
-          onPageChange={setPage}
-          columns={columns}
-          loading={loading}
-          error={error}
-          emptyMessage="No hay usuarios disponibles."
-          keyExtractor={(item) => item.id}
-        />
-      </div>
+      <DataTable
+        data={users}
+        totalCount={totalCount}
+        pageIndex={page}
+        onPageChange={setPage}
+        columns={columns}
+        loading={loading}
+        error={error}
+        emptyMessage="No users available."
+        keyExtractor={(item) => item.id}
+      />
 
       <SuccessModal
         open={successModalOpen}

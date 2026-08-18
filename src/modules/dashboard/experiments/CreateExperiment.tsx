@@ -75,15 +75,15 @@ const CreateExperiment = () => {
   const [promoterRegion, setPromoterRegion] = useState("");
 
   const modelPlaceholders = {
-    genome: "Ejm: HG38",
-    track: "Ejm: jaspar2022",
-    identity: "Ejm: 100.0",
-    chromosome: "Ejm: chr8",
-    strand: "Ejm: NEGATIVE",
-    start: "Ejm: 58498163",
-    end: "Ejm: 58502163",
-    reliability: "Ejm: 95",
-    promoterRegion: "Ingrese la secuencia de la región promotora...",
+    genome: "e.g.: HG38",
+    track: "e.g.: jaspar2022",
+    identity: "e.g.: 100.0",
+    chromosome: "e.g.: chr8",
+    strand: "e.g.: NEGATIVE",
+    start: "e.g.: 58498163",
+    end: "e.g.: 58502163",
+    reliability: "e.g.: 95",
+    promoterRegion: "Enter promoter region sequence...",
   };
 
   const [searchLevel, setSearchLevel] = useState<string>("");
@@ -145,7 +145,7 @@ const CreateExperiment = () => {
           setExpertObjectsFile(expertObjectsToCsvFile(data.expertObjects));
         }
       } catch {
-        setErrorMessage("Error al cargar la información del experimento.");
+        setErrorMessage("Error loading experiment information.");
         setErrorModalOpen(true);
       } finally {
         setIsSubmitting(false);
@@ -158,12 +158,12 @@ const CreateExperiment = () => {
   const handleNext = async () => {
     if (currentStep === 0) {
       if (!networkId) {
-        setErrorMessage("Falta el ID de la red en la URL.");
+        setErrorMessage("Network ID is missing in the URL.");
         setErrorModalOpen(true);
         return;
       }
       if (!experimentName || !experimentDescription) {
-        setErrorMessage("Por favor, ingrese el nombre y la descripción.");
+        setErrorMessage("Please enter a name and description.");
         setErrorModalOpen(true);
         return;
       }
@@ -182,20 +182,20 @@ const CreateExperiment = () => {
         } else {
           setErrorMessage(
             experiment?.id
-              ? "Error al actualizar la descripción del experimento."
-              : "Error al crear el experimento. Por favor, intente de nuevo."
+              ? "Error updating experiment description."
+              : "Error creating experiment. Please try again."
           );
           setErrorModalOpen(true);
         }
       } catch {
-        setErrorMessage("Ocurrió un error inesperado al comunicarse con el servidor.");
+        setErrorMessage("An unexpected error occurred while communicating with the server.");
         setErrorModalOpen(true);
       } finally {
         setIsSubmitting(false);
       }
     } else if (currentStep === 1) {
       if (!experiment) {
-        setErrorMessage("No se ha creado el experimento. Por favor, complete el paso anterior.");
+        setErrorMessage("Experiment has not been created. Please complete the previous step first.");
         setErrorModalOpen(true);
         return;
       }
@@ -231,18 +231,18 @@ const CreateExperiment = () => {
           setExperiment(updatedData);
           setCurrentStep((prev) => prev + 1);
         } else {
-          setErrorMessage("Error al guardar los factores de transcripción del experimento.");
+          setErrorMessage("Error saving experiment transcription factors.");
           setErrorModalOpen(true);
         }
       } catch {
-        setErrorMessage("Ocurrió un error inesperado al comunicarse con el servidor.");
+        setErrorMessage("An unexpected error occurred while communicating with the server.");
         setErrorModalOpen(true);
       } finally {
         setIsSubmitting(false);
       }
     } else if (currentStep === 2) {
       if (!experiment) {
-        setErrorMessage("No se ha creado el experimento. Por favor, complete el paso anterior.");
+        setErrorMessage("Experiment has not been created. Please complete the previous step first.");
         setErrorModalOpen(true);
         return;
       }
@@ -262,40 +262,40 @@ const CreateExperiment = () => {
           setExperiment(updatedData);
           setCurrentStep((prev) => prev + 1);
         } else {
-          setErrorMessage("Error al guardar los objetos expertos del experimento.");
+          setErrorMessage("Error saving experiment expert objects.");
           setErrorModalOpen(true);
         }
       } catch {
-        setErrorMessage("Ocurrió un error inesperado al comunicarse con el servidor.");
+        setErrorMessage("An unexpected error occurred while communicating with the server.");
         setErrorModalOpen(true);
       } finally {
         setIsSubmitting(false);
       }
     } else {
       if (!experiment) {
-        setErrorMessage("No se ha creado el experimento. Por favor, complete el paso anterior.");
+        setErrorMessage("Experiment has not been created. Please complete the previous step first.");
         setErrorModalOpen(true);
         return;
       }
       if (!searchLevel) {
-        setErrorMessage("Por favor, ingrese el nivel de búsqueda.");
+        setErrorMessage("Please enter the search level.");
         setErrorModalOpen(true);
         return;
       }
       if (!retMax) {
-        setErrorMessage("Por favor, ingrese el número máximo de búsqueda en Pubtator.");
+        setErrorMessage("Please enter maximum search limit for PubTator.");
         setErrorModalOpen(true);
         return;
       }
       if (!maxComplexes) {
-        setErrorMessage("Por favor, ingrese el número máximo de complejos.");
+        setErrorMessage("Please enter maximum complexes count.");
         setErrorModalOpen(true);
         return;
       }
 
       const levels = Number(searchLevel);
       if (Number.isNaN(levels)) {
-        setErrorMessage("El nivel de búsqueda debe ser un número válido.");
+        setErrorMessage("Search level must be a valid number.");
         setErrorModalOpen(true);
         return;
       }
@@ -307,19 +307,19 @@ const CreateExperiment = () => {
 
       const retMaxNumber = Number(retMax);
       if (Number.isNaN(retMaxNumber)) {
-        setErrorMessage("El número máximo de búsqueda debe ser un número válido.");
+        setErrorMessage("Maximum search limit must be a valid number.");
         setErrorModalOpen(true);
         return;
       }
 
       const maxComplexesNumber = Number(maxComplexes);
       if (Number.isNaN(maxComplexesNumber)) {
-        setErrorMessage("El número máximo de complejos debe ser un número válido.");
+        setErrorMessage("Maximum complexes count must be a valid number.");
         setErrorModalOpen(true);
         return;
       }
       if (maxComplexesNumber <= 0) {
-        setErrorMessage("El número máximo de complejos debe ser mayor a cero.");
+        setErrorMessage("Maximum complexes count must be greater than zero.");
         setErrorModalOpen(true);
         return;
       }
@@ -336,11 +336,11 @@ const CreateExperiment = () => {
         if (response.ok) {
           setSuccessModalOpen(true);
         } else {
-          setErrorMessage("Error al configurar la búsqueda del experimento.");
+          setErrorMessage("Error configuring experiment search.");
           setErrorModalOpen(true);
         }
       } catch {
-        setErrorMessage("Ocurrió un error inesperado al comunicarse con el servidor.");
+        setErrorMessage("An unexpected error occurred while communicating with the server.");
         setErrorModalOpen(true);
       } finally {
         setIsSubmitting(false);
@@ -466,7 +466,7 @@ const CreateExperiment = () => {
                   if (experiment?.id) {
                     setCurrentStep(index);
                   } else {
-                    setErrorMessage("Es necesario cargar primero la información básica del experimento");
+                    setErrorMessage("Basic experiment information must be saved first.");
                     setErrorModalOpen(true);
                   }
                 }}
@@ -485,7 +485,7 @@ const CreateExperiment = () => {
                 onClick={handleBack}
                 disabled={currentStep === 0}
               >
-                Anterior
+                Previous
               </Button>
               <Button
                 variant="primary"
@@ -494,7 +494,7 @@ const CreateExperiment = () => {
                 className="gap-2"
               >
                 {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                {currentStep === steps.length - 1 ? "Crear Experimento" : "Siguiente"}
+                {currentStep === steps.length - 1 ? (isEditMode ? "Save Experiment" : "Create Experiment") : "Next"}
               </Button>
             </div>
           </div>
@@ -503,15 +503,15 @@ const CreateExperiment = () => {
 
       <SuccessModal
         open={successModalOpen}
-        title="Experimento creado"
-        message="Configuración exitosa del experimento"
+        title="Experiment Created"
+        message="Experiment configured successfully."
         onClose={handleSuccessClose}
       />
 
       <ErrorModal
         open={errorModalOpen}
         title="Error"
-        message={errorMessage || "Ocurrió un error al crear el experimento."}
+        message={errorMessage || "An error occurred while creating the experiment."}
         onClose={() => setErrorModalOpen(false)}
       />
     </div>

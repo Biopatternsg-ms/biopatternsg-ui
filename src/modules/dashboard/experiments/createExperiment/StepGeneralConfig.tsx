@@ -36,13 +36,13 @@ export function StepGeneralConfig({
 }: StepGeneralConfigProps) {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <h3 className="text-lg font-bold text-on-surface">Configuración General</h3>
+      <h3 className="text-lg font-bold text-on-surface">General Configuration</h3>
       <p className="text-sm text-on-surface-variant">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+        Set the basic identification details and scope for this experimental pipeline.
       </p>
       <div className="grid grid-cols-1 gap-4">
         <FormField
-          label="Nombre del Experimento"
+          label="Experiment Name"
           placeholder="e.g. Model Alpha v1.0"
           type="text"
           value={name}
@@ -50,7 +50,7 @@ export function StepGeneralConfig({
           disabled={nameReadOnly}
         />
         <FormField
-          label="Descripción"
+          label="Description"
           placeholder="Describe the objective..."
           type="textarea"
           rows={3}
