@@ -243,13 +243,13 @@ const UpdateAlignedObjects = () => {
     if (!expId) return;
 
     let ignore = false;
-    async function loadData() {
+    async function loadData(id: string) {
       try {
         setLoading(true);
 
         const [execData, alignedResultsData] = await Promise.allSettled([
-          experimentService.getExperimentExecution(expId),
-          experimentService.getAlignedResults(expId),
+          experimentService.getExperimentExecution(id),
+          experimentService.getAlignedResults(id),
         ]);
 
         if (ignore) return;
@@ -338,7 +338,7 @@ const UpdateAlignedObjects = () => {
       }
     }
 
-    loadData();
+    loadData(expId);
 
     return () => {
       ignore = true;
@@ -364,7 +364,7 @@ const UpdateAlignedObjects = () => {
     setEditForm(null);
   };
 
-  const handleReplaceSymbolName = (itemId: string, currentSymbol: string, synonym: string) => {
+  const handleReplaceSymbolName = (itemId: string, synonym: string) => {
     setObjects((prev) =>
       prev.map((obj) =>
         obj.id === itemId
@@ -835,7 +835,6 @@ const UpdateAlignedObjects = () => {
                 onClick={() => {
                   handleReplaceSymbolName(
                     activeSynonymMenu.itemId,
-                    activeSynonymMenu.itemSymbol,
                     activeSynonymMenu.synonym
                   );
                   setActiveSynonymMenu(null);
