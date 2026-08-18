@@ -89,7 +89,7 @@ export function StepExpertObjects({
     const isCsv = file.name.toLowerCase().endsWith(".csv") || file.type === "text/csv";
     if (!isCsv) {
       onFileChange(null);
-      onError("Solo se permiten archivos de tipo CSV.");
+      onError("Only CSV files are allowed.");
       input.value = "";
       return;
     }
@@ -103,7 +103,7 @@ export function StepExpertObjects({
         onFileParsed(parsed);
       } catch (err) {
         onFileChange(null);
-        onError(err instanceof Error ? err.message : "Error al leer el archivo CSV.");
+        onError(err instanceof Error ? err.message : "Error reading CSV file.");
         input.value = "";
       }
     };
@@ -132,7 +132,7 @@ export function StepExpertObjects({
         />
         {expertObjects && expertObjects.length > 0 && (
           <p className="text-sm text-on-surface-variant">
-            Archivo seleccionado:
+            Selected file:
             <Button variant="link" size="sm" onClick={handleDownloadCurrentCsv}>
               Expert-objects.csv
             </Button>

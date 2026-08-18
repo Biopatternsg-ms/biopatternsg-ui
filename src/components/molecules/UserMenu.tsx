@@ -37,11 +37,11 @@ const UserMenu = () => {
   };
 
   // Intentamos obtener el nombre de distintos posibles claims del JWT
-  const displayName = user?.name || user?.preferred_username || user?.upn || user?.sub || "Usuario";
+  const displayName = user?.name || user?.preferred_username || user?.upn || user?.sub || "User";
 
   return (
     <div className="flex items-center gap-4">
-      {/* Texto de Usuario (solo desktop para ahorrar espacio) */}
+      {/* User display name (desktop) */}
       <div className="hidden md:flex flex-col items-end justify-center">
         <span className="font-headline font-bold text-sm text-on-surface">
           {displayName}
@@ -56,7 +56,7 @@ const UserMenu = () => {
         </DropdownMenuTrigger>
         
         <DropdownMenuContent align="end" className="min-w-[200px]">
-          {/* Solo en mobile se muestra el nombre dentro del menú */}
+          {/* Mobile user name */}
           <div className="md:hidden">
             <DropdownMenuLabel>
               {displayName}
@@ -69,7 +69,7 @@ const UserMenu = () => {
             className="text-error hover:bg-error/10 focus:bg-error/10"
           >
             <LogOut className="w-4 h-4 mr-2" />
-            Cerrar sesión
+            Log out
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

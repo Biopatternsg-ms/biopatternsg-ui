@@ -22,11 +22,25 @@ import {
   PIPELINES_DESCRIPTION_ENDPOINT,
   PIPELINES_TRANSCRIPTION_FACTOR_ENDPOINT,
   PIPELINES_EXPERT_OBJECTS_ENDPOINT,
+  PIPELINES_ALIGNED_EXPERT_OBJECTS_ENDPOINT,
   PIPELINES_SEARCH_CONFIG_ENDPOINT,
   PIPELINES_LAUNCH_ENDPOINT,
+  PUBMED_ALIGNED_RESULTS_ENDPOINT,
+  PUBMED_SYNONYMS_BY_NAME_ENDPOINT,
+  PUBMED_KB_EVENTS_BY_TERM_ENDPOINT,
+  PUBMED_GENERATE_KB_ENDPOINT,
 } from "./apiConfig";
 
-import type { Experiment, ExpertObject, TranscriptionFactorConfig, ExperimentExecution } from "./models/Experiment";
+import type {
+  Experiment,
+  ExpertObject,
+  TranscriptionFactorConfig,
+  ExperimentExecution,
+  PipelineStepExecution,
+  AlignedResultResponse,
+  PipelineSynonymResponse,
+  KbEventResponse,
+} from "./models/Experiment";
 
 export interface PaginatedResponse<T> {
   count: number;
@@ -114,6 +128,59 @@ export const experimentService = {
   },
 
   /**
+   * Updates the aligned expert objects list (symbols) of an existing pipeline.
+   * PUT /config-and-control/pipelines/aligned-expert-objects
+   * Body: { id, alignedExpertObjects }
+   */
+  async saveAlignedExpertObjects(
+    id: string,
+    alignedExpertObjects: string[]
+  ): Promise<Response> {
+    return authFetch(PIPELINES_ALIGNED_EXPERT_OBJECTS_ENDPOINT, {
+      method: "PUT",
+      body: JSON.stringify({ id, alignedExpertObjects }),
+    });
+  },
+
+  /**
+   * Re-triggers the aligned objects generation step.
+   * POST /config-and-control/pipelines/{id}/regenerate-aligned-objects
+   */
+  async regenerateAlignedObjects(id: string): Promise<Response> {
+    return authFetch(`${PIPELINES_ENDPOINT}/${id}/regenerate-aligned-objects`, {
+      method: "POST",
+    });
+  },
+
+  /**
+   * Updates a specific pipeline step status and metrics.
+   * PATCH /config-and-control/pipelines/update-step
+   */
+  async updatePipelineStep(
+    id: string,
+    step: string,
+    status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED",
+    metrics?: Record<string, string>
+  ): Promise<Response> {
+    return authFetch(`${PIPELINES_ENDPOINT}/update-step`, {
+      method: "PATCH",
+      body: JSON.stringify({ id, step, status, metrics }),
+    });
+  },
+
+  /**
+   * Re-triggers the Knowledge Base Generation step for a pipeline.
+   * POST /pubmed/generate-kb
+   * Body: { pipelineId }
+   */
+  async generateKnowledgeBase(pipelineId: string): Promise<Response> {
+    return authFetch(PUBMED_GENERATE_KB_ENDPOINT, {
+      method: "POST",
+      body: JSON.stringify({ pipelineId }),
+    });
+  },
+
+  /**
    * Updates the search configuration of an existing pipeline (levels + retMax + useOnlyPrincipalName + maxComplexes).
    * PUT /config-and-control/pipelines/search-config
    * Body: { id, levels, retMax, useOnlyPrincipalName, maxComplexes }
@@ -164,8 +231,48 @@ export const experimentService = {
       const response = await authFetch(`${PIPELINES_ENDPOINT}/${experimentId}/execution`);
       if (response.ok) {
         const data = await response.json();
+        const steps = (data.steps || []).map((s: PipelineStepExecution) => ({
+          ...s,
+          id: s.id || (s as { step?: string }).step || s.name,
+        }));
+
+        // Ensure "Update Aligned Objects" manual step is present right after "Generate Aligned Objects"
+        const hasUpdateAligned = steps.some(
+          (s: PipelineStepExecution) =>
+            s.id === "step-update_aligned_objects" ||
+            s.id === "UPDATE_ALIGNED_OBJECTS" ||
+            s.name === "Update Aligned Objects"
+        );
+
+        if (!hasUpdateAligned) {
+          const genIndex = steps.findIndex(
+            (s: PipelineStepExecution) =>
+              s.id === "step-generate_aligned_objects" ||
+              s.id === "GENERATE_ALIGNED_OBJECTS" ||
+              s.name === "Generate Aligned Objects"
+          );
+
+          const updateStep = {
+            id: "step-update_aligned_objects",
+            name: "Update Aligned Objects",
+            status: "PENDING",
+            duration: "Manual",
+            outputText: "Manual Action Required",
+            description: "Manual step to review, modify, and align biological objects, synonyms, and identifiers.",
+            iconName: "GitBranch",
+            isManual: true,
+          };
+
+          if (genIndex !== -1) {
+            steps.splice(genIndex + 1, 0, updateStep);
+          } else {
+            steps.push(updateStep);
+          }
+        }
+
         return {
           ...data,
+          steps,
           networkId: data.networkId || networkId,
         };
       }
@@ -177,6 +284,41 @@ export const experimentService = {
       ...getMockExecutionData(experimentId, experimentName),
       networkId,
     };
+  },
+
+  /**
+   * Fetches aligned results for a given pipelineId from pubmed-integration endpoint.
+   */
+  async getAlignedResults(pipelineId: string): Promise<AlignedResultResponse> {
+    const response = await authFetch(`${PUBMED_ALIGNED_RESULTS_ENDPOINT}/${pipelineId}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch aligned results for pipeline ${pipelineId}`);
+    }
+    return response.json();
+  },
+
+  /**
+   * Fetches synonyms for a given pipelineId and object name from pubmed-integration endpoint.
+   */
+  async getSynonymsByName(pipelineId: string, name: string): Promise<PipelineSynonymResponse> {
+    const url = `${PUBMED_SYNONYMS_BY_NAME_ENDPOINT}/${pipelineId}/by-name/${encodeURIComponent(name)}`;
+    const response = await authFetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch synonyms for pipeline ${pipelineId} and name ${name}`);
+    }
+    return response.json();
+  },
+
+  /**
+   * Fetches kb_events for a given pipelineId and term from pubmed-integration endpoint.
+   */
+  async getKbEventsByTerm(pipelineId: string, term: string): Promise<KbEventResponse[]> {
+    const url = `${PUBMED_KB_EVENTS_BY_TERM_ENDPOINT}/${pipelineId}/by-term/${encodeURIComponent(term)}`;
+    const response = await authFetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch kb_events for pipeline ${pipelineId} and term ${term}`);
+    }
+    return response.json();
   },
 };
 
@@ -236,21 +378,43 @@ export function getMockExecutionData(experimentId: string, experimentName = "Pro
       {
         id: "step-4",
         name: "Variant Calling",
-        status: "ACTIVE",
+        status: "COMPLETED",
         startTime: "14:59:27",
         duration: "18m 42s",
-        outputText: "(Active)",
-        description: "Identifying genetic variations from aligned sequences using the GATK HaplotypeCaller engine. Currently processing chromosome 14.",
+        outputText: "Completed",
+        description: "Identifying genetic variations from aligned sequences using the GATK HaplotypeCaller engine.",
         iconName: "Activity",
-        subSteps: [
-          { name: "Haplotype Engine Init", status: "COMPLETED" },
-          { name: "Chr 14 Processing", status: "ACTIVE" },
-          { name: "VCF Generation", status: "PENDING" }
-        ],
         metrics: [
-          { label: "TOTAL READS", value: "42.8M", progress: 75 },
+          { label: "TOTAL READS", value: "42.8M", progress: 100 },
           { label: "MAPPING QUALITY", value: "98.4%", subLabel: "↑ 0.2% from baseline", subLabelColor: "green" },
-          { label: "WARNINGS DETECTED", value: "02", hasWarnings: true, warningCount: 2 }
+        ]
+      },
+      {
+        id: "step-generate_aligned_objects",
+        name: "Generate Aligned Objects",
+        status: "COMPLETED",
+        startTime: "15:20:00",
+        duration: "05m 10s",
+        outputText: "Completed • 142 Aligned Objects",
+        description: "Automatically generates initial aligned biological objects from mined literature and databases.",
+        iconName: "GitBranch",
+        metrics: [
+          { label: "ALIGNED OBJECTS", value: "142" },
+          { label: "UNALIGNED OBJECTS", value: "8" }
+        ]
+      },
+      {
+        id: "step-update_aligned_objects",
+        name: "Update Aligned Objects",
+        status: "PENDING",
+        duration: "Manual",
+        outputText: "Manual Action Required",
+        description: "Manual step to review, modify, and align biological objects, synonyms, and identifiers.",
+        iconName: "GitBranch",
+        isManual: true,
+        metrics: [
+          { label: "STATUS", value: "Awaiting Manual Update" },
+          { label: "TARGET OBJECTS", value: "150" }
         ]
       },
       {

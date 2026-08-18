@@ -25,8 +25,8 @@ import { networkService } from "@/services/networkService";
 import type { DataFormConfig } from "@/components/organisms/DataFormConfig";
 
 const createNetworkSchema = z.object({
-  name: z.string().min(1, "El nombre de la red es requerido."),
-  description: z.string().min(1, "La descripción es requerida."),
+  name: z.string().min(1, "Network name is required."),
+  description: z.string().min(1, "Description is required."),
 });
 
 const CreateNetwork = () => {
@@ -80,6 +80,7 @@ const CreateNetwork = () => {
     <div >
       {/* Breadcrumb Navigation */}
       <Breadcrumb
+        className="mb-6"
         items={[
           { label: "Networks", href: "/dashboard/network" },
           { label: "Register Network" },
@@ -87,7 +88,7 @@ const CreateNetwork = () => {
       />
 
       {/* Page Header */}
-      <div className="flex flex-col gap-2 max-w-2xl">
+      <div className="flex flex-col gap-2 max-w-2xl mb-8">
         <h1 className="font-headline text-3xl font-black text-on-surface tracking-tighter">
           Register New Network
         </h1>

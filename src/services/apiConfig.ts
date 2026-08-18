@@ -43,7 +43,7 @@ export const ADMIN_USERS_PATH = "config-and-control/admin/users";
 export const ADMIN_USERS_ENDPOINT = `${CONFIG_AND_CONTROL}/${ADMIN_USERS_PATH}`;
 
 /** Endpoint path for creating admin user. */
-export const CREATE_ADMIN_USER_PATH = "config-and-control/admin/create-user";
+export const CREATE_ADMIN_USER_PATH = "config-and-control/admin/users";
 export const CREATE_ADMIN_USER_ENDPOINT = `${CONFIG_AND_CONTROL}/${CREATE_ADMIN_USER_PATH}`;
 
 /** Endpoint path for toggling an admin user's enabled status (dynamic userId). */
@@ -73,5 +73,22 @@ export const PIPELINES_ENDPOINT = `${CONFIG_AND_CONTROL}/${PIPELINES_PATH}`;
 export const PIPELINES_DESCRIPTION_ENDPOINT = `${PIPELINES_ENDPOINT}/description`;
 export const PIPELINES_TRANSCRIPTION_FACTOR_ENDPOINT = `${PIPELINES_ENDPOINT}/transcription-factor`;
 export const PIPELINES_EXPERT_OBJECTS_ENDPOINT = `${PIPELINES_ENDPOINT}/expert-objects`;
+export const PIPELINES_ALIGNED_EXPERT_OBJECTS_ENDPOINT = `${PIPELINES_ENDPOINT}/aligned-expert-objects`;
 export const PIPELINES_SEARCH_CONFIG_ENDPOINT = `${PIPELINES_ENDPOINT}/search-config`;
 export const PIPELINES_LAUNCH_ENDPOINT = `${PIPELINES_ENDPOINT}/launch`;
+
+/** Endpoint path for pubmed aligned-results. */
+export const PUBMED_ALIGNED_RESULTS_PATH = "pubmed/aligned-results";
+export const PUBMED_ALIGNED_RESULTS_ENDPOINT = `${CONFIG_AND_CONTROL}/${PUBMED_ALIGNED_RESULTS_PATH}`;
+
+/** Endpoint path for pubmed synonyms search by name. */
+export const PUBMED_SYNONYMS_BY_NAME_PATH = "pubmed/synonyms";
+export const PUBMED_SYNONYMS_BY_NAME_ENDPOINT = `${CONFIG_AND_CONTROL}/${PUBMED_SYNONYMS_BY_NAME_PATH}`;
+
+/** Endpoint path for pubmed kb-events search by term. */
+export const PUBMED_KB_EVENTS_BY_TERM_PATH = "pubmed/kb-events";
+export const PUBMED_KB_EVENTS_BY_TERM_ENDPOINT = `${CONFIG_AND_CONTROL}/${PUBMED_KB_EVENTS_BY_TERM_PATH}`;
+
+/** Endpoint path for pubmed generate-kb. */
+export const PUBMED_GENERATE_KB_PATH = "pubmed/generate-kb";
+export const PUBMED_GENERATE_KB_ENDPOINT = `${CONFIG_AND_CONTROL}/${PUBMED_GENERATE_KB_PATH}`;

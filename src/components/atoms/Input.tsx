@@ -52,8 +52,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             type="button"
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors focus:outline-none"
-            aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-            tabIndex={-1} // Evita que al dar 'Tab' por el formulario se detenga en el icono en vez del siguiente input
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            tabIndex={-1}
           >
             {showPassword ? (
               <EyeOff className="w-5 h-5 opacity-70" />

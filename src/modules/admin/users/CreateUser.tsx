@@ -27,16 +27,16 @@ import { Breadcrumb } from "@/components/atoms/Breadcrumb";
 export const createUserSchema = z.object({
   email: z
     .string()
-    .min(1, "El correo electrónico es requerido.")
-    .email("Ingresa un correo válido."),
+    .min(1, "Email address is required.")
+    .email("Enter a valid email address."),
   firstName: z
     .string()
-    .min(2, "El nombre debe tener al menos 2 caracteres.")
-    .max(50, "El nombre es demasiado largo."),
+    .min(2, "First name must be at least 2 characters.")
+    .max(50, "First name is too long."),
   lastName: z
     .string()
-    .min(2, "El apellido debe tener al menos 2 caracteres.")
-    .max(50, "El apellido es demasiado largo."),
+    .min(2, "Last name must be at least 2 characters.")
+    .max(50, "Last name is too long."),
 });
 
 const CreateUser = () => {
@@ -91,28 +91,29 @@ const CreateUser = () => {
   };
 
   return (
-    <div className="w-full flex flex-col h-full overflow-hidden">
-      {/* Scrollable container with padding */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12">
-        {/* Breadcrumb Navigation */}
-        <Breadcrumb
-          className="mb-6"
-          items={[
-            { label: "Usuarios", href: "/dashboard/admin/users" },
-            { label: "Crear Usuario" },
-          ]}
-        />
+    <div>
+      {/* Breadcrumb Navigation */}
+      <Breadcrumb
+        className="mb-6"
+        items={[
+          { label: "Users", href: "/dashboard/admin/users" },
+          { label: "Create User" },
+        ]}
+      />
 
-        {/* Centered Form similar to Register */}
-        <div className="max-w-lg mx-auto">
-          {/* Context Badge */}
-          <div className="text-center mb-6">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed font-label text-[10px] uppercase tracking-widest font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              Admin User Creation Session
-            </span>
-          </div>
+      {/* Page Header */}
+      <div className="flex flex-col gap-2 max-w-2xl mb-8">
+        <h1 className="font-headline text-3xl font-black text-on-surface tracking-tighter">
+          Create New User
+        </h1>
+        <p className="text-on-surface-variant font-body text-sm leading-relaxed">
+          Register a new researcher to access the platform. Set access credentials and personal details.
+        </p>
+      </div>
 
+      {/* Centered Form */}
+      <div className="flex justify-center">
+        <div className="w-full max-w-lg">
           <DataForm config={createUserConfig} />
         </div>
       </div>

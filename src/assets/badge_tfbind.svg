@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <linearGradient id="tfGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#151039" />
+      <stop offset="100%" stop-color="#0050cb" />
+    </linearGradient>
+    <linearGradient id="dnaGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4edea3" />
+      <stop offset="100%" stop-color="#0066ff" />
+    </linearGradient>
+  </defs>
+  <!-- Background Circle -->
+  <rect width="100" height="100" rx="50" fill="url(#tfGrad)"/>
+  
+  <!-- DNA Helix strands -->
+  <path d="M25,35 Q50,65 75,35" fill="none" stroke="url(#dnaGrad)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M25,65 Q50,35 75,65" fill="none" stroke="url(#dnaGrad)" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- Binding Nodes -->
+  <line x1="38" y1="44" x2="38" y2="56" stroke="#ffffff" stroke-width="2.5" stroke-dasharray="2 2" opacity="0.8"/>
+  <line x1="50" y1="50" x2="50" y2="50" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+  <line x1="62" y1="44" x2="62" y2="56" stroke="#ffffff" stroke-width="2.5" stroke-dasharray="2 2" opacity="0.8"/>
+
+  <!-- TFBIND Badge Text -->
+  <text x="50" y="82" font-family="'Space Grotesk', system-ui, sans-serif" font-size="11" font-weight="800" fill="#ffffff" text-anchor="middle" letter-spacing="1">TFBIND</text>
+</svg>

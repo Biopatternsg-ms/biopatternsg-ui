@@ -39,6 +39,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
         },
+        "/pubmed": {
+          target: env.VITE_BACKEND_URL || "http://localhost:8080",
+          changeOrigin: true,
+          secure: false,
+        }
       },
     },
   };

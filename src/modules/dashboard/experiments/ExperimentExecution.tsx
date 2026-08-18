@@ -34,11 +34,14 @@ import {
   Info,
   Hash,
   Network as NetworkIcon,
+  Clock,
+  Edit3,
   type LucideIcon
 } from "lucide-react";
+import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
 import { experimentService } from "@/services/experimentService";
 import { networkService } from "@/services/networkService";
-import type { ExperimentExecution, MetricCard } from "@/services/models/Experiment";
+import type { ExperimentExecution, MetricCard, PipelineStepExecution } from "@/services/models/Experiment";
 import { Button } from "@/components/atoms/Button";
 import { Breadcrumb } from "@/components/atoms/Breadcrumb";
 import { Badge } from "@/components/atoms/Badge";
@@ -193,26 +196,59 @@ const STAGE_DEFINITIONS = [
     name: "Initialization",
     description: "Configures initial pipeline parameters, validates input payload, and sets up network metadata.",
     iconName: "Sliders",
-    stepIds: ["step-configuration", "step-launched", "step-1", "step-2"],
+    stepIds: [
+      "step-configuration",
+      "step-launched",
+      "step-1",
+      "step-2",
+      "CONFIG",
+      "LAUNCH",
+      "Configuration Setup",
+      "Launch Pipeline",
+    ],
   },
   {
     id: "BIOLOGICAL_OBJECT",
     name: "Discovery Biological Objects",
     description: "Extracts transcription factors, processes expert biological objects, and configures hierarchy levels.",
     iconName: "Cpu",
-    stepIds: ["step-transcription_factor", "step-expert_objects", "step-search_levels", "step-3"],
+    stepIds: [
+      "step-transcription_factor",
+      "step-expert_objects",
+      "step-search_levels",
+      "step-3",
+      "TRANSCRIPTION_FACTOR",
+      "EXPERT_OBJECTS",
+      "SEARCH_LEVELS",
+      "Transcription Factor Config",
+      "Expert Objects Processing",
+      "Search Levels Processing",
+    ],
   },
   {
     id: "PUBMED_INTEGRATION",
     name: "Build Knowledge Bases",
-    description: "Generates combinations, queries PubMed identifiers, extracts PubTator annotations, and builds the knowledge base graph.",
+    description: "Generates combinations, queries PubMed identifiers, extracts PubTator annotations, builds the knowledge base graph, and updates aligned objects.",
     iconName: "GitBranch",
     stepIds: [
       "step-combinations",
+      "COMBINATIONS",
+      "Pubmed Combinations Generation",
       "step-search_pubmed_ids",
+      "SEARCH_PUBMED_IDS",
+      "Search PubMed IDs",
       "step-search_pubtator",
+      "SEARCH_PUBTATOR",
+      "Search PubTator Annotations",
       "step-build_knowledge_base",
+      "BUILD_KNOWLEDGE_BASE",
+      "Build Knowledge Base Graph",
       "step-generate_aligned_objects",
+      "GENERATE_ALIGNED_OBJECTS",
+      "Generate Aligned Objects",
+      "step-update_aligned_objects",
+      "UPDATE_ALIGNED_OBJECTS",
+      "Update Aligned Objects",
       "step-4",
       "step-5",
     ],
@@ -235,8 +271,8 @@ const ExperimentExecutionView = () => {
     if (targetNetworkId) {
       networkService
         .getNetworks()
-        .then((networks) => {
-          const found = networks.find((n) => n.id === targetNetworkId);
+        .then((res) => {
+          const found = res?.list?.find((n) => n.id === targetNetworkId);
           if (found) {
             setNetworkName(found.name);
           }
@@ -261,7 +297,15 @@ const ExperimentExecutionView = () => {
           setData(executionData);
 
           const computedStages = STAGE_DEFINITIONS.map((def) => {
-            const sSteps = executionData.steps.filter((s) => def.stepIds.includes(s.id));
+            const sSteps = executionData.steps.filter((s: PipelineStepExecution) => {
+              const sId = String(s.id || "").toLowerCase();
+              const sName = String(s.name || "").toLowerCase();
+              const sStep = String((s as { step?: string }).step || "").toLowerCase();
+              return def.stepIds.some((id) => {
+                const target = id.toLowerCase();
+                return target === sId || target === sName || target === sStep;
+              });
+            });
             const hasActive = sSteps.some((s) => s.status === "ACTIVE");
             return { id: def.id, hasActive, count: sSteps.length };
           }).filter((s) => s.count > 0);
@@ -338,10 +382,13 @@ const ExperimentExecutionView = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <p className="text-on-surface-variant text-sm font-medium">Loading execution details...</p>
-      </div>
+      <LoadingSpinner
+        backdrop
+        size="lg"
+        variant="primary"
+        label="Loading execution details..."
+        sublabel="Fetching pipeline sequence and execution status"
+      />
     );
   }
 
@@ -364,11 +411,21 @@ const ExperimentExecutionView = () => {
   const displayPhaseTime = formatSecondsToMs(phaseSeconds);
 
   // Group steps by stages
-  const matchedStepIds = new Set(STAGE_DEFINITIONS.flatMap((def) => def.stepIds));
-  const unmatchedSteps = data.steps.filter((step) => !matchedStepIds.has(step.id));
+  const isStepInStage = (step: PipelineStepExecution, stepIds: string[]) => {
+    const sId = String(step.id || "").toLowerCase();
+    const sName = String(step.name || "").toLowerCase();
+    const sStep = String((step as { step?: string }).step || "").toLowerCase();
+    return stepIds.some((id) => {
+      const target = id.toLowerCase();
+      return target === sId || target === sName || target === sStep;
+    });
+  };
+
+  const allStageStepIds = STAGE_DEFINITIONS.flatMap((def) => def.stepIds);
+  const unmatchedSteps = data.steps.filter((step) => !isStepInStage(step, allStageStepIds));
 
   const stages = STAGE_DEFINITIONS.map((def) => {
-    const stageSteps = data.steps.filter((step) => def.stepIds.includes(step.id));
+    const stageSteps = data.steps.filter((step) => isStepInStage(step, def.stepIds));
     let status: "COMPLETED" | "ACTIVE" | "PENDING" | "FAILED" = "PENDING";
     if (stageSteps.length > 0) {
       const hasFailed = stageSteps.some((s) => s.status === "FAILED");
@@ -561,6 +618,7 @@ const ExperimentExecutionView = () => {
                           const isStepActive = step.status === "ACTIVE";
                           const isStepPending = step.status === "PENDING";
                           const isStepFailed = step.status === "FAILED";
+                          const isManualStep = step.isManual || step.id === "step-update_aligned_objects" || step.name === "Update Aligned Objects";
 
                           return (
                             <div
@@ -570,6 +628,8 @@ const ExperimentExecutionView = () => {
                               <div className="flex items-center gap-2 min-w-0">
                                 {isStepCompleted ? (
                                   <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                                ) : isManualStep ? (
+                                  <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                                 ) : isStepActive ? (
                                   <Loader2 className="w-3.5 h-3.5 text-amber-500 animate-spin shrink-0" />
                                 ) : isStepFailed ? (
@@ -578,8 +638,16 @@ const ExperimentExecutionView = () => {
                                   <Circle className="w-3.5 h-3.5 text-outline-variant/60 shrink-0" />
                                 )}
                                 <span
+                                  onClick={(e) => {
+                                    if (isManualStep && !isStepCompleted) {
+                                      e.stopPropagation();
+                                      navigate(`/dashboard/experiments/${networkId || data.networkId}/aligned-objects/${experimentId}`);
+                                    }
+                                  }}
                                   className={`text-[12px] truncate ${
-                                    isStepPending
+                                    isManualStep && !isStepCompleted
+                                      ? "text-primary font-bold hover:underline cursor-pointer"
+                                      : isStepPending
                                       ? "text-on-surface-variant/40"
                                       : "text-on-surface/90 font-medium"
                                   }`}
@@ -587,19 +655,35 @@ const ExperimentExecutionView = () => {
                                   {step.name}
                                 </span>
                               </div>
-                              <span className="text-[10px] text-on-surface-variant/60 font-medium whitespace-nowrap">
-                                {isStepActive ? (
-                                  <span className="text-amber-500 font-semibold animate-pulse">
-                                    {displayPhaseTime}
-                                  </span>
-                                ) : step.duration ? (
-                                  step.duration
-                                ) : isStepPending ? (
-                                  "Awaiting"
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {isManualStep && !isStepCompleted ? (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/dashboard/experiments/${networkId || data.networkId}/aligned-objects/${experimentId}`);
+                                    }}
+                                    title="Open and edit Update Aligned Objects"
+                                    className="flex items-center gap-1 bg-primary/10 hover:bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold text-[10px] transition-all shrink-0"
+                                  >
+                                    <Edit3 className="w-3 h-3" />
+                                    <span>Edit</span>
+                                  </button>
                                 ) : (
-                                  ""
+                                  <span className="text-[10px] text-on-surface-variant/60 font-medium whitespace-nowrap">
+                                    {isStepActive ? (
+                                      <span className="text-amber-500 font-semibold animate-pulse">
+                                        {displayPhaseTime}
+                                      </span>
+                                    ) : step.duration ? (
+                                      step.duration
+                                    ) : isStepPending ? (
+                                      "Awaiting"
+                                    ) : (
+                                      ""
+                                    )}
+                                  </span>
                                 )}
-                              </span>
+                              </div>
                             </div>
                           );
                         })}
@@ -675,81 +759,118 @@ const ExperimentExecutionView = () => {
                 </div>
 
                 {/* Sub-steps Checklist details for Stage */}
-                {selectedStage.steps && selectedStage.steps.length > 0 && (
-                  <div className="flex flex-col gap-3 mt-2 bg-surface-container-low p-5 rounded-2xl border border-outline-variant/10">
-                    <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-                      Stage Pipeline Steps
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
-                      {selectedStage.steps.map((step, sIdx) => {
-                        const stepMetrics = parseRawMetrics(step.metrics);
+                {selectedStage.steps && selectedStage.steps.length > 0 && (() => {
+                  const visibleSteps = selectedStage.steps.filter((step) => {
+                    const stepMetrics = parseRawMetrics(step.metrics);
+                    const isManualStep = step.isManual || step.id === "step-update_aligned_objects" || step.name === "Update Aligned Objects";
+                    return stepMetrics.length > 0 || isManualStep;
+                  });
 
-                        return (
-                          <div
-                            key={sIdx}
-                            className="flex flex-col bg-surface-card p-4 rounded-xl border border-outline-variant/15 shadow-sm gap-3"
-                          >
-                            <div className="flex items-start gap-3">
-                              {step.status === "COMPLETED" ? (
-                                <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 mt-0.5">
-                                  <Check className="w-3 h-3 font-black" />
-                                </div>
-                              ) : step.status === "ACTIVE" ? (
-                                <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 animate-pulse mt-0.5">
-                                  <Loader2 className="w-3 h-3 animate-spin" />
-                                </div>
-                              ) : step.status === "FAILED" ? (
-                                <div className="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0 mt-0.5">
-                                  <AlertTriangle className="w-3 h-3 font-black" />
-                                </div>
-                              ) : (
-                                <div className="w-5 h-5 rounded-full border border-outline-variant shrink-0 mt-0.5" />
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-2">
-                                  <span
-                                    className={`text-xs font-bold truncate ${
-                                      step.status === "PENDING" ? "text-on-surface-variant/40" : "text-on-surface"
-                                    }`}
-                                  >
-                                    {step.name}
-                                  </span>
-                                  {step.duration && (
-                                    <span className="text-[10px] text-on-surface-variant/60 font-medium whitespace-nowrap">
-                                      {step.duration}
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-[11px] text-on-surface-variant/70 mt-1 leading-snug">
-                                  {step.description}
-                                </p>
-                              </div>
-                            </div>
+                  if (visibleSteps.length === 0) return null;
 
-                            {/* Render step metrics directly inside the step card */}
-                            {stepMetrics.length > 0 && (
-                              <div className="pt-3 border-t border-outline-variant/10 flex flex-col gap-2.5 mt-1">
-                                {stepMetrics.map((metric, mIdx) => (
-                                  <div
-                                    key={mIdx}
-                                    className="bg-surface-container-low/70 p-2.5 rounded-lg border border-outline-variant/10 flex flex-col w-full gap-1.5"
-                                  >
-                                    <span className="font-label font-bold text-[9px] tracking-wider text-on-surface-variant/75 uppercase break-words">
-                                      {metric.label}
-                                    </span>
-                                    <div className="max-h-24 overflow-y-auto font-mono text-[11px] font-semibold text-on-surface bg-surface-container-lowest/90 p-2 rounded-md border border-outline-variant/15 break-all select-all leading-relaxed custom-scrollbar">
-                                      {metric.value}
-                                    </div>
+                  return (
+                    <div className="flex flex-col gap-3 mt-2 bg-surface-container-low p-5 rounded-2xl border border-outline-variant/10">
+                      <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+                        Stage Pipeline Steps
+                      </h4>
+                      <div className={`grid gap-4 mt-1 ${visibleSteps.length === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"}`}>
+                        {visibleSteps.map((step, sIdx) => {
+                          const stepMetrics = parseRawMetrics(step.metrics);
+                          const isManualStep = step.isManual || step.id === "step-update_aligned_objects" || step.name === "Update Aligned Objects";
+
+                          return (
+                            <div
+                              key={sIdx}
+                              className={`flex flex-col bg-surface-card p-4 rounded-xl border shadow-sm gap-3 ${
+                                isManualStep ? "border-primary/30 ring-1 ring-primary/10" : "border-outline-variant/15"
+                              }`}
+                            >
+                              <div className="flex items-start gap-3">
+                                {step.status === "COMPLETED" ? (
+                                  <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+                                    <Check className="w-3 h-3 font-black" />
                                   </div>
-                                ))}
+                                ) : isManualStep ? (
+                                  <div className="w-5 h-5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-300/60 flex items-center justify-center shrink-0 mt-0.5">
+                                    <Clock className="w-3 h-3 font-bold" />
+                                  </div>
+                                ) : step.status === "ACTIVE" ? (
+                                  <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 animate-pulse mt-0.5">
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  </div>
+                                ) : step.status === "FAILED" ? (
+                                  <div className="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+                                    <AlertTriangle className="w-3 h-3 font-black" />
+                                  </div>
+                                ) : (
+                                  <div className="w-5 h-5 rounded-full border border-outline-variant shrink-0 mt-0.5" />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span
+                                      className={`text-xs font-bold truncate ${
+                                        step.status === "PENDING" ? "text-on-surface-variant/40" : "text-on-surface"
+                                      }`}
+                                    >
+                                      {step.name}
+                                    </span>
+                                    {step.duration && (
+                                      <span className="text-[10px] text-on-surface-variant/60 font-medium whitespace-nowrap">
+                                        {step.duration}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-[11px] text-on-surface-variant/70 mt-1 leading-snug">
+                                    {step.description}
+                                  </p>
+                                </div>
                               </div>
-                            )}
-                          </div>
-                        );
-                      })}
+
+                              {/* Manual Step Action Banner */}
+                              {isManualStep && (
+                                <div className="mt-1 flex items-center justify-between bg-primary/5 p-2.5 rounded-xl border border-primary/20 gap-2">
+                                  <span className="text-[11px] font-semibold text-primary">
+                                    Manual Action Required
+                                  </span>
+                                  <Button
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={() =>
+                                      navigate(`/dashboard/experiments/${networkId || data.networkId}/aligned-objects/${experimentId}`)
+                                    }
+                                    className="gap-1.5 font-bold text-xs shadow-primary-glow"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                    Edit Aligned Objects
+                                  </Button>
+                                </div>
+                              )}
+
+                              {/* Render step metrics directly inside the step card */}
+                              {stepMetrics.length > 0 && (
+                                <div className="pt-3 border-t border-outline-variant/10 flex flex-col gap-2.5 mt-1">
+                                  {stepMetrics.map((metric, mIdx) => (
+                                    <div
+                                      key={mIdx}
+                                      className="bg-surface-container-low/70 p-2.5 rounded-lg border border-outline-variant/10 flex flex-col w-full gap-1.5"
+                                    >
+                                      <span className="font-label font-bold text-[9px] tracking-wider text-on-surface-variant/75 uppercase break-words">
+                                        {metric.label}
+                                      </span>
+                                      <div className="max-h-24 overflow-y-auto font-mono text-[11px] font-semibold text-on-surface bg-surface-container-lowest/90 p-2 rounded-md border border-outline-variant/15 break-all select-all leading-relaxed custom-scrollbar">
+                                        {metric.value}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             ) : (
               <div className="flex items-center justify-center py-20 text-on-surface-variant italic">

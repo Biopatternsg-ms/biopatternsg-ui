@@ -66,6 +66,8 @@ export interface PipelineStepExecution {
   outputText?: string;
   description: string;
   iconName: string;
+  isManual?: boolean;
+  actionRoute?: string;
   subSteps?: SubStep[];
   metrics?: MetricCard[] | Record<string, string>;
 }
@@ -95,4 +97,28 @@ export interface Experiment {
   createdAt?: number;
   status?: PipelineStatus;
   useOnlyPrincipalName?: boolean;
+}
+
+export interface AlignedAsItem {
+  expertObjectName: string;
+  alternativeIds: string[];
+}
+
+export interface AlignedResultResponse {
+  pipelineId: string;
+  aligned: string[];
+  noAligned: string[];
+  alignedAs: AlignedAsItem[];
+}
+
+export interface PipelineSynonymResponse {
+  name: string;
+  synonyms: string[];
+}
+
+export interface KbEventResponse {
+  first: string;
+  relation: string;
+  second: string;
+  pubmedIds: string[];
 }
