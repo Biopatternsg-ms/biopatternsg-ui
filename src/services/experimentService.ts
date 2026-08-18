@@ -36,6 +36,7 @@ import type {
   ExpertObject,
   TranscriptionFactorConfig,
   ExperimentExecution,
+  PipelineStepExecution,
   AlignedResultResponse,
   PipelineSynonymResponse,
   KbEventResponse,
@@ -230,14 +231,14 @@ export const experimentService = {
       const response = await authFetch(`${PIPELINES_ENDPOINT}/${experimentId}/execution`);
       if (response.ok) {
         const data = await response.json();
-        const steps = (data.steps || []).map((s: any) => ({
+        const steps = (data.steps || []).map((s: PipelineStepExecution) => ({
           ...s,
-          id: s.id || s.step || s.name,
+          id: s.id || (s as { step?: string }).step || s.name,
         }));
 
         // Ensure "Update Aligned Objects" manual step is present right after "Generate Aligned Objects"
         const hasUpdateAligned = steps.some(
-          (s: any) =>
+          (s: PipelineStepExecution) =>
             s.id === "step-update_aligned_objects" ||
             s.id === "UPDATE_ALIGNED_OBJECTS" ||
             s.name === "Update Aligned Objects"
@@ -245,7 +246,7 @@ export const experimentService = {
 
         if (!hasUpdateAligned) {
           const genIndex = steps.findIndex(
-            (s: any) =>
+            (s: PipelineStepExecution) =>
               s.id === "step-generate_aligned_objects" ||
               s.id === "GENERATE_ALIGNED_OBJECTS" ||
               s.name === "Generate Aligned Objects"

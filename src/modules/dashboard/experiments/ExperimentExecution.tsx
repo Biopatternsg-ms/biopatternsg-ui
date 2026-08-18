@@ -34,16 +34,14 @@ import {
   Info,
   Hash,
   Network as NetworkIcon,
-  Play,
   Clock,
-  ExternalLink,
   Edit3,
   type LucideIcon
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
 import { experimentService } from "@/services/experimentService";
 import { networkService } from "@/services/networkService";
-import type { ExperimentExecution, MetricCard } from "@/services/models/Experiment";
+import type { ExperimentExecution, MetricCard, PipelineStepExecution } from "@/services/models/Experiment";
 import { Button } from "@/components/atoms/Button";
 import { Breadcrumb } from "@/components/atoms/Breadcrumb";
 import { Badge } from "@/components/atoms/Badge";
@@ -299,10 +297,10 @@ const ExperimentExecutionView = () => {
           setData(executionData);
 
           const computedStages = STAGE_DEFINITIONS.map((def) => {
-            const sSteps = executionData.steps.filter((s: any) => {
+            const sSteps = executionData.steps.filter((s: PipelineStepExecution) => {
               const sId = String(s.id || "").toLowerCase();
               const sName = String(s.name || "").toLowerCase();
-              const sStep = String(s.step || "").toLowerCase();
+              const sStep = String((s as { step?: string }).step || "").toLowerCase();
               return def.stepIds.some((id) => {
                 const target = id.toLowerCase();
                 return target === sId || target === sName || target === sStep;
@@ -413,10 +411,10 @@ const ExperimentExecutionView = () => {
   const displayPhaseTime = formatSecondsToMs(phaseSeconds);
 
   // Group steps by stages
-  const isStepInStage = (step: any, stepIds: string[]) => {
+  const isStepInStage = (step: PipelineStepExecution, stepIds: string[]) => {
     const sId = String(step.id || "").toLowerCase();
     const sName = String(step.name || "").toLowerCase();
-    const sStep = String(step.step || "").toLowerCase();
+    const sStep = String((step as { step?: string }).step || "").toLowerCase();
     return stepIds.some((id) => {
       const target = id.toLowerCase();
       return target === sId || target === sName || target === sStep;

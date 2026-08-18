@@ -127,15 +127,12 @@ const UpdateAlignedObjects = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<AlignedObjectItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successModalOpen, setSuccessModalOpen] = useState(false);
 
   const [activeSynonymMenu, setActiveSynonymMenu] = useState<{
     itemId: string;
     itemSymbol: string;
     synonym: string;
   } | null>(null);
-
-  const [modifiedExpertObjects, setModifiedExpertObjects] = useState<ModifiedExpertObjectRecord[]>([]);
 
   const [deleteConfirmItem, setDeleteConfirmItem] = useState<AlignedObjectItem | null>(null);
 
