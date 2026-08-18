@@ -761,108 +761,118 @@ const ExperimentExecutionView = () => {
                 </div>
 
                 {/* Sub-steps Checklist details for Stage */}
-                {selectedStage.steps && selectedStage.steps.length > 0 && (
-                  <div className="flex flex-col gap-3 mt-2 bg-surface-container-low p-5 rounded-2xl border border-outline-variant/10">
-                    <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-                      Stage Pipeline Steps
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
-                      {selectedStage.steps.map((step, sIdx) => {
-                        const stepMetrics = parseRawMetrics(step.metrics);
-                        const isManualStep = step.isManual || step.id === "step-update_aligned_objects" || step.name === "Update Aligned Objects";
+                {selectedStage.steps && selectedStage.steps.length > 0 && (() => {
+                  const visibleSteps = selectedStage.steps.filter((step) => {
+                    const stepMetrics = parseRawMetrics(step.metrics);
+                    const isManualStep = step.isManual || step.id === "step-update_aligned_objects" || step.name === "Update Aligned Objects";
+                    return stepMetrics.length > 0 || isManualStep;
+                  });
 
-                        return (
-                          <div
-                            key={sIdx}
-                            className={`flex flex-col bg-surface-card p-4 rounded-xl border shadow-sm gap-3 ${
-                              isManualStep ? "border-primary/30 ring-1 ring-primary/10" : "border-outline-variant/15"
-                            }`}
-                          >
-                            <div className="flex items-start gap-3">
-                              {step.status === "COMPLETED" ? (
-                                <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 mt-0.5">
-                                  <Check className="w-3 h-3 font-black" />
-                                </div>
-                              ) : isManualStep && step.status !== "COMPLETED" ? (
-                                <div className="w-5 h-5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-300/60 flex items-center justify-center shrink-0 mt-0.5">
-                                  <Clock className="w-3 h-3 font-bold" />
-                                </div>
-                              ) : step.status === "ACTIVE" ? (
-                                <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 animate-pulse mt-0.5">
-                                  <Loader2 className="w-3 h-3 animate-spin" />
-                                </div>
-                              ) : step.status === "FAILED" ? (
-                                <div className="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0 mt-0.5">
-                                  <AlertTriangle className="w-3 h-3 font-black" />
-                                </div>
-                              ) : (
-                                <div className="w-5 h-5 rounded-full border border-outline-variant shrink-0 mt-0.5" />
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-2">
-                                  <span
-                                    className={`text-xs font-bold truncate ${
-                                      step.status === "PENDING" ? "text-on-surface-variant/40" : "text-on-surface"
-                                    }`}
-                                  >
-                                    {step.name}
-                                  </span>
-                                  {step.duration && (
-                                    <span className="text-[10px] text-on-surface-variant/60 font-medium whitespace-nowrap">
-                                      {step.duration}
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-[11px] text-on-surface-variant/70 mt-1 leading-snug">
-                                  {step.description}
-                                </p>
-                              </div>
-                            </div>
+                  if (visibleSteps.length === 0) return null;
 
-                            {/* Manual Step Action Banner */}
-                            {isManualStep && (
-                              <div className="mt-1 flex items-center justify-between bg-primary/5 p-2.5 rounded-xl border border-primary/20 gap-2">
-                                <span className="text-[11px] font-semibold text-primary">
-                                  Manual Action Required
-                                </span>
-                                <Button
-                                  variant="primary"
-                                  size="sm"
-                                  onClick={() =>
-                                    navigate(`/dashboard/experiments/${networkId || data.networkId}/aligned-objects/${experimentId}`)
-                                  }
-                                  className="gap-1.5 font-bold text-xs shadow-primary-glow"
-                                >
-                                  <Edit3 className="w-3.5 h-3.5" />
-                                  Edit Aligned Objects
-                                </Button>
-                              </div>
-                            )}
+                  return (
+                    <div className="flex flex-col gap-3 mt-2 bg-surface-container-low p-5 rounded-2xl border border-outline-variant/10">
+                      <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+                        Stage Pipeline Steps
+                      </h4>
+                      <div className={`grid gap-4 mt-1 ${visibleSteps.length === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"}`}>
+                        {visibleSteps.map((step, sIdx) => {
+                          const stepMetrics = parseRawMetrics(step.metrics);
+                          const isManualStep = step.isManual || step.id === "step-update_aligned_objects" || step.name === "Update Aligned Objects";
 
-                            {/* Render step metrics directly inside the step card */}
-                            {stepMetrics.length > 0 && (
-                              <div className="pt-3 border-t border-outline-variant/10 flex flex-col gap-2.5 mt-1">
-                                {stepMetrics.map((metric, mIdx) => (
-                                  <div
-                                    key={mIdx}
-                                    className="bg-surface-container-low/70 p-2.5 rounded-lg border border-outline-variant/10 flex flex-col w-full gap-1.5"
-                                  >
-                                    <span className="font-label font-bold text-[9px] tracking-wider text-on-surface-variant/75 uppercase break-words">
-                                      {metric.label}
-                                    </span>
-                                    <div className="max-h-24 overflow-y-auto font-mono text-[11px] font-semibold text-on-surface bg-surface-container-lowest/90 p-2 rounded-md border border-outline-variant/15 break-all select-all leading-relaxed custom-scrollbar">
-                                      {metric.value}
-                                    </div>
+                          return (
+                            <div
+                              key={sIdx}
+                              className={`flex flex-col bg-surface-card p-4 rounded-xl border shadow-sm gap-3 ${
+                                isManualStep ? "border-primary/30 ring-1 ring-primary/10" : "border-outline-variant/15"
+                              }`}
+                            >
+                              <div className="flex items-start gap-3">
+                                {step.status === "COMPLETED" ? (
+                                  <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+                                    <Check className="w-3 h-3 font-black" />
                                   </div>
-                                ))}
+                                ) : isManualStep && step.status !== "COMPLETED" ? (
+                                  <div className="w-5 h-5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-300/60 flex items-center justify-center shrink-0 mt-0.5">
+                                    <Clock className="w-3 h-3 font-bold" />
+                                  </div>
+                                ) : step.status === "ACTIVE" ? (
+                                  <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 animate-pulse mt-0.5">
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  </div>
+                                ) : step.status === "FAILED" ? (
+                                  <div className="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+                                    <AlertTriangle className="w-3 h-3 font-black" />
+                                  </div>
+                                ) : (
+                                  <div className="w-5 h-5 rounded-full border border-outline-variant shrink-0 mt-0.5" />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span
+                                      className={`text-xs font-bold truncate ${
+                                        step.status === "PENDING" ? "text-on-surface-variant/40" : "text-on-surface"
+                                      }`}
+                                    >
+                                      {step.name}
+                                    </span>
+                                    {step.duration && (
+                                      <span className="text-[10px] text-on-surface-variant/60 font-medium whitespace-nowrap">
+                                        {step.duration}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-[11px] text-on-surface-variant/70 mt-1 leading-snug">
+                                    {step.description}
+                                  </p>
+                                </div>
                               </div>
-                            )}
-                          </div>
-                        );
-                      })}
+
+                              {/* Manual Step Action Banner */}
+                              {isManualStep && (
+                                <div className="mt-1 flex items-center justify-between bg-primary/5 p-2.5 rounded-xl border border-primary/20 gap-2">
+                                  <span className="text-[11px] font-semibold text-primary">
+                                    Manual Action Required
+                                  </span>
+                                  <Button
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={() =>
+                                      navigate(`/dashboard/experiments/${networkId || data.networkId}/aligned-objects/${experimentId}`)
+                                    }
+                                    className="gap-1.5 font-bold text-xs shadow-primary-glow"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                    Edit Aligned Objects
+                                  </Button>
+                                </div>
+                              )}
+
+                              {/* Render step metrics directly inside the step card */}
+                              {stepMetrics.length > 0 && (
+                                <div className="pt-3 border-t border-outline-variant/10 flex flex-col gap-2.5 mt-1">
+                                  {stepMetrics.map((metric, mIdx) => (
+                                    <div
+                                      key={mIdx}
+                                      className="bg-surface-container-low/70 p-2.5 rounded-lg border border-outline-variant/10 flex flex-col w-full gap-1.5"
+                                    >
+                                      <span className="font-label font-bold text-[9px] tracking-wider text-on-surface-variant/75 uppercase break-words">
+                                        {metric.label}
+                                      </span>
+                                      <div className="max-h-24 overflow-y-auto font-mono text-[11px] font-semibold text-on-surface bg-surface-container-lowest/90 p-2 rounded-md border border-outline-variant/15 break-all select-all leading-relaxed custom-scrollbar">
+                                        {metric.value}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             ) : (
               <div className="flex items-center justify-center py-20 text-on-surface-variant italic">
