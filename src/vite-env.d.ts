@@ -16,36 +16,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { defineConfig, loadEnv } from "vite";
-import react from "@vitejs/plugin-react";
-import path from "path";
 
-// https://vite.dev/config/
-export default defineConfig(({ mode }) => {
-  // Carga el archivo .env correspondiente según el "modo" (ej. development o production)
-  const env = loadEnv(mode, process.cwd(), "");
-  const serverUrl = "https://bioai.redclara.net/api";
+/// <reference types="vite/client" />
 
-  return {
-    plugins: [react()],
-    resolve: {
-      alias: {
-        "@": path.resolve(__dirname, "./src"),
-      },
-    },
-    server: {
-      proxy: {
-        "/config-and-control": {
-          target: env.VITE_CONFIG_AND_CONTROL_URL || serverUrl,
-          changeOrigin: true,
-          secure: false,
-        },
-        "/pubmed": {
-          target: env.VITE_PUBMED_URL || serverUrl,
-          changeOrigin: true,
-          secure: false,
-        }
-      },
-    },
-  };
-});
+interface ImportMetaEnv {
+  readonly VITE_API_URL?: string;
+  readonly VITE_BACKEND_URL?: string;
+  readonly VITE_USER_ID?: string;
+  readonly VITE_USER_ROLES?: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}

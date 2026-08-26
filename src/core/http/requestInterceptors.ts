@@ -18,12 +18,29 @@
  */
 import { getAccessToken } from "./tokenStorage";
 
-/** Adds (or replaces) the Authorization header with the current access token. */
+/**
+ * Adds (or replaces) the Authorization header with the current access token.
+ * In development profile, also injects x-user-id and x-user-roles headers if configured.
+ */
 export function withAuthHeader(init: RequestInit | undefined): RequestInit {
   const headers = new Headers(init?.headers);
   const token = getAccessToken();
   if (token && !headers.has("Authorization")) {
     headers.set("Authorization", `Bearer ${token}`);
   }
+
+  // Inject development headers if running in dev profile
+  if (import.meta.env.DEV || import.meta.env.MODE === "development") {
+    const devUserId = import.meta.env.VITE_USER_ID;
+    if (devUserId && !headers.has("x-user-id")) {
+      headers.set("x-user-id", devUserId);
+    }
+
+    const devUserRoles = import.meta.env.VITE_USER_ROLES;
+    if (devUserRoles && !headers.has("x-user-roles")) {
+      headers.set("x-user-roles", devUserRoles);
+    }
+  }
+
   return { ...init, headers };
 }

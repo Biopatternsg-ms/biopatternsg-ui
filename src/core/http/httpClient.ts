@@ -75,7 +75,8 @@ export async function authFetch(
     return firstResponse;
   }
 
-  const retryHeaders = new Headers(init?.headers);
+  const retryInit = withAuthHeader(init);
+  const retryHeaders = new Headers(retryInit.headers);
   retryHeaders.set("Authorization", `Bearer ${freshToken}`);
   return baseFetch(input, { ...init, headers: retryHeaders });
 }
