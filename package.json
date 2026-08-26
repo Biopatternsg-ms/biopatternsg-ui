@@ -4,8 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "local": "vite --mode development",
+    "dev": "vite --mode development",
     "prod": "vite --mode production",
     "build": "tsc -b && vite build",
     "build:local": "tsc -b && vite build --mode development",
