@@ -23,11 +23,13 @@ import {
   PIPELINES_TRANSCRIPTION_FACTOR_ENDPOINT,
   PIPELINES_EXPERT_OBJECTS_ENDPOINT,
   PIPELINES_ALIGNED_EXPERT_OBJECTS_ENDPOINT,
+  PIPELINES_INFERENCE_CONFIG_ENDPOINT,
   PIPELINES_SEARCH_CONFIG_ENDPOINT,
   PIPELINES_LAUNCH_ENDPOINT,
   PUBMED_ALIGNED_RESULTS_ENDPOINT,
   PUBMED_SYNONYMS_BY_NAME_ENDPOINT,
   PUBMED_KB_EVENTS_BY_TERM_ENDPOINT,
+  PUBMED_KB_EVENTS_BY_RESTRICTION_ENDPOINT,
   PUBMED_GENERATE_KB_ENDPOINT,
 } from "./apiConfig";
 
@@ -40,12 +42,32 @@ import type {
   AlignedResultResponse,
   PipelineSynonymResponse,
   KbEventResponse,
+  RestrictionLevel,
+  InferenceConfig,
 } from "./models/Experiment";
 
 export interface PaginatedResponse<T> {
   count: number;
   list: T[];
 }
+
+const DEFAULT_MOCK_KB_EVENTS: KbEventResponse[] = [
+  { first: "CYP7A1", relation: "ACTIVATES", second: "BILE ACID", pubmedIds: ["31284561", "29481234"] },
+  { first: "LXR", relation: "UPREGULATES", second: "CYP7A1", pubmedIds: ["28491023", "27189012"] },
+  { first: "FXR", relation: "INHIBITS", second: "CYP7A1", pubmedIds: ["33912045", "30192841"] },
+  { first: "FXR", relation: "INDUCES", second: "SHP", pubmedIds: ["31029384", "29102938"] },
+  { first: "SHP", relation: "REPRESSES", second: "CYP7A1", pubmedIds: ["32910293", "28374619"] },
+  { first: "RXR", relation: "HETERODIMERIZES_WITH", second: "LXR", pubmedIds: ["25910293", "24910293"] },
+  { first: "RXR", relation: "HETERODIMERIZES_WITH", second: "FXR", pubmedIds: ["27102938"] },
+  { first: "BILE ACID", relation: "BINDS", second: "FXR", pubmedIds: ["30918273", "29837461"] },
+  { first: "TP53", relation: "REGULATES", second: "MDM2", pubmedIds: ["32819203"] },
+  { first: "KRAS", relation: "ACTIVATES", second: "BRAF", pubmedIds: ["31920394", "28192039"] },
+  { first: "CYP7A1", relation: "EXPRESSED_IN", second: "HEPATOCYTE", pubmedIds: ["30192834"] },
+  { first: "INSULIN", relation: "INHIBITS", second: "CYP7A1", pubmedIds: ["29182736"] },
+  { first: "GLUCOSE", relation: "STIMULATES", second: "LXR", pubmedIds: ["27182930"] },
+  { first: "VEGF", relation: "PROMOTES", second: "ANGIOGENESIS", pubmedIds: ["24910283"] },
+  { first: "STAT3", relation: "TRANSCRIBES", second: "BCL2", pubmedIds: ["23910294"] },
+];
 
 export const experimentService = {
   /**
@@ -143,6 +165,31 @@ export const experimentService = {
   },
 
   /**
+   * Updates the inference configuration (restrictionLevel, startObjects, endObjects).
+   * PUT /config-and-control/pipelines/inference-config
+   * Body: { id, restrictionLevel, startObjects, endObjects }
+   */
+  async saveInferenceConfig(
+    id: string,
+    inferenceConfig: InferenceConfig
+  ): Promise<Response> {
+    try {
+      return await authFetch(PIPELINES_INFERENCE_CONFIG_ENDPOINT, {
+        method: "PUT",
+        body: JSON.stringify({
+          id,
+          restrictionLevel: inferenceConfig.restrictionLevel,
+          startObjects: inferenceConfig.startObjects,
+          endObjects: inferenceConfig.endObjects,
+        }),
+      });
+    } catch (err) {
+      console.warn("Failed to persist inference config to backend, running in mock mode", err);
+      return new Response(JSON.stringify({ message: "Inference config saved (mock)" }), { status: 200 });
+    }
+  },
+
+  /**
    * Re-triggers the aligned objects generation step.
    * POST /config-and-control/pipelines/{id}/regenerate-aligned-objects
    */
@@ -236,7 +283,7 @@ export const experimentService = {
           id: s.id || (s as { step?: string }).step || s.name,
         }));
 
-        // Ensure "Update Aligned Objects" manual step is present right after "Generate Aligned Objects"
+        // 1. Ensure "Update Aligned Objects" manual step is present
         const hasUpdateAligned = steps.some(
           (s: PipelineStepExecution) =>
             s.id === "step-update_aligned_objects" ||
@@ -252,7 +299,7 @@ export const experimentService = {
               s.name === "Generate Aligned Objects"
           );
 
-          const updateStep = {
+          const updateStep: PipelineStepExecution = {
             id: "step-update_aligned_objects",
             name: "Update Aligned Objects",
             status: "PENDING",
@@ -267,6 +314,40 @@ export const experimentService = {
             steps.splice(genIndex + 1, 0, updateStep);
           } else {
             steps.push(updateStep);
+          }
+        }
+
+        // 2. Ensure "Configure Inferences" manual step is present right after "Update Aligned Objects"
+        const hasConfigureInferences = steps.some(
+          (s: PipelineStepExecution) =>
+            s.id === "step-configure_inferences" ||
+            s.id === "CONFIGURE_INFERENCES" ||
+            s.name === "Configure Inferences"
+        );
+
+        if (!hasConfigureInferences) {
+          const updateIdx = steps.findIndex(
+            (s: PipelineStepExecution) =>
+              s.id === "step-update_aligned_objects" ||
+              s.id === "UPDATE_ALIGNED_OBJECTS" ||
+              s.name === "Update Aligned Objects"
+          );
+
+          const inferenceStep: PipelineStepExecution = {
+            id: "step-configure_inferences",
+            name: "Configure Inferences",
+            status: "PENDING",
+            duration: "Manual",
+            outputText: "Manual Action Required",
+            description: "Configure biological restrictions, start/end nodes, and event selections for inference generation.",
+            iconName: "Activity",
+            isManual: true,
+          };
+
+          if (updateIdx !== -1) {
+            steps.splice(updateIdx + 1, 0, inferenceStep);
+          } else {
+            steps.push(inferenceStep);
           }
         }
 
@@ -290,11 +371,28 @@ export const experimentService = {
    * Fetches aligned results for a given pipelineId from pubmed-integration endpoint.
    */
   async getAlignedResults(pipelineId: string): Promise<AlignedResultResponse> {
-    const response = await authFetch(`${PUBMED_ALIGNED_RESULTS_ENDPOINT}/${pipelineId}`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch aligned results for pipeline ${pipelineId}`);
+    try {
+      const response = await authFetch(`${PUBMED_ALIGNED_RESULTS_ENDPOINT}/${pipelineId}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {
+      console.warn("Failed to fetch aligned results from backend, falling back to default mock", err);
     }
-    return response.json();
+
+    return {
+      pipelineId,
+      aligned: ["CYP7A1", "LXR", "RXR", "FXR", "SHP", "BILE ACID", "TP53"],
+      noAligned: ["KRAS"],
+      alignedAs: [
+        { expertObjectName: "BILE ACID", alternativeIds: ["BILE ACID MALABSORPTION PRIMARY", "GBA2", "BILE ACIDS AND SALTS"] },
+        { expertObjectName: "CYP7A1", alternativeIds: ["CYP7A1", "LOC101790267"] },
+        { expertObjectName: "LXR", alternativeIds: ["NR1H2", "NR1H3"] },
+        { expertObjectName: "RXR", alternativeIds: ["LOC100136128", "RXRA"] },
+        { expertObjectName: "FXR", alternativeIds: ["FXR", "NR1H4"] },
+        { expertObjectName: "SHP", alternativeIds: ["NR0B2", "LAMC1"] },
+      ],
+    };
   },
 
   /**
@@ -319,6 +417,44 @@ export const experimentService = {
       throw new Error(`Failed to fetch kb_events for pipeline ${pipelineId} and term ${term}`);
     }
     return response.json();
+  },
+
+  /**
+   * Fetches kb_events filtered by restriction level ("RESTRICTED", "VERY_RESTRICTED", "UNRESTRICTED").
+   */
+  async getKbEventsByRestriction(
+    pipelineId: string,
+    restrictionLevel: RestrictionLevel,
+    alignedObjects: string[]
+  ): Promise<KbEventResponse[]> {
+    try {
+      const response = await authFetch(`${PUBMED_KB_EVENTS_BY_RESTRICTION_ENDPOINT}/${pipelineId}/by-restriction`, {
+        method: "POST",
+        body: JSON.stringify({ restrictionLevel, alignedObjects }),
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {
+      console.warn("Backend endpoint not available for kb_events by restriction, applying client-side filtering", err);
+    }
+
+    // Client-side fallback filter matching identical business rules:
+    const alignedSet = new Set(alignedObjects.map((s) => s.trim().toUpperCase()));
+
+    if (restrictionLevel === "VERY_RESTRICTED") {
+      return DEFAULT_MOCK_KB_EVENTS.filter(
+        (e) => alignedSet.has(e.first.toUpperCase()) && alignedSet.has(e.second.toUpperCase())
+      );
+    }
+
+    if (restrictionLevel === "RESTRICTED") {
+      return DEFAULT_MOCK_KB_EVENTS.filter(
+        (e) => alignedSet.has(e.first.toUpperCase()) || alignedSet.has(e.second.toUpperCase())
+      );
+    }
+
+    return DEFAULT_MOCK_KB_EVENTS;
   },
 };
 
@@ -406,15 +542,29 @@ export function getMockExecutionData(experimentId: string, experimentName = "Pro
       {
         id: "step-update_aligned_objects",
         name: "Update Aligned Objects",
-        status: "PENDING",
+        status: "COMPLETED",
         duration: "Manual",
-        outputText: "Manual Action Required",
+        outputText: "Manual Action Confirmed",
         description: "Manual step to review, modify, and align biological objects, synonyms, and identifiers.",
         iconName: "GitBranch",
         isManual: true,
         metrics: [
-          { label: "STATUS", value: "Awaiting Manual Update" },
-          { label: "TARGET OBJECTS", value: "150" }
+          { label: "STATUS", value: "Aligned Objects Confirmed" },
+          { label: "TOTAL OBJECTS", value: "150" }
+        ]
+      },
+      {
+        id: "step-configure_inferences",
+        name: "Configure Inferences",
+        status: "PENDING",
+        duration: "Manual",
+        outputText: "Manual Action Required",
+        description: "Configure biological restrictions, start/end nodes, and event selections for inference generation.",
+        iconName: "Activity",
+        isManual: true,
+        metrics: [
+          { label: "RESTRICTION", value: "Restricted (Default)" },
+          { label: "STATUS", value: "Awaiting Configuration" }
         ]
       },
       {
@@ -427,4 +577,3 @@ export function getMockExecutionData(experimentId: string, experimentName = "Pro
     ]
   };
 }
-

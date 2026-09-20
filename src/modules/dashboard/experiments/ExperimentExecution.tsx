@@ -36,6 +36,7 @@ import {
   Network as NetworkIcon,
   Clock,
   Edit3,
+  Lock,
   type LucideIcon
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
@@ -57,6 +58,93 @@ const stepIcons: Record<string, LucideIcon> = {
 function StepIcon({ name, className }: { name: string; className?: string }) {
   const IconComponent = stepIcons[name] || Info;
   return <IconComponent className={className} />;
+}
+
+interface ManualStepDefinition {
+  routeSegment: string;
+  buttonLabel: string;
+  buttonIcon: LucideIcon;
+}
+
+const MANUAL_STEP_CONFIG: Record<string, ManualStepDefinition> = {
+  // Update Aligned Objects
+  "step-update_aligned_objects": {
+    routeSegment: "aligned-objects",
+    buttonLabel: "Edit Aligned Objects",
+    buttonIcon: Edit3,
+  },
+  "UPDATE_ALIGNED_OBJECTS": {
+    routeSegment: "aligned-objects",
+    buttonLabel: "Edit Aligned Objects",
+    buttonIcon: Edit3,
+  },
+  "Update Aligned Objects": {
+    routeSegment: "aligned-objects",
+    buttonLabel: "Edit Aligned Objects",
+    buttonIcon: Edit3,
+  },
+
+  // Configure Inferences
+  "step-configure_inferences": {
+    routeSegment: "inferences-config",
+    buttonLabel: "Configure Inferences",
+    buttonIcon: Activity,
+  },
+  "CONFIGURE_INFERENCES": {
+    routeSegment: "inferences-config",
+    buttonLabel: "Configure Inferences",
+    buttonIcon: Activity,
+  },
+  "Configure Inferences": {
+    routeSegment: "inferences-config",
+    buttonLabel: "Configure Inferences",
+    buttonIcon: Activity,
+  },
+};
+
+function getManualStepConfig(step: PipelineStepExecution): ManualStepDefinition | null {
+  return MANUAL_STEP_CONFIG[step.id] || MANUAL_STEP_CONFIG[step.name] || null;
+}
+
+function getManualStepRoute(step: PipelineStepExecution, networkId?: string, experimentId?: string): string | null {
+  const config = getManualStepConfig(step);
+  if (!config) return null;
+  const netId = networkId || "";
+  const expId = experimentId || "";
+  return `/dashboard/experiments/${netId}/${config.routeSegment}/${expId}`;
+}
+
+export function isUpdateAlignedCompleted(execution?: ExperimentExecution | null): boolean {
+  if (!execution || !execution.steps) return false;
+  const updateStep = execution.steps.find((s) => {
+    const sId = String(s.id || "").toLowerCase();
+    const sName = String(s.name || "").toLowerCase();
+    const sStep = String((s as { step?: string }).step || "").toLowerCase();
+    return (
+      sId === "step-update_aligned_objects" ||
+      sId === "update_aligned_objects" ||
+      sName === "update aligned objects" ||
+      sStep === "update_aligned_objects"
+    );
+  });
+  return updateStep?.status === "COMPLETED";
+}
+
+export function isStepActionDisabled(step: PipelineStepExecution, execution?: ExperimentExecution | null): boolean {
+  const sId = String(step.id || "").toLowerCase();
+  const sName = String(step.name || "").toLowerCase();
+  const sStep = String((step as { step?: string }).step || "").toLowerCase();
+
+  const isConfigureInferences =
+    sId === "step-configure_inferences" ||
+    sId === "configure_inferences" ||
+    sName === "configure inferences" ||
+    sStep === "configure_inferences";
+
+  if (isConfigureInferences) {
+    return !isUpdateAlignedCompleted(execution);
+  }
+  return false;
 }
 
 const METRIC_LABELS: Record<string, string> = {
@@ -249,6 +337,9 @@ const STAGE_DEFINITIONS = [
       "step-update_aligned_objects",
       "UPDATE_ALIGNED_OBJECTS",
       "Update Aligned Objects",
+      "step-configure_inferences",
+      "CONFIGURE_INFERENCES",
+      "Configure Inferences",
       "step-4",
       "step-5",
     ],
@@ -467,6 +558,15 @@ const ExperimentExecutionView = () => {
     ? selectedStage.steps.find((step) => step.startTime)?.startTime
     : undefined;
 
+  const selectedStageDuration = selectedStage
+    ? (() => {
+        const totalSecs = selectedStage.steps.reduce((acc, step) => {
+          return acc + parseTimeToSeconds(step.duration);
+        }, 0);
+        return totalSecs > 0 ? formatSecondsToMs(totalSecs) : undefined;
+      })()
+    : undefined;
+
   return (
     <div className="flex flex-col gap-6">
       {/* Breadcrumb Navigation & Back Actions */}
@@ -618,7 +718,10 @@ const ExperimentExecutionView = () => {
                           const isStepActive = step.status === "ACTIVE";
                           const isStepPending = step.status === "PENDING";
                           const isStepFailed = step.status === "FAILED";
-                          const isManualStep = step.isManual || step.id === "step-update_aligned_objects" || step.name === "Update Aligned Objects";
+                          const manualRoute = getManualStepRoute(step, networkId || data.networkId, experimentId);
+                          const isManualStep = step.isManual || !!manualRoute;
+                          const stepDisabled = isStepActionDisabled(step, data);
+                          const canNavigate = manualRoute && !isStepCompleted && !stepDisabled;
 
                           return (
                             <div
@@ -628,6 +731,8 @@ const ExperimentExecutionView = () => {
                               <div className="flex items-center gap-2 min-w-0">
                                 {isStepCompleted ? (
                                   <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                                ) : stepDisabled ? (
+                                  <Lock className="w-3.5 h-3.5 text-outline-variant/60 shrink-0" />
                                 ) : isManualStep ? (
                                   <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                                 ) : isStepActive ? (
@@ -639,16 +744,17 @@ const ExperimentExecutionView = () => {
                                 )}
                                 <span
                                   onClick={(e) => {
-                                    if (isManualStep && !isStepCompleted) {
+                                    if (canNavigate) {
                                       e.stopPropagation();
-                                      navigate(`/dashboard/experiments/${networkId || data.networkId}/aligned-objects/${experimentId}`);
+                                      navigate(manualRoute);
                                     }
                                   }}
+                                  title={stepDisabled ? "Requires 'Update Aligned Objects' to be completed first" : undefined}
                                   className={`text-[12px] truncate ${
-                                    isManualStep && !isStepCompleted
+                                    canNavigate
                                       ? "text-primary font-bold hover:underline cursor-pointer"
-                                      : isStepPending
-                                      ? "text-on-surface-variant/40"
+                                      : stepDisabled || isStepPending
+                                      ? "text-on-surface-variant/40 cursor-not-allowed"
                                       : "text-on-surface/90 font-medium"
                                   }`}
                                 >
@@ -656,30 +762,35 @@ const ExperimentExecutionView = () => {
                                 </span>
                               </div>
                               <div className="flex items-center gap-1.5 shrink-0">
-                                {isManualStep && !isStepCompleted ? (
+                                {manualRoute && !isStepCompleted ? (
                                   <button
                                     onClick={(e) => {
-                                      e.stopPropagation();
-                                      navigate(`/dashboard/experiments/${networkId || data.networkId}/aligned-objects/${experimentId}`);
+                                      if (canNavigate) {
+                                        e.stopPropagation();
+                                        navigate(manualRoute);
+                                      }
                                     }}
-                                    title="Open and edit Update Aligned Objects"
-                                    className="flex items-center gap-1 bg-primary/10 hover:bg-primary/20 text-primary px-2 py-0.5 rounded-full font-bold text-[10px] transition-all shrink-0"
+                                    disabled={stepDisabled}
+                                    title={
+                                      stepDisabled
+                                        ? "Requires 'Update Aligned Objects' to be completed first"
+                                        : `Open and edit ${step.name}`
+                                    }
+                                    className={`flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[10px] transition-all shrink-0 ${
+                                      stepDisabled
+                                        ? "bg-surface-container-high text-on-surface-variant/40 cursor-not-allowed"
+                                        : "bg-primary/10 hover:bg-primary/20 text-primary cursor-pointer"
+                                    }`}
                                   >
-                                    <Edit3 className="w-3 h-3" />
-                                    <span>Edit</span>
+                                    {stepDisabled ? <Lock className="w-3 h-3" /> : <Edit3 className="w-3 h-3" />}
+                                    <span>{stepDisabled ? "Locked" : "Edit"}</span>
                                   </button>
                                 ) : (
                                   <span className="text-[10px] text-on-surface-variant/60 font-medium whitespace-nowrap">
                                     {isStepActive ? (
-                                      <span className="text-amber-500 font-semibold animate-pulse">
-                                        {displayPhaseTime}
-                                      </span>
-                                    ) : step.duration ? (
-                                      step.duration
-                                    ) : isStepPending ? (
-                                      "Awaiting"
+                                      <span className="text-amber-500 font-bold">Running</span>
                                     ) : (
-                                      ""
+                                      step.duration || "--:--"
                                     )}
                                   </span>
                                 )}
@@ -696,32 +807,28 @@ const ExperimentExecutionView = () => {
           </div>
         </div>
 
-        {/* Right: Selected Stage Status View */}
-        <div className="w-full lg:w-2/3">
-          <div className="bg-surface-card p-8 rounded-3xl border border-outline-variant/15 shadow-xl relative overflow-hidden h-full flex flex-col justify-between">
-            {/* Background glowing orb design */}
-            <div className="absolute top-0 right-0 w-48 h-48 bg-primary-container/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
-
-            {selectedStage ? (
-              <div className="flex-1 flex flex-col gap-6">
-                {/* Detail Section Title, Description, and Timers */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-6 border-b border-outline-variant/10">
-                  {/* Left: Stage Info */}
-                  <div className="flex gap-4">
-                    <div className="p-3 bg-secondary-container text-primary-container rounded-2xl shrink-0 self-start shadow-sm">
+        {/* Right: Stage Step Details View */}
+        <div className="w-full lg:w-2/3 flex flex-col gap-6">
+          {selectedStage ? (
+            <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-outline-variant/15 shadow-md flex flex-col gap-6">
+              {/* Stage Top Banner */}
+              <div className="flex flex-col gap-3 pb-6 border-b border-outline-variant/10">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-primary/10 text-primary rounded-2xl shrink-0">
                       <StepIcon name={selectedStage.iconName} className="w-6 h-6" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h2 className="font-headline text-2xl font-black text-on-surface tracking-tighter">
+                        <h2 className="font-headline text-xl font-black text-on-surface tracking-tight">
                           {selectedStage.name}
                         </h2>
                         <Badge
                           variant={
-                            selectedStage.status === "ACTIVE"
-                              ? "inProgress"
-                              : selectedStage.status === "COMPLETED"
+                            selectedStage.status === "COMPLETED"
                               ? "completed"
+                              : selectedStage.status === "ACTIVE"
+                              ? "inProgress"
                               : selectedStage.status === "FAILED"
                               ? "failed"
                               : "pending"
@@ -731,120 +838,160 @@ const ExperimentExecutionView = () => {
                           {selectedStage.status}
                         </Badge>
                       </div>
-                      <p className="text-on-surface-variant font-body text-sm max-w-xl mt-1.5 leading-relaxed">
+                      <p className="text-on-surface-variant text-xs mt-0.5">
                         {selectedStage.description}
                       </p>
-                      {selectedStageStartTime && (
-                        <p className="text-xs font-semibold text-primary-container mt-2 font-label">
-                          Start Time: {formatLocalDateTime(selectedStageStartTime)}
-                        </p>
-                      )}
                     </div>
                   </div>
 
-                  {/* Right: Global & Stage Timers */}
-                  <div className="text-right flex flex-col min-w-[140px] border-l md:border-l border-t md:border-t-0 border-outline-variant/10 pt-4 md:pt-0 pl-0 md:pl-6 self-stretch md:self-auto justify-center">
-                    <span className="font-label font-bold text-[10px] tracking-widest text-on-surface-variant uppercase">
-                      Total Execution Time
-                    </span>
-                    <span className="font-headline text-3xl font-black text-on-surface tracking-tight mt-1 font-label">
-                      {selectedStage.status === "ACTIVE" ? displayTotalTime : data.totalExecutionTime}
-                    </span>
-                    {selectedStage.status === "ACTIVE" && (
-                      <span className="text-[11px] font-semibold text-primary mt-1 font-label">
-                        Current Stage: {displayPhaseTime}
+                  <div className="flex items-center gap-2 self-start sm:self-center">
+                    {selectedStage.status === "COMPLETED" ? (
+                      <span className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/20">
+                        <Check className="w-3.5 h-3.5 font-bold" />
+                        Stage Completed
                       </span>
-                    )}
+                    ) : selectedStage.status === "ACTIVE" ? (
+                      <span className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 font-semibold bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/20">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        Stage In Progress
+                      </span>
+                    ) : null}
                   </div>
                 </div>
 
-                {/* Sub-steps Checklist details for Stage */}
-                {selectedStage.steps && selectedStage.steps.length > 0 && (() => {
-                  const visibleSteps = selectedStage.steps.filter((step) => {
-                    const stepMetrics = parseRawMetrics(step.metrics);
-                    const isManualStep = step.isManual || step.id === "step-update_aligned_objects" || step.name === "Update Aligned Objects";
-                    return stepMetrics.length > 0 || isManualStep;
-                  });
+                {/* Stage Timing Info */}
+                <div className="flex items-center gap-4 text-xs text-on-surface-variant/80 pt-2 flex-wrap">
+                  {selectedStageStartTime && (
+                    <span className="flex items-center gap-1.5 bg-surface-container-high px-2.5 py-1 rounded-lg">
+                      <Clock className="w-3.5 h-3.5" />
+                      Started: {formatLocalDateTime(selectedStageStartTime)}
+                    </span>
+                  )}
+                  {selectedStageDuration && (
+                    <span className="flex items-center gap-1.5 bg-surface-container-high px-2.5 py-1 rounded-lg">
+                      <Clock className="w-3.5 h-3.5" />
+                      Duration: {selectedStageDuration}
+                    </span>
+                  )}
+                  {selectedStage.status === "ACTIVE" && (
+                    <span className="flex items-center gap-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2.5 py-1 rounded-lg font-mono font-bold">
+                      <Clock className="w-3.5 h-3.5 animate-spin" />
+                      Current Stage: {displayPhaseTime}
+                    </span>
+                  )}
+                </div>
+              </div>
 
-                  if (visibleSteps.length === 0) return null;
+              {/* Sub-steps Checklist details for Stage */}
+              {selectedStage.steps && selectedStage.steps.length > 0 && (() => {
+                const visibleSteps = selectedStage.steps.filter((step) => {
+                  const stepMetrics = parseRawMetrics(step.metrics);
+                  const isManualStep = step.isManual || !!getManualStepRoute(step, networkId || data.networkId, experimentId);
+                  return stepMetrics.length > 0 || isManualStep;
+                });
 
-                  return (
-                    <div className="flex flex-col gap-3 mt-2 bg-surface-container-low p-5 rounded-2xl border border-outline-variant/10">
-                      <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-                        Stage Pipeline Steps
-                      </h4>
-                      <div className={`grid gap-4 mt-1 ${visibleSteps.length === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"}`}>
-                        {visibleSteps.map((step, sIdx) => {
-                          const stepMetrics = parseRawMetrics(step.metrics);
-                          const isManualStep = step.isManual || step.id === "step-update_aligned_objects" || step.name === "Update Aligned Objects";
+                if (visibleSteps.length === 0) return null;
 
-                          return (
-                            <div
-                              key={sIdx}
-                              className={`flex flex-col bg-surface-card p-4 rounded-xl border shadow-sm gap-3 ${
-                                isManualStep ? "border-primary/30 ring-1 ring-primary/10" : "border-outline-variant/15"
-                              }`}
-                            >
-                              <div className="flex items-start gap-3">
-                                {step.status === "COMPLETED" ? (
-                                  <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 mt-0.5">
-                                    <Check className="w-3 h-3 font-black" />
-                                  </div>
-                                ) : isManualStep ? (
-                                  <div className="w-5 h-5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-300/60 flex items-center justify-center shrink-0 mt-0.5">
-                                    <Clock className="w-3 h-3 font-bold" />
-                                  </div>
-                                ) : step.status === "ACTIVE" ? (
-                                  <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 animate-pulse mt-0.5">
-                                    <Loader2 className="w-3 h-3 animate-spin" />
-                                  </div>
-                                ) : step.status === "FAILED" ? (
-                                  <div className="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0 mt-0.5">
-                                    <AlertTriangle className="w-3 h-3 font-black" />
-                                  </div>
-                                ) : (
-                                  <div className="w-5 h-5 rounded-full border border-outline-variant shrink-0 mt-0.5" />
-                                )}
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center justify-between gap-2">
-                                    <span
-                                      className={`text-xs font-bold truncate ${
-                                        step.status === "PENDING" ? "text-on-surface-variant/40" : "text-on-surface"
-                                      }`}
-                                    >
-                                      {step.name}
-                                    </span>
-                                    {step.duration && (
-                                      <span className="text-[10px] text-on-surface-variant/60 font-medium whitespace-nowrap">
-                                        {step.duration}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="text-[11px] text-on-surface-variant/70 mt-1 leading-snug">
-                                    {step.description}
-                                  </p>
+                return (
+                  <div className="flex flex-col gap-3 mt-2 bg-surface-container-low p-5 rounded-2xl border border-outline-variant/10">
+                    <h4 className="font-headline text-xs font-bold uppercase tracking-wider text-on-surface-variant">
+                      Stage Pipeline Steps
+                    </h4>
+                    <div className={`grid gap-4 mt-1 ${visibleSteps.length === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"}`}>
+                      {visibleSteps.map((step, sIdx) => {
+                        const stepMetrics = parseRawMetrics(step.metrics);
+                        const manualRoute = getManualStepRoute(step, networkId || data.networkId, experimentId);
+                        const manualConfig = getManualStepConfig(step);
+                        const isManualStep = step.isManual || !!manualRoute;
+                        const stepDisabled = isStepActionDisabled(step, data);
+                        const isStepCompleted = step.status === "COMPLETED";
+                        const ActionIcon = manualConfig?.buttonIcon || Edit3;
+
+                        return (
+                          <div
+                            key={sIdx}
+                            className={`flex flex-col bg-surface-card p-4 rounded-xl border shadow-sm gap-3 ${
+                              isManualStep ? "border-primary/30 ring-1 ring-primary/10" : "border-outline-variant/15"
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              {isStepCompleted ? (
+                                <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+                                  <Check className="w-3 h-3 font-black" />
                                 </div>
-                              </div>
-
-                              {/* Manual Step Action Banner */}
-                              {isManualStep && (
-                                <div className="mt-1 flex items-center justify-between bg-primary/5 p-2.5 rounded-xl border border-primary/20 gap-2">
-                                  <span className="text-[11px] font-semibold text-primary">
-                                    Manual Action Required
-                                  </span>
-                                  <Button
-                                    variant="primary"
-                                    size="sm"
-                                    onClick={() =>
-                                      navigate(`/dashboard/experiments/${networkId || data.networkId}/aligned-objects/${experimentId}`)
-                                    }
-                                    className="gap-1.5 font-bold text-xs shadow-primary-glow"
-                                  >
-                                    <Edit3 className="w-3.5 h-3.5" />
-                                    Edit Aligned Objects
-                                  </Button>
+                              ) : stepDisabled ? (
+                                <div className="w-5 h-5 rounded-full bg-surface-container-high text-on-surface-variant/60 flex items-center justify-center shrink-0 mt-0.5">
+                                  <Lock className="w-3 h-3" />
                                 </div>
+                              ) : isManualStep ? (
+                                <div className="w-5 h-5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-300/60 flex items-center justify-center shrink-0 mt-0.5">
+                                  <Clock className="w-3 h-3 font-bold" />
+                                </div>
+                              ) : step.status === "ACTIVE" ? (
+                                <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 animate-pulse mt-0.5">
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                </div>
+                              ) : step.status === "FAILED" ? (
+                                <div className="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+                                  <AlertTriangle className="w-3 h-3 font-black" />
+                                </div>
+                              ) : (
+                                <div className="w-5 h-5 rounded-full border border-outline-variant shrink-0 mt-0.5" />
                               )}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span
+                                    className={`text-xs font-bold truncate ${
+                                      step.status === "PENDING" || stepDisabled ? "text-on-surface-variant/40" : "text-on-surface"
+                                    }`}
+                                  >
+                                    {step.name}
+                                  </span>
+                                  {step.duration && (
+                                    <span className="text-[10px] text-on-surface-variant/60 font-medium whitespace-nowrap">
+                                      {step.duration}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-on-surface-variant/70 mt-1 leading-snug">
+                                  {step.description}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Manual Step Action Banner */}
+                            {manualRoute && (
+                              <div className={`mt-1 flex items-center justify-between p-2.5 rounded-xl border gap-2 ${
+                                stepDisabled
+                                  ? "bg-surface-container-low border-outline-variant/20 opacity-75"
+                                  : "bg-primary/5 border-primary/20"
+                              }`}>
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  {stepDisabled && <Lock className="w-3.5 h-3.5 text-on-surface-variant/60 shrink-0" />}
+                                  <span className={`text-[11px] font-semibold truncate ${
+                                    stepDisabled ? "text-on-surface-variant/70" : "text-primary"
+                                  }`}>
+                                    {stepDisabled
+                                      ? "Requires completion of 'Update Aligned Objects'"
+                                      : isStepCompleted
+                                      ? "Step Configured"
+                                      : "Manual Action Required"}
+                                  </span>
+                                </div>
+                                <Button
+                                  variant={stepDisabled ? "outline" : "primary"}
+                                  size="sm"
+                                  disabled={stepDisabled}
+                                  onClick={() => !stepDisabled && navigate(manualRoute)}
+                                  className={`gap-1.5 font-bold text-xs shrink-0 ${
+                                    stepDisabled ? "cursor-not-allowed opacity-60" : "shadow-primary-glow"
+                                  }`}
+                                >
+                                  {stepDisabled ? <Lock className="w-3.5 h-3.5" /> : <ActionIcon className="w-3.5 h-3.5" />}
+                                  {manualConfig?.buttonLabel || "Configure Step"}
+                                </Button>
+                              </div>
+                            )}
 
                               {/* Render step metrics directly inside the step card */}
                               {stepMetrics.length > 0 && (
@@ -877,7 +1024,6 @@ const ExperimentExecutionView = () => {
                 Select a stage to view its details.
               </div>
             )}
-          </div>
         </div>
       </div>
     </div>

@@ -74,6 +74,7 @@ export const PIPELINES_DESCRIPTION_ENDPOINT = `${PIPELINES_ENDPOINT}/description
 export const PIPELINES_TRANSCRIPTION_FACTOR_ENDPOINT = `${PIPELINES_ENDPOINT}/transcription-factor`;
 export const PIPELINES_EXPERT_OBJECTS_ENDPOINT = `${PIPELINES_ENDPOINT}/expert-objects`;
 export const PIPELINES_ALIGNED_EXPERT_OBJECTS_ENDPOINT = `${PIPELINES_ENDPOINT}/aligned-expert-objects`;
+export const PIPELINES_INFERENCE_CONFIG_ENDPOINT = `${PIPELINES_ENDPOINT}/inference-config`;
 export const PIPELINES_SEARCH_CONFIG_ENDPOINT = `${PIPELINES_ENDPOINT}/search-config`;
 export const PIPELINES_LAUNCH_ENDPOINT = `${PIPELINES_ENDPOINT}/launch`;
 
@@ -88,6 +89,10 @@ export const PUBMED_SYNONYMS_BY_NAME_ENDPOINT = `${CONFIG_AND_CONTROL}/${PUBMED_
 /** Endpoint path for pubmed kb-events search by term. */
 export const PUBMED_KB_EVENTS_BY_TERM_PATH = "pubmed/kb-events";
 export const PUBMED_KB_EVENTS_BY_TERM_ENDPOINT = `${CONFIG_AND_CONTROL}/${PUBMED_KB_EVENTS_BY_TERM_PATH}`;
+
+/** Endpoint path for pubmed kb-events filtered by restriction. */
+export const PUBMED_KB_EVENTS_BY_RESTRICTION_PATH = "pubmed/kb-events";
+export const PUBMED_KB_EVENTS_BY_RESTRICTION_ENDPOINT = `${CONFIG_AND_CONTROL}/${PUBMED_KB_EVENTS_BY_RESTRICTION_PATH}`;
 
 /** Endpoint path for pubmed generate-kb. */
 export const PUBMED_GENERATE_KB_PATH = "pubmed/generate-kb";
