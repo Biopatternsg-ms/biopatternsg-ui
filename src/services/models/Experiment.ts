@@ -122,3 +122,11 @@ export interface KbEventResponse {
   second: string;
   pubmedIds: string[];
 }
+
+export type RestrictionLevel = "RESTRICTED" | "VERY_RESTRICTED" | "UNRESTRICTED";
+
+export interface InferenceConfig {
+  restrictionLevel: RestrictionLevel;
+  startObjects: string[];
+  endObjects: string[];
+}
