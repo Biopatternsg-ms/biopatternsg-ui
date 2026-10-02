@@ -58,10 +58,13 @@ export interface GraphNode {
   // d3-force runtime
   x?: number;
   y?: number;
+  z?: number;
   vx?: number;
   vy?: number;
-  fx?: number | null;
-  fy?: number | null;
+  vz?: number;
+  fx?: number;
+  fy?: number;
+  fz?: number;
 }
 
 /** Internal link representation consumed by ForceGraph2D. */
