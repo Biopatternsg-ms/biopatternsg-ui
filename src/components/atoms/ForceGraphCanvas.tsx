@@ -80,9 +80,9 @@ function applyAlpha(colorStr: string, alpha: number): string {
     const full =
       raw.length === 3
         ? raw
-            .split("")
-            .map((c) => c + c)
-            .join("")
+          .split("")
+          .map((c) => c + c)
+          .join("")
         : raw;
     const num = parseInt(full, 16);
     if (!isNaN(num)) {
@@ -223,7 +223,7 @@ const ForceGraphCanvas: React.FC<ForceGraphCanvasProps> = ({
       sprite.fontFace = '"Space Grotesk", "Inter", sans-serif';
       sprite.fontWeight = "600";
       // Position sprite 8 units below node center (sphere radius is 5)
-      sprite.position.set(0, -8, 0);
+      sprite.position.set(0, -10, 0);
       if (sprite.material) {
         sprite.material.depthWrite = false;
       }
