@@ -96,7 +96,7 @@ const Footer = () => (
 
     {/* Bottom bar — "No-Line" via border-t at 10% opacity */}
     <div className="max-w-screen-2xl mx-auto mt-20 pt-8 border-t border-surface-variant/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-label uppercase tracking-widest opacity-40">
-      <p>© 2024 Biopatternsg Research System</p>
+      <p>© 2024 Biopatternsg Research Project</p>
       <p>System Status: Optimal</p>
     </div>
   </footer>
