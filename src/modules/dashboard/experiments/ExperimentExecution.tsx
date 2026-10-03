@@ -37,6 +37,7 @@ import {
   Clock,
   Edit3,
   Lock,
+  Dna,
   type LucideIcon
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
@@ -46,6 +47,7 @@ import type { ExperimentExecution, MetricCard, PipelineStepExecution } from "@/s
 import { Button } from "@/components/atoms/Button";
 import { Breadcrumb } from "@/components/atoms/Breadcrumb";
 import { Badge } from "@/components/atoms/Badge";
+import { BiologicalRolesModal } from "@/components/molecules/BiologicalRolesModal";
 
 const stepIcons: Record<string, LucideIcon> = {
   Sliders: Sliders,
@@ -114,38 +116,13 @@ function getManualStepRoute(step: PipelineStepExecution, networkId?: string, exp
   return `/dashboard/experiments/${netId}/${config.routeSegment}/${expId}`;
 }
 
-export function isUpdateAlignedCompleted(execution?: ExperimentExecution | null): boolean {
-  if (!execution || !execution.steps) return false;
-  const updateStep = execution.steps.find((s) => {
-    const sId = String(s.id || "").toLowerCase();
-    const sName = String(s.name || "").toLowerCase();
-    const sStep = String((s as { step?: string }).step || "").toLowerCase();
-    return (
-      sId === "step-update_aligned_objects" ||
-      sId === "update_aligned_objects" ||
-      sName === "update aligned objects" ||
-      sStep === "update_aligned_objects"
-    );
-  });
-  return updateStep?.status === "COMPLETED";
-}
-
 export function isStepActionDisabled(step: PipelineStepExecution, execution?: ExperimentExecution | null): boolean {
-  const sId = String(step.id || "").toLowerCase();
-  const sName = String(step.name || "").toLowerCase();
-  const sStep = String((step as { step?: string }).step || "").toLowerCase();
-
-  const isConfigureInferences =
-    sId === "step-configure_inferences" ||
-    sId === "configure_inferences" ||
-    sName === "configure inferences" ||
-    sStep === "configure_inferences";
-
-  if (isConfigureInferences) {
-    return !isUpdateAlignedCompleted(execution);
-  }
-  return false;
+  if (!execution?.steps?.length) return false;
+  const idx = execution.steps.findIndex((s) => s.id === step.id);
+  if (idx <= 0) return false;
+  return execution.steps.slice(0, idx).some((s) => s.status !== "COMPLETED");
 }
+
 
 const METRIC_LABELS: Record<string, string> = {
   // Initialization Stage
@@ -176,6 +153,14 @@ const METRIC_LABELS: Record<string, string> = {
   pmidsWithErrors: "PMIDS WITH ERRORS (KB)",
   alignedObjects: "ALIGNED OBJECTS",
   notAlignedObjects: "UNALIGNED OBJECTS",
+
+  // Inferences Stage
+  restrictionLevel: "RESTRICTION LEVEL",
+  totalAlignedObjects: "ALIGNED OBJECTS EVALUATED",
+  meshIdsFound: "MESH IDS FOUND",
+  rolesIdentified: "ROLES IDENTIFIED",
+  entitiesWithActiveRoles: "ENTITIES WITH ACTIVE ROLES",
+  statusMessage: "STATUS",
 };
 
 function formatMetricValue(value: string): string {
@@ -221,7 +206,8 @@ function parseRawMetrics(rawMetrics?: RawMetricInput): ParsedMetricItem[] {
         stringVal.length > 25 ||
         key === "promoterRegion" ||
         key === "expertObjectSymbols" ||
-        key === "tfSources";
+        key === "tfSources" ||
+        key === "statusMessage";
 
       return {
         label,
@@ -337,11 +323,25 @@ const STAGE_DEFINITIONS = [
       "step-update_aligned_objects",
       "UPDATE_ALIGNED_OBJECTS",
       "Update Aligned Objects",
+      "step-4",
+      "step-5",
+    ],
+  },
+  {
+    id: "INFERENCES",
+    name: "Inferences",
+    description: "Configures biological restriction rules, processes inference hypotheses, and evaluates regulatory networks.",
+    iconName: "Activity",
+    stepIds: [
       "step-configure_inferences",
       "CONFIGURE_INFERENCES",
       "Configure Inferences",
-      "step-4",
-      "step-5",
+      "configure_inferences",
+      "step-find_roles",
+      "FIND_ROLES",
+      "Find Biological Roles",
+      "find_roles",
+      "step-6",
     ],
   },
 ];
@@ -355,6 +355,7 @@ const ExperimentExecutionView = () => {
   const [data, setData] = useState<ExperimentExecution | null>(null);
   const [selectedStageId, setSelectedStageId] = useState<string | null>(null);
   const [networkName, setNetworkName] = useState<string | null>(null);
+  const [isRolesModalOpen, setIsRolesModalOpen] = useState(false);
 
   // Fetch Network details
   useEffect(() => {
@@ -641,6 +642,14 @@ const ExperimentExecutionView = () => {
                   </Link>
                 </div>
               )}
+
+              <div className="flex items-center gap-1.5 bg-surface-container-high px-2.5 py-1 rounded-lg border border-outline-variant/15 text-xs">
+                <Clock className="w-3.5 h-3.5 text-primary" />
+                <span className="text-on-surface-variant font-medium">Total Duration:</span>
+                <span className="font-mono font-bold text-on-surface text-xs">
+                  {data.status === "ACTIVE" ? displayTotalTime : (data.totalExecutionTime || displayTotalTime)}
+                </span>
+              </div>
             </div>
         </div>
       </div>
@@ -749,7 +758,7 @@ const ExperimentExecutionView = () => {
                                       navigate(manualRoute);
                                     }
                                   }}
-                                  title={stepDisabled ? "Requires 'Update Aligned Objects' to be completed first" : undefined}
+                                  title={stepDisabled ? "Requires previous steps to be completed" : undefined}
                                   className={`text-[12px] truncate ${
                                     canNavigate
                                       ? "text-primary font-bold hover:underline cursor-pointer"
@@ -773,7 +782,7 @@ const ExperimentExecutionView = () => {
                                     disabled={stepDisabled}
                                     title={
                                       stepDisabled
-                                        ? "Requires 'Update Aligned Objects' to be completed first"
+                                        ? "Requires previous steps to be completed"
                                         : `Open and edit ${step.name}`
                                     }
                                     className={`flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[10px] transition-all shrink-0 ${
@@ -886,8 +895,14 @@ const ExperimentExecutionView = () => {
               {selectedStage.steps && selectedStage.steps.length > 0 && (() => {
                 const visibleSteps = selectedStage.steps.filter((step) => {
                   const stepMetrics = parseRawMetrics(step.metrics);
-                  const isManualStep = step.isManual || !!getManualStepRoute(step, networkId || data.networkId, experimentId);
-                  return stepMetrics.length > 0 || isManualStep;
+                  const manualRoute = getManualStepRoute(step, networkId || data.networkId, experimentId);
+                  const isRolesStep =
+                    step.id === "step-find_roles" ||
+                    step.name === "Find Biological Roles" ||
+                    step.id === "FIND_ROLES" ||
+                    (step as { step?: string }).step === "find_roles";
+                  const isManualStep = step.isManual || !!manualRoute;
+                  return stepMetrics.length > 0 || isManualStep || isRolesStep;
                 });
 
                 if (visibleSteps.length === 0) return null;
@@ -902,7 +917,12 @@ const ExperimentExecutionView = () => {
                         const stepMetrics = parseRawMetrics(step.metrics);
                         const manualRoute = getManualStepRoute(step, networkId || data.networkId, experimentId);
                         const manualConfig = getManualStepConfig(step);
-                        const isManualStep = step.isManual || !!manualRoute;
+                        const isRolesStep =
+                          step.id === "step-find_roles" ||
+                          step.name === "Find Biological Roles" ||
+                          step.id === "FIND_ROLES" ||
+                          (step as { step?: string }).step === "find_roles";
+                        const isManualStep = step.isManual || !!manualRoute || isRolesStep;
                         const stepDisabled = isStepActionDisabled(step, data);
                         const isStepCompleted = step.status === "COMPLETED";
                         const ActionIcon = manualConfig?.buttonIcon || Edit3;
@@ -959,7 +979,7 @@ const ExperimentExecutionView = () => {
                               </div>
                             </div>
 
-                            {/* Manual Step Action Banner */}
+                            {/* Action Banner for Manual Steps */}
                             {manualRoute && (
                               <div className={`mt-1 flex items-center justify-between p-2.5 rounded-xl border gap-2 ${
                                 stepDisabled
@@ -972,7 +992,7 @@ const ExperimentExecutionView = () => {
                                     stepDisabled ? "text-on-surface-variant/70" : "text-primary"
                                   }`}>
                                     {stepDisabled
-                                      ? "Requires completion of 'Update Aligned Objects'"
+                                      ? "Requires previous steps to be completed"
                                       : isStepCompleted
                                       ? "Step Configured"
                                       : "Manual Action Required"}
@@ -990,6 +1010,38 @@ const ExperimentExecutionView = () => {
                                   {stepDisabled ? <Lock className="w-3.5 h-3.5" /> : <ActionIcon className="w-3.5 h-3.5" />}
                                   {manualConfig?.buttonLabel || "Configure Step"}
                                 </Button>
+                              </div>
+                            )}
+
+                            {/* Inspection Actions for automatic step Find Biological Roles */}
+                            {isRolesStep && (
+                              <div className="mt-1 pt-2 border-t border-outline-variant/10 flex items-center justify-between gap-2">
+                                <span className="text-[11px] text-on-surface-variant font-medium">
+                                  {isStepCompleted ? "Discovered Roles Available" : "Automated MeSH Traversal"}
+                                </span>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setIsRolesModalOpen(true)}
+                                    className="text-xs text-primary font-bold hover:bg-primary/10 px-2 py-1 h-auto"
+                                  >
+                                    Modal
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      navigate(
+                                        `/dashboard/experiments/${networkId || data.networkId}/biological-roles/${experimentId || data.experimentId}`
+                                      )
+                                    }
+                                    className="gap-1.5 font-bold text-xs shrink-0 border-primary/30 text-primary hover:bg-primary/10"
+                                  >
+                                    <Dna className="w-3.5 h-3.5" />
+                                    View Roles
+                                  </Button>
+                                </div>
                               </div>
                             )}
 
@@ -1026,6 +1078,13 @@ const ExperimentExecutionView = () => {
             )}
         </div>
       </div>
+      {/* Biological Roles Inspection Modal */}
+      <BiologicalRolesModal
+        open={isRolesModalOpen}
+        onClose={() => setIsRolesModalOpen(false)}
+        pipelineId={experimentId || data.experimentId}
+        experimentName={data.experimentName}
+      />
     </div>
   );
 };

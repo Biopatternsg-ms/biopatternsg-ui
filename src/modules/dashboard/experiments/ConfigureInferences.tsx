@@ -22,7 +22,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   Activity,
   ArrowLeft,
-  Search,
   CheckCircle2,
   X,
   Loader2,
@@ -30,11 +29,7 @@ import {
   ShieldAlert,
   Globe,
   SlidersHorizontal,
-  ExternalLink,
   Check,
-  Tag,
-  Layers,
-  ArrowRight,
   Sparkles,
   Lock,
   Edit3,
@@ -43,24 +38,13 @@ import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
 import { Button } from "@/components/atoms/Button";
 import { Breadcrumb } from "@/components/atoms/Breadcrumb";
 import { Badge } from "@/components/atoms/Badge";
-import { Input } from "@/components/atoms/Input";
 import { experimentService } from "@/services/experimentService";
 import type {
   ExperimentExecution,
-  KbEventResponse,
   RestrictionLevel,
 } from "@/services/models/Experiment";
 import { SuccessModal } from "@/components/molecules/SuccessModal";
-
-const DEFAULT_ALIGNED_SYMBOLS = [
-  "BILE ACID",
-  "CYP7A1",
-  "LXR",
-  "RXR",
-  "FXR",
-  "SHP",
-  "TP53",
-];
+import { ErrorModal } from "@/components/molecules/ErrorModal";
 
 export default function ConfigureInferences() {
   const { networkId, experimentId } = useParams<{ networkId: string; experimentId: string }>();
@@ -68,28 +52,17 @@ export default function ConfigureInferences() {
 
   const [loading, setLoading] = useState(true);
   const [experimentData, setExperimentData] = useState<ExperimentExecution | null>(null);
-  const [alignedSymbols, setAlignedSymbols] = useState<string[]>(DEFAULT_ALIGNED_SYMBOLS);
 
   // Configuration Form State
   const [restrictionLevel, setRestrictionLevel] = useState<RestrictionLevel>("RESTRICTED");
-  const [startObjects, setStartObjects] = useState<string[]>(["CYP7A1", "LXR"]);
-  const [endObjects, setEndObjects] = useState<string[]>(["SHP", "FXR"]);
-
-  // Search & Filter State for Starts / Ends and KB Events
-  const [startSearch, setStartSearch] = useState("");
-  const [endSearch, setEndSearch] = useState("");
-  const [eventSearch, setEventSearch] = useState("");
-
-  // KB Events
-  const [events, setEvents] = useState<KbEventResponse[]>([]);
-  const [isEventsLoading, setIsEventsLoading] = useState(false);
 
   // Modals and Submission State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmCompleteModalOpen, setIsConfirmCompleteModalOpen] = useState(false);
   const [successModalData, setSuccessModalData] = useState<{ title: string; message: string } | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // 1. Initial Load: Experiment Execution Details and Aligned Objects
+  // 1. Initial Load: Experiment Execution Details
   useEffect(() => {
     const expId = experimentId;
     if (!expId) return;
@@ -98,42 +71,20 @@ export default function ConfigureInferences() {
     async function loadInitialData(id: string) {
       try {
         setLoading(true);
-        const [execData, alignedData] = await Promise.allSettled([
+        const [execData, savedInference] = await Promise.all([
           experimentService.getExperimentExecution(id),
-          experimentService.getAlignedResults(id),
+          experimentService.getInferenceByPipelineId(id),
         ]);
-
-        if (ignore) return;
-
-        if (execData.status === "fulfilled") {
-          setExperimentData(execData.value);
-        }
-
-        let confirmedSymbols: string[] = [];
-        if (alignedData.status === "fulfilled" && alignedData.value) {
-          const res = alignedData.value;
-          const symbols = Array.from(
-            new Set([
-              ...(res.aligned || []),
-              ...(res.alignedAs || []).map((a) => a.expertObjectName),
-            ])
-          ).filter(Boolean);
-
-          if (symbols.length > 0) {
-            confirmedSymbols = symbols;
-            setAlignedSymbols(symbols);
+        if (!ignore) {
+          if (execData) {
+            setExperimentData(execData);
           }
-        }
-
-        if (confirmedSymbols.length === 0) {
-          confirmedSymbols = DEFAULT_ALIGNED_SYMBOLS;
-          setAlignedSymbols(DEFAULT_ALIGNED_SYMBOLS);
-        }
-
-        // Set default starts/ends if aligned objects available
-        if (confirmedSymbols.length >= 2) {
-          setStartObjects([confirmedSymbols[0], confirmedSymbols[1]]);
-          setEndObjects([confirmedSymbols[confirmedSymbols.length - 1]]);
+          const level =
+            savedInference?.restrictionLevel ||
+            ((execData?.steps?.find((s) => s.id === "step-configure_inferences")?.metrics as Record<string, string> | undefined)?.restrictionLevel as RestrictionLevel | undefined);
+          if (level && ["RESTRICTED", "VERY_RESTRICTED", "UNRESTRICTED"].includes(level)) {
+            setRestrictionLevel(level);
+          }
         }
       } catch (err) {
         console.warn("Failed loading experiment execution for inferences config", err);
@@ -171,84 +122,6 @@ export default function ConfigureInferences() {
     return true;
   }, [experimentData]);
 
-  // 2. Fetch / Filter KB Events whenever restrictionLevel or alignedSymbols change
-  useEffect(() => {
-    const expId = experimentId || "pipeline-demo-123";
-    let ignore = false;
-
-    async function fetchFilteredEvents() {
-      setIsEventsLoading(true);
-      try {
-        const result = await experimentService.getKbEventsByRestriction(
-          expId,
-          restrictionLevel,
-          alignedSymbols
-        );
-        if (!ignore) {
-          setEvents(result);
-        }
-      } catch (err) {
-        console.warn("Error fetching kb_events by restriction", err);
-      } finally {
-        if (!ignore) {
-          setIsEventsLoading(false);
-        }
-      }
-    }
-
-    fetchFilteredEvents();
-
-    return () => {
-      ignore = true;
-    };
-  }, [experimentId, restrictionLevel, alignedSymbols]);
-
-  // Toggle Start Object
-  const handleToggleStart = (symbol: string) => {
-    setStartObjects((prev) =>
-      prev.includes(symbol) ? prev.filter((s) => s !== symbol) : [...prev, symbol]
-    );
-  };
-
-  // Toggle End Object
-  const handleToggleEnd = (symbol: string) => {
-    setEndObjects((prev) =>
-      prev.includes(symbol) ? prev.filter((s) => s !== symbol) : [...prev, symbol]
-    );
-  };
-
-  // Select / Clear All Helpers
-  const handleSelectAllStarts = () => setStartObjects([...alignedSymbols]);
-  const handleClearAllStarts = () => setStartObjects([]);
-  const handleSelectAllEnds = () => setEndObjects([...alignedSymbols]);
-  const handleClearAllEnds = () => setEndObjects([]);
-
-  // Filtered Starts / Ends by Search Text
-  const filteredStartSymbols = useMemo(() => {
-    return alignedSymbols.filter((sym) =>
-      sym.toLowerCase().includes(startSearch.toLowerCase())
-    );
-  }, [alignedSymbols, startSearch]);
-
-  const filteredEndSymbols = useMemo(() => {
-    return alignedSymbols.filter((sym) =>
-      sym.toLowerCase().includes(endSearch.toLowerCase())
-    );
-  }, [alignedSymbols, endSearch]);
-
-  // Filtered Events by Search Text
-  const filteredEvents = useMemo(() => {
-    if (!eventSearch.trim()) return events;
-    const term = eventSearch.toLowerCase();
-    return events.filter(
-      (e) =>
-        e.first.toLowerCase().includes(term) ||
-        e.relation.toLowerCase().includes(term) ||
-        e.second.toLowerCase().includes(term) ||
-        e.pubmedIds.some((id) => id.includes(term))
-    );
-  }, [events, eventSearch]);
-
   // Handle Save and Complete Action
   const handleConfirmSaveAndComplete = async () => {
     setIsConfirmCompleteModalOpen(false);
@@ -256,42 +129,24 @@ export default function ConfigureInferences() {
     try {
       const pipeId = experimentId || "pipeline-demo-123";
 
-      // 1. Save Inference Configuration
+      // Save Inference Configuration (inferences service updates the pipeline step)
       await experimentService.saveInferenceConfig(pipeId, {
         restrictionLevel,
-        startObjects,
-        endObjects,
       });
-
-      // 2. Complete Step with Summary Metrics
-      try {
-        await experimentService.updatePipelineStep(
-          pipeId,
-          "CONFIGURE_INFERENCES",
-          "COMPLETED",
-          {
-            restrictionLevel,
-            totalEvents: String(events.length),
-            startObjectsCount: String(startObjects.length),
-            endObjectsCount: String(endObjects.length),
-            startObjects: startObjects.join(", "),
-            endObjects: endObjects.join(", "),
-            statusMessage: `Configured with ${restrictionLevel} restriction level`,
-          }
-        );
-      } catch (stepErr) {
-        console.warn("Update step endpoint warning:", stepErr);
-      }
 
       setIsSubmitting(false);
       setSuccessModalData({
         title: "Inferences Configured Successfully",
-        message: `Inference settings have been saved with ${events.length} filtered biological events, ${startObjects.length} start objects, and ${endObjects.length} end objects.`,
+        message: `Inference restriction strategy set to ${restrictionLevel.replace("_", " ")}.`,
       });
     } catch (err) {
       console.error("Error saving inference configuration:", err);
       setIsSubmitting(false);
-      alert("Error saving inference configuration. Please check backend connection.");
+      setErrorMessage(
+        err instanceof Error
+          ? err.message
+          : "Error saving inference configuration. Please check backend connection."
+      );
     }
   };
 
@@ -307,12 +162,10 @@ export default function ConfigureInferences() {
         size="lg"
         variant="primary"
         label="Loading inference configuration..."
-        sublabel="Fetching aligned objects and biological knowledge base events"
+        sublabel="Fetching pipeline and stage details"
       />
     );
   }
-
-  const alignedSet = new Set(alignedSymbols.map((s) => s.trim().toUpperCase()));
 
   return (
     <div className="flex flex-col gap-6">
@@ -368,7 +221,7 @@ export default function ConfigureInferences() {
               </Badge>
             </div>
             <p className="text-on-surface-variant font-body text-xs max-w-2xl mt-1 leading-relaxed">
-              Define the biological restriction strategy, select start and end boundary objects, and review the mined knowledge base events before launching inferences.
+              Select the biological restriction strategy to configure rules for the upcoming inference launch.
             </p>
           </div>
         </div>
@@ -392,7 +245,7 @@ export default function ConfigureInferences() {
             variant="primary"
             size="md"
             onClick={() => setIsConfirmCompleteModalOpen(true)}
-            disabled={isSubmitting || !isUpdateAlignedCompleted || startObjects.length === 0 || endObjects.length === 0}
+            disabled={isSubmitting || !isUpdateAlignedCompleted}
             title={!isUpdateAlignedCompleted ? "The 'Update Aligned Objects' step must be completed first" : undefined}
             className={`gap-2 font-bold ${!isUpdateAlignedCompleted ? "cursor-not-allowed opacity-60" : "shadow-primary-glow"}`}
           >
@@ -446,7 +299,7 @@ export default function ConfigureInferences() {
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="w-4 h-4 text-primary" />
             <h2 className="font-headline text-base font-bold text-on-surface">
-              1. Restriction Level
+              Restriction Level
             </h2>
           </div>
           <span className="text-xs text-on-surface-variant font-medium">
@@ -455,7 +308,7 @@ export default function ConfigureInferences() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* 1. Restringido (Default) */}
+          {/* 1. Restricted (Default) */}
           <div
             onClick={() => setRestrictionLevel("RESTRICTED")}
             className={`cursor-pointer p-5 rounded-2xl border transition-all flex flex-col justify-between gap-3 relative ${
@@ -481,15 +334,15 @@ export default function ConfigureInferences() {
             </div>
             <div>
               <h3 className="font-headline font-bold text-sm text-on-surface">
-                Restringido (Restricted)
+                Restricted
               </h3>
               <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-                Includes events where <strong>at least 1 object</strong> matches the confirmed aligned objects list.
+                Adds the <strong>aligned objects</strong> and the <strong>objects paired with them</strong> in biological events.
               </p>
             </div>
           </div>
 
-          {/* 2. Muy Restringido */}
+          {/* 2. Very Restricted */}
           <div
             onClick={() => setRestrictionLevel("VERY_RESTRICTED")}
             className={`cursor-pointer p-5 rounded-2xl border transition-all flex flex-col justify-between gap-3 relative ${
@@ -510,15 +363,15 @@ export default function ConfigureInferences() {
             </div>
             <div>
               <h3 className="font-headline font-bold text-sm text-on-surface">
-                Muy Restringido (Very Restricted)
+                Very Restricted
               </h3>
               <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-                Strict criteria: <strong>both objects</strong> (Subject and Object) must belong to the confirmed aligned objects list.
+                Adds <strong>only the aligned objects</strong>.
               </p>
             </div>
           </div>
 
-          {/* 3. Sin Restriccion */}
+          {/* 3. Unrestricted */}
           <div
             onClick={() => setRestrictionLevel("UNRESTRICTED")}
             className={`cursor-pointer p-5 rounded-2xl border transition-all flex flex-col justify-between gap-3 relative ${
@@ -539,308 +392,13 @@ export default function ConfigureInferences() {
             </div>
             <div>
               <h3 className="font-headline font-bold text-sm text-on-surface">
-                Sin Restricción (Unrestricted)
+                Unrestricted
               </h3>
               <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-                Broad exploration: includes <strong>all mined events</strong> without filtering against the aligned list.
+                Adds <strong>all objects</strong> that appear in biological events.
               </p>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Step 2: Starts & Ends Biological Objects Selection */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Panel Inicios (Starts) */}
-        <div className="glass-panel p-6 rounded-3xl border border-outline-variant/15 shadow-md flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-              <h2 className="font-headline text-base font-bold text-on-surface">
-                2. Start Objects (Inicios)
-              </h2>
-            </div>
-            <Badge variant="completed" className="text-[10px] font-bold">
-              {startObjects.length} Selected
-            </Badge>
-          </div>
-
-          <p className="text-xs text-on-surface-variant leading-relaxed">
-            Select trigger/source biological objects that initiate inference discovery paths.
-          </p>
-
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/60" />
-              <Input
-                type="text"
-                placeholder="Search start objects..."
-                value={startSearch}
-                onChange={(e) => setStartSearch(e.target.value)}
-                className="pl-8 text-xs h-8"
-              />
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSelectAllStarts}
-              className="text-[11px] h-8 px-2.5 border border-outline-variant/20"
-            >
-              Select All
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClearAllStarts}
-              className="text-[11px] h-8 px-2.5 text-rose-500 hover:bg-rose-500/10 border border-rose-500/20"
-            >
-              Clear
-            </Button>
-          </div>
-
-          {/* Chips Grid */}
-          <div className="flex flex-wrap gap-2 p-3 bg-surface-card rounded-2xl border border-outline-variant/15 max-h-48 overflow-y-auto">
-            {filteredStartSymbols.map((sym) => {
-              const isSelected = startObjects.includes(sym);
-              return (
-                <button
-                  key={sym}
-                  type="button"
-                  onClick={() => handleToggleStart(sym)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
-                    isSelected
-                      ? "bg-emerald-500 text-white shadow-xs scale-102"
-                      : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest border border-outline-variant/20"
-                  }`}
-                >
-                  {isSelected ? <Check className="w-3.5 h-3.5 font-bold" /> : <Tag className="w-3 h-3 text-on-surface-variant/50" />}
-                  <span>{sym}</span>
-                </button>
-              );
-            })}
-            {filteredStartSymbols.length === 0 && (
-              <span className="text-xs text-on-surface-variant/50 italic p-2">No symbols match search.</span>
-            )}
-          </div>
-        </div>
-
-        {/* Panel Cierres (Ends) */}
-        <div className="glass-panel p-6 rounded-3xl border border-outline-variant/15 shadow-md flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-              <h2 className="font-headline text-base font-bold text-on-surface">
-                3. End Objects (Cierres)
-              </h2>
-            </div>
-            <Badge variant="primary" className="text-[10px] font-bold">
-              {endObjects.length} Selected
-            </Badge>
-          </div>
-
-          <p className="text-xs text-on-surface-variant leading-relaxed">
-            Select target/destination biological objects where inference chains terminate.
-          </p>
-
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/60" />
-              <Input
-                type="text"
-                placeholder="Search end objects..."
-                value={endSearch}
-                onChange={(e) => setEndSearch(e.target.value)}
-                className="pl-8 text-xs h-8"
-              />
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleSelectAllEnds}
-              className="text-[11px] h-8 px-2.5 border border-outline-variant/20"
-            >
-              Select All
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClearAllEnds}
-              className="text-[11px] h-8 px-2.5 text-rose-500 hover:bg-rose-500/10 border border-rose-500/20"
-            >
-              Clear
-            </Button>
-          </div>
-
-          {/* Chips Grid */}
-          <div className="flex flex-wrap gap-2 p-3 bg-surface-card rounded-2xl border border-outline-variant/15 max-h-48 overflow-y-auto">
-            {filteredEndSymbols.map((sym) => {
-              const isSelected = endObjects.includes(sym);
-              return (
-                <button
-                  key={sym}
-                  type="button"
-                  onClick={() => handleToggleEnd(sym)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
-                    isSelected
-                      ? "bg-blue-600 text-white shadow-xs scale-102"
-                      : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest border border-outline-variant/20"
-                  }`}
-                >
-                  {isSelected ? <Check className="w-3.5 h-3.5 font-bold" /> : <Tag className="w-3 h-3 text-on-surface-variant/50" />}
-                  <span>{sym}</span>
-                </button>
-              );
-            })}
-            {filteredEndSymbols.length === 0 && (
-              <span className="text-xs text-on-surface-variant/50 italic p-2">No symbols match search.</span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Step 3: Biological Events (kb_events) Table */}
-      <div className="glass-panel p-6 rounded-3xl border border-outline-variant/15 shadow-md flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-primary" />
-            <h2 className="font-headline text-base font-bold text-on-surface">
-              4. Mined Biological Events (Knowledge Base)
-            </h2>
-            <Badge variant="inProgress" className="text-[10px] font-bold">
-              {filteredEvents.length} Events Available
-            </Badge>
-          </div>
-
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="relative flex-1 sm:w-72">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/60" />
-              <Input
-                type="text"
-                placeholder="Search events by term, relation, PMID..."
-                value={eventSearch}
-                onChange={(e) => setEventSearch(e.target.value)}
-                className="pl-8 text-xs"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Table Content */}
-        <div className="overflow-x-auto rounded-2xl border border-outline-variant/15 bg-surface-card shadow-xs">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-outline-variant/15 bg-surface-container-low text-[11px] font-label uppercase font-bold tracking-wider text-on-surface-variant">
-                <th className="py-3 px-4">Subject (First)</th>
-                <th className="py-3 px-4 text-center">Relation</th>
-                <th className="py-3 px-4">Object (Second)</th>
-                <th className="py-3 px-4">Evidence (PubMed IDs)</th>
-                <th className="py-3 px-4 text-right">Alignment Match</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-outline-variant/10 text-xs">
-              {isEventsLoading ? (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center text-on-surface-variant">
-                    <Loader2 className="w-5 h-5 animate-spin mx-auto text-primary mb-2" />
-                    <span>Loading filtered biological events...</span>
-                  </td>
-                </tr>
-              ) : filteredEvents.length > 0 ? (
-                filteredEvents.map((evt, idx) => {
-                  const firstUpper = evt.first.trim().toUpperCase();
-                  const secondUpper = evt.second.trim().toUpperCase();
-                  const firstAligned = alignedSet.has(firstUpper);
-                  const secondAligned = alignedSet.has(secondUpper);
-                  const bothAligned = firstAligned && secondAligned;
-                  const oneAligned = firstAligned || secondAligned;
-
-                  const isStart = startObjects.includes(evt.first) || startObjects.includes(firstUpper);
-                  const isEnd = endObjects.includes(evt.second) || endObjects.includes(secondUpper);
-
-                  return (
-                    <tr key={`${evt.first}-${evt.relation}-${evt.second}-${idx}`} className="hover:bg-surface-container-low/60 transition-colors">
-                      {/* First */}
-                      <td className="py-3 px-4 font-mono font-bold text-on-surface">
-                        <div className="flex items-center gap-1.5">
-                          <span>{evt.first}</span>
-                          {isStart && (
-                            <Badge variant="completed" className="text-[8px] px-1 py-0 font-bold">
-                              START
-                            </Badge>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Relation */}
-                      <td className="py-3 px-4 text-center">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-primary/10 text-primary border border-primary/20">
-                          <ArrowRight className="w-3 h-3" />
-                          {evt.relation}
-                        </span>
-                      </td>
-
-                      {/* Second */}
-                      <td className="py-3 px-4 font-mono font-bold text-on-surface">
-                        <div className="flex items-center gap-1.5">
-                          <span>{evt.second}</span>
-                          {isEnd && (
-                            <Badge variant="primary" className="text-[8px] px-1 py-0 font-bold">
-                              END
-                            </Badge>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Evidence (PubMed IDs) */}
-                      <td className="py-3 px-4">
-                        <div className="flex flex-wrap gap-1">
-                          {evt.pubmedIds && evt.pubmedIds.length > 0 ? (
-                            evt.pubmedIds.map((pmid) => (
-                              <a
-                                key={pmid}
-                                href={`https://pubmed.ncbi.nlm.nih.gov/${pmid}/`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1 bg-surface-container-high hover:bg-primary/10 text-on-surface-variant hover:text-primary px-2 py-0.5 rounded text-[10px] font-mono border border-outline-variant/20 transition-colors"
-                              >
-                                <span>{pmid}</span>
-                                <ExternalLink className="w-2.5 h-2.5 opacity-60" />
-                              </a>
-                            ))
-                          ) : (
-                            <span className="text-[11px] text-on-surface-variant/40 italic">-</span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Alignment Status */}
-                      <td className="py-3 px-4 text-right">
-                        {bothAligned ? (
-                          <Badge variant="completed" className="text-[9px] font-bold">
-                            Both Aligned
-                          </Badge>
-                        ) : oneAligned ? (
-                          <Badge variant="primary" className="text-[9px] font-bold">
-                            1 Object Aligned
-                          </Badge>
-                        ) : (
-                          <Badge variant="pending" className="text-[9px] font-bold">
-                            Unrestricted
-                          </Badge>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan={5} className="py-8 text-center text-on-surface-variant/60 text-xs italic">
-                    No biological events found for the active restriction criteria.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
         </div>
       </div>
 
@@ -864,20 +422,8 @@ export default function ConfigureInferences() {
 
             <div className="bg-surface-container-low p-4 rounded-2xl border border-outline-variant/10 text-xs flex flex-col gap-2.5">
               <div className="flex justify-between">
-                <span className="text-on-surface-variant">Restriction Level:</span>
-                <strong className="text-on-surface font-mono">{restrictionLevel}</strong>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-on-surface-variant">Start Objects (Inicios):</span>
-                <strong className="text-emerald-600 font-mono">{startObjects.join(", ") || "None"}</strong>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-on-surface-variant">End Objects (Cierres):</span>
-                <strong className="text-blue-600 font-mono">{endObjects.join(", ") || "None"}</strong>
-              </div>
-              <div className="flex justify-between border-t border-outline-variant/10 pt-2">
-                <span className="text-on-surface-variant">Filtered KB Events:</span>
-                <strong className="text-primary font-mono">{events.length} Events</strong>
+                <span className="text-on-surface-variant">Selected Restriction Level:</span>
+                <strong className="text-primary font-mono">{restrictionLevel.replace("_", " ")}</strong>
               </div>
             </div>
 
@@ -909,6 +455,14 @@ export default function ConfigureInferences() {
         title={successModalData?.title || "Step Completed"}
         message={successModalData?.message || "Inferences configuration completed successfully."}
         onClose={handleSuccessClose}
+      />
+
+      {/* Error Modal */}
+      <ErrorModal
+        open={!!errorMessage}
+        title="Configuration Error"
+        message={errorMessage || "Error saving inference configuration. Please check backend connection."}
+        onClose={() => setErrorMessage(null)}
       />
     </div>
   );
