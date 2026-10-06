@@ -29,9 +29,9 @@ import type {
 import {
   getNodeId,
   linkKey,
-  HIGHLIGHT_COLOR,
   DIMMED_OPACITY,
 } from "@/components/organisms/forceGraph/forceGraphTypes";
+import type { GraphVisualProfile } from "@/components/organisms/forceGraph/forceGraphProfiles";
 
 /* ─────────────────────────────────────────────────────────────────────────────
    PROPS
@@ -55,8 +55,8 @@ export interface ForceGraphCanvasProps {
   /** Canvas dimensions. */
   width: number;
   height: number;
-  /** Link distance for d3-force physics simulation (default: 45). */
-  linkDistance?: number;
+  /** Visual profile (background, node size, spacing, link colors/widths). */
+  profile: GraphVisualProfile;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -126,22 +126,23 @@ const ForceGraphCanvas: React.FC<ForceGraphCanvasProps> = ({
   onBackgroundClick,
   width,
   height,
-  linkDistance = 45,
+  profile,
 }) => {
   const fgRef = useRef<ForceGraphMethods | undefined>(undefined);
   const hasSelection = selectedNodeId != null;
+  const { linkDistance, chargeStrength } = profile.spacing;
 
   // Initialize forces and zoom to fit after the physics settle
   useEffect(() => {
     const fg = fgRef.current;
     if (fg) {
-      // Configure link distance (+50% default = 45)
+      // Configure link distance (from profile)
       const linkForce = fg.d3Force("link") as unknown as D3LinkForce | undefined;
       linkForce?.distance?.(linkDistance);
 
-      // Repulsion force to complement increased link distance
+      // Repulsion force to complement link distance (from profile)
       const chargeForce = fg.d3Force("charge") as unknown as D3ChargeForce | undefined;
-      chargeForce?.strength?.(-120);
+      chargeForce?.strength?.(chargeStrength);
 
       fg.d3ReheatSimulation?.();
     }
@@ -150,7 +151,7 @@ const ForceGraphCanvas: React.FC<ForceGraphCanvasProps> = ({
       fgRef.current?.zoomToFit(400, 60);
     }, 600);
     return () => clearTimeout(timer);
-  }, [linkDistance]);
+  }, [linkDistance, chargeStrength]);
 
   /* ── Curvature for parallel links between the same node pair ────────────── */
   const getLinkCurvature = useCallback(
@@ -189,7 +190,7 @@ const ForceGraphCanvas: React.FC<ForceGraphCanvasProps> = ({
         );
 
       if (isSelected || isHighlightedViaLink) {
-        return HIGHLIGHT_COLOR;
+        return profile.node.highlightColor;
       }
 
       if (hasSelection && !isSelected && !isConnected) {
@@ -198,7 +199,7 @@ const ForceGraphCanvas: React.FC<ForceGraphCanvasProps> = ({
 
       return node.color;
     },
-    [selectedNodeId, connectedNodeIds, highlightedLinkKey, hasSelection, graphData.links],
+    [selectedNodeId, connectedNodeIds, highlightedLinkKey, hasSelection, graphData.links, profile],
   );
 
   /* ── Node 3D Object (Sphere + Text Sprite) ──────────────────────────────── */
@@ -217,19 +218,19 @@ const ForceGraphCanvas: React.FC<ForceGraphCanvasProps> = ({
       const sprite = new SpriteText(node.name || node.id);
       sprite.color =
         hasSelection && !isSelected && !isConnected && !isHighlightedViaLink
-          ? "rgba(255,255,255,0.2)"
-          : "rgba(255,255,255,0.92)";
-      sprite.textHeight = 3.5;
+          ? profile.node.labelDimmedColor
+          : profile.node.labelColor;
+      sprite.textHeight = profile.node.labelTextHeight;
       sprite.fontFace = '"Space Grotesk", "Inter", sans-serif';
       sprite.fontWeight = "600";
-      // Position sprite 8 units below node center (sphere radius is 5)
-      sprite.position.set(0, -10, 0);
+      // Position sprite below node center (offset defined by profile)
+      sprite.position.set(0, profile.node.labelOffsetY, 0);
       if (sprite.material) {
         sprite.material.depthWrite = false;
       }
       return sprite;
     },
-    [selectedNodeId, connectedNodeIds, highlightedLinkKey, hasSelection, graphData.links],
+    [selectedNodeId, connectedNodeIds, highlightedLinkKey, hasSelection, graphData.links, profile],
   );
 
   /* ── Link color ─────────────────────────────────────────────────────────── */
@@ -237,28 +238,28 @@ const ForceGraphCanvas: React.FC<ForceGraphCanvasProps> = ({
     (link: GraphLink) => {
       const key = linkKey(link);
 
-      if (highlightedLinkKey === key) return HIGHLIGHT_COLOR;
+      if (highlightedLinkKey === key) return profile.linkColor.highlighted;
 
       if (hasSelection) {
         return connectedLinkKeys.has(key)
-          ? "rgba(153,194,255,0.7)"
-          : `rgba(80,80,100,${DIMMED_OPACITY})`;
+          ? profile.linkColor.connected
+          : profile.linkColor.dimmed;
       }
 
-      return "rgba(153,194,255,0.35)";
+      return profile.linkColor.default;
     },
-    [highlightedLinkKey, hasSelection, connectedLinkKeys],
+    [highlightedLinkKey, hasSelection, connectedLinkKeys, profile],
   );
 
   /* ── Link width ─────────────────────────────────────────────────────────── */
   const getLinkWidth = useCallback(
     (link: GraphLink) => {
       const key = linkKey(link);
-      if (highlightedLinkKey === key) return 2.5;
-      if (hasSelection && connectedLinkKeys.has(key)) return 1.2;
-      return 0.6;
+      if (highlightedLinkKey === key) return profile.linkWidth.highlighted;
+      if (hasSelection && connectedLinkKeys.has(key)) return profile.linkWidth.connected;
+      return profile.linkWidth.default;
     },
-    [highlightedLinkKey, hasSelection, connectedLinkKeys],
+    [highlightedLinkKey, hasSelection, connectedLinkKeys, profile],
   );
 
   /* ── Render ─────────────────────────────────────────────────────────────── */
@@ -268,8 +269,9 @@ const ForceGraphCanvas: React.FC<ForceGraphCanvasProps> = ({
       graphData={graphData}
       width={width}
       height={height}
-      backgroundColor="rgba(10,10,20,1)"
+      backgroundColor={profile.backgroundColor}
       showNavInfo={false}
+      linkOpacity={0.5}
       /* ── Node ID & Labels ── */
       nodeId="id"
       nodeLabel={(node: object) => {
@@ -277,13 +279,13 @@ const ForceGraphCanvas: React.FC<ForceGraphCanvasProps> = ({
         return `${n.name || n.id}${n.type ? ` (${n.type})` : ""}`;
       }}
       /* ── Nodes ── */
-      nodeRelSize={5}
+      nodeRelSize={profile.node.relSize}
       nodeColor={getNodeColor as (node: object) => string}
       nodeThreeObjectExtend={true}
       nodeThreeObject={getNodeThreeObject as (node: object) => Object3D}
       onNodeClick={(node) => onNodeClick(node as GraphNode)}
       /* ── Links — Directional Arrows ── */
-      linkDirectionalArrowLength={4}
+      linkDirectionalArrowLength={profile.linkWidth.arrowLength}
       linkDirectionalArrowRelPos={1}
       linkDirectionalArrowColor={getLinkColor as (link: object) => string}
       linkColor={getLinkColor as (link: object) => string}

@@ -99,7 +99,11 @@ export const TYPE_COLOR_MAP: Record<string, string> = {
 /** Fallback color for unknown types. */
 export const DEFAULT_NODE_COLOR = "#94a3b8";
 
-/** Highlight color for selected/active elements. */
+/**
+ * Highlight color for selected/active elements.
+ * Kept for compatibility — the effective value is now defined per background
+ * in `forceGraphProfiles.ts` (`node.highlightColor` / `linkColor.highlighted`).
+ */
 export const HIGHLIGHT_COLOR = "#ffffff";
 
 /** Opacity for non-connected elements when a node is selected. */

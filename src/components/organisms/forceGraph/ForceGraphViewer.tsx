@@ -32,6 +32,12 @@ import {
   linkKey,
   colorForType,
 } from "@/components/organisms/forceGraph/forceGraphTypes";
+import {
+  getGraphProfile,
+  DEFAULT_GRAPH_BACKGROUND,
+  type GraphBackground,
+  type GraphVisualProfile,
+} from "@/components/organisms/forceGraph/forceGraphProfiles";
 
 /* ─────────────────────────────────────────────────────────────────────────────
    PROPS
@@ -44,8 +50,16 @@ export interface ForceGraphViewerProps {
   links: GraphLinkInput[];
   /** Height of the canvas area in px. Default: 650. */
   height?: number;
-  /** Link distance for d3-force physics simulation (default: 45, +50% over standard 30). */
+  /**
+   * Link distance for d3-force physics simulation.
+   * When provided, overrides the value defined by the background profile (45).
+   */
   linkDistance?: number;
+  /**
+   * Background color. Selects the visual profile (background, node size,
+   * node spacing, link color and link width). Default: "black".
+   */
+  background?: GraphBackground;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -61,13 +75,15 @@ export interface ForceGraphViewerProps {
  *   2. Deduplicates nodes by `name`.
  *   3. Manages all interaction state (selected node, highlighted link).
  *   4. Computes connected node/link sets for visual feedback.
- *   5. Renders ForceGraphCanvas + NodeDetailPanel.
+ *   5. Resolves the visual profile from the `background` prop.
+ *   6. Renders ForceGraphCanvas + NodeDetailPanel.
  *
  * Usage:
  * ```tsx
  * <ForceGraphViewer
  *   nodes={[{ name: "TP53", type: "Protein" }]}
  *   links={[{ object1: "TP53", interaction: "bind", object2: "MDM2" }]}
+ *   background="white"
  * />
  * ```
  */
@@ -75,8 +91,17 @@ const ForceGraphViewer: React.FC<ForceGraphViewerProps> = ({
   nodes: inputNodes,
   links: inputLinks,
   height = 650,
-  linkDistance = 45,
+  linkDistance,
+  background = DEFAULT_GRAPH_BACKGROUND,
 }) => {
+  /* ── Visual profile (background → parameters) ───────────────────────────── */
+  const profile: GraphVisualProfile = useMemo(() => {
+    const base = getGraphProfile(background);
+    return linkDistance == null
+      ? base
+      : { ...base, spacing: { ...base.spacing, linkDistance } };
+  }, [background, linkDistance]);
+
   /* ── Transform & deduplicate input → internal data ─────────────────────── */
   const graphData: ForceGraphData = useMemo(() => {
     // Deduplicate nodes by name
@@ -204,7 +229,7 @@ const ForceGraphViewer: React.FC<ForceGraphViewerProps> = ({
           onBackgroundClick={handleBackgroundClick}
           width={canvasWidth}
           height={height}
-          linkDistance={linkDistance}
+          profile={profile}
         />
       )}
 

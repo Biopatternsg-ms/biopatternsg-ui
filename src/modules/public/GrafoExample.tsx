@@ -60,9 +60,23 @@
  * - Clic en espacio vacío → cierra panel.
  * - Clic en conexión (panel) → resalta los 2 nodos participantes.
  *
+ * ## Color de fondo / perfiles visuales
+ *
+ * La prop opcional `background` acepta `"black"` (por defecto), `"white"` o
+ * `"skyblue"`. Cada valor selecciona un perfil (ver forceGraphProfiles.ts) que
+ * define: color de fondo, tamaño de nodos, separación de nodos, color de las
+ * conexiones y grosor de las conexiones.
+ *
+ * ```tsx
+ * <ForceGraphViewer nodes={nodes} links={links} background="skyblue" />
+ * ```
+ *
+ * Si se pasa `linkDistance`, sobrescribe la separación definida por el perfil.
+ *
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
+import { useState } from "react";
 import { Header } from "@/components/organisms/Header";
 import { Footer } from "@/components/organisms/Footer";
 import { ForceGraphViewer } from "@/components/organisms/forceGraph/ForceGraphViewer";
@@ -71,6 +85,14 @@ import type {
   GraphLinkInput,
 } from "@/components/organisms/forceGraph/forceGraphTypes";
 import { TYPE_COLOR_MAP } from "@/components/organisms/forceGraph/forceGraphTypes";
+import type { GraphBackground } from "@/components/organisms/forceGraph/forceGraphProfiles";
+
+/** Opciones del selector de fondo (demo). */
+const BACKGROUND_OPTIONS: { value: GraphBackground; label: string; swatch: string }[] = [
+  { value: "black", label: "Negro", swatch: "rgba(10,10,20,1)" },
+  { value: "white", label: "Blanco", swatch: "#ffffff" },
+  { value: "skyblue", label: "Azul cielo", swatch: "#87ceeb" },
+];
 
 /* ═════════════════════════════════════════════════════════════════════════════
    DATOS — Red de señalización celular (Epinephrine → ADRB2 → cascada)
@@ -180,6 +202,7 @@ const exampleLinks: GraphLinkInput[] = [
 
 const GrafoExample = () => {
   const legendEntries = Object.entries(TYPE_COLOR_MAP);
+  const [background, setBackground] = useState<GraphBackground>("black");
 
   return (
     <div className="bg-background text-on-background font-body min-h-screen">
@@ -217,12 +240,36 @@ const GrafoExample = () => {
 
         {/* ── Graph ───────────────────────────────────────────────────────────── */}
         <section className="max-w-screen-2xl mx-auto px-8">
+          {/* ── Background selector (demo de perfiles) ──────────────────────── */}
+          <div className="flex items-center gap-2 mb-3 text-xs text-on-surface-variant">
+            <span className="font-semibold uppercase tracking-wide mr-1">Fondo:</span>
+            {BACKGROUND_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setBackground(opt.value)}
+                aria-pressed={background === opt.value}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full border transition-colors cursor-pointer ${
+                  background === opt.value
+                    ? "border-primary text-primary bg-primary-container/15"
+                    : "border-outline-variant/30 hover:border-outline-variant"
+                }`}
+              >
+                <span
+                  className="w-3 h-3 rounded-full border border-outline-variant/40 flex-shrink-0"
+                  style={{ backgroundColor: opt.swatch }}
+                />
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
           <div className="rounded-2xl border border-outline-variant/15 shadow-ambient overflow-hidden">
             <ForceGraphViewer
               nodes={exampleNodes}
               links={exampleLinks}
               height={700}
-              linkDistance={45}
+              background={background}
             />
           </div>
         </section>
