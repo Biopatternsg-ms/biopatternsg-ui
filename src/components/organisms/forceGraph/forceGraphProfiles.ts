@@ -70,6 +70,8 @@ export interface GraphVisualProfile {
     connected: number;
     highlighted: number;
     arrowLength: number;
+    /** Arrow/cone opacity (0.0 to 1.0). */
+    arrowOpacity: number;
   };
 }
 
@@ -92,7 +94,7 @@ export const GRAPH_PROFILES: Record<GraphBackground, GraphVisualProfile> = {
       dimmed: "rgba(255, 255, 255, 0.15)",
       highlighted: "#ffffff",
     },
-    linkWidth: { default: 0.9, connected: 1.8, highlighted: 3.75, arrowLength: 4 },
+    linkWidth: { default: 0.9, connected: 1.8, highlighted: 3.75, arrowLength: 4, arrowOpacity: 0.3 },
   },
 
   /* ── White: same sizes, inverted palette (dark slate / black) ── */
@@ -113,7 +115,7 @@ export const GRAPH_PROFILES: Record<GraphBackground, GraphVisualProfile> = {
       dimmed: "rgba(0, 0, 0, 0.15)",
       highlighted: "#000000",
     },
-    linkWidth: { default: 0.9, connected: 1.8, highlighted: 3.75, arrowLength: 4 },
+    linkWidth: { default: 0.9, connected: 1.8, highlighted: 3.75, arrowLength: 4, arrowOpacity: 0.30 },
   },
 
   /* ── Sky blue: #87CEEB background, black links and labels ── */
@@ -129,12 +131,12 @@ export const GRAPH_PROFILES: Record<GraphBackground, GraphVisualProfile> = {
     },
     spacing: { linkDistance: 45, chargeStrength: -120 },
     linkColor: {
-      default: "#000000",
-      connected: "#000000",
+      default: "#1E3A8A",
+      connected: "#1E3A8A",
       dimmed: "rgba(0, 0, 0, 0.15)",
-      highlighted: "#000000",
+      highlighted: "#1E3A8A",
     },
-    linkWidth: { default: 0.9, connected: 1.8, highlighted: 3.75, arrowLength: 4 },
+    linkWidth: { default: 0.9, connected: 1.8, highlighted: 3.75, arrowLength: 4, arrowOpacity: 0.6 },
   },
 };
 

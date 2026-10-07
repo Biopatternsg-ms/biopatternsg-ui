@@ -251,6 +251,32 @@ const ForceGraphCanvas: React.FC<ForceGraphCanvasProps> = ({
     [highlightedLinkKey, hasSelection, connectedLinkKeys, profile],
   );
 
+  /* ── Arrow color & opacity ────────────────────────────────────────────── */
+  const getArrowColor = useCallback(
+    (link: GraphLink) => {
+      const key = linkKey(link);
+      const isHighlighted = highlightedLinkKey === key;
+      const isDimmed = hasSelection && !connectedLinkKeys.has(key);
+
+      const targetOpacity = isHighlighted
+        ? 1.0
+        : isDimmed
+          ? 0.15
+          : profile.linkWidth.arrowOpacity;
+
+      // three-forcegraph multiplies arrow opacity by 3
+      const adjustedAlpha = Math.min(1, targetOpacity / 3);
+      return applyAlpha(getLinkColor(link), adjustedAlpha);
+    },
+    [
+      getLinkColor,
+      highlightedLinkKey,
+      hasSelection,
+      connectedLinkKeys,
+      profile.linkWidth.arrowOpacity,
+    ],
+  );
+
   /* ── Link width ─────────────────────────────────────────────────────────── */
   const getLinkWidth = useCallback(
     (link: GraphLink) => {
@@ -271,7 +297,7 @@ const ForceGraphCanvas: React.FC<ForceGraphCanvasProps> = ({
       height={height}
       backgroundColor={profile.backgroundColor}
       showNavInfo={false}
-      linkOpacity={0.5}
+      linkOpacity={profile.linkWidth.arrowOpacity}
       /* ── Node ID & Labels ── */
       nodeId="id"
       nodeLabel={(node: object) => {
@@ -287,7 +313,7 @@ const ForceGraphCanvas: React.FC<ForceGraphCanvasProps> = ({
       /* ── Links — Directional Arrows ── */
       linkDirectionalArrowLength={profile.linkWidth.arrowLength}
       linkDirectionalArrowRelPos={1}
-      linkDirectionalArrowColor={getLinkColor as (link: object) => string}
+      linkDirectionalArrowColor={getArrowColor as (link: object) => string}
       linkColor={getLinkColor as (link: object) => string}
       linkWidth={getLinkWidth as (link: object) => number}
       linkCurvature={getLinkCurvature as (link: object) => number}

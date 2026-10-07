@@ -60,6 +60,10 @@ export interface ForceGraphViewerProps {
    * node spacing, link color and link width). Default: "black".
    */
   background?: GraphBackground;
+  /** Name of the selected node (controlled mode). `null` = none. Omit for uncontrolled. */
+  selectedNodeName?: string | null;
+  /** Fired whenever selection changes from inside the graph (node click → name, background click / panel close → null). */
+  onSelectedNodeChange?: (name: string | null) => void;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -78,12 +82,23 @@ export interface ForceGraphViewerProps {
  *   5. Resolves the visual profile from the `background` prop.
  *   6. Renders ForceGraphCanvas + NodeDetailPanel.
  *
- * Usage:
+ * Usage (uncontrolled):
  * ```tsx
  * <ForceGraphViewer
  *   nodes={[{ name: "TP53", type: "Protein" }]}
  *   links={[{ object1: "TP53", interaction: "bind", object2: "MDM2" }]}
  *   background="white"
+ * />
+ * ```
+ *
+ * Usage (controlled selection):
+ * ```tsx
+ * const [selected, setSelected] = useState<string | null>(null);
+ * <ForceGraphViewer
+ *   nodes={nodes}
+ *   links={links}
+ *   selectedNodeName={selected}
+ *   onSelectedNodeChange={setSelected}
  * />
  * ```
  */
@@ -93,6 +108,8 @@ const ForceGraphViewer: React.FC<ForceGraphViewerProps> = ({
   height = 650,
   linkDistance,
   background = DEFAULT_GRAPH_BACKGROUND,
+  selectedNodeName,
+  onSelectedNodeChange,
 }) => {
   /* ── Visual profile (background → parameters) ───────────────────────────── */
   const profile: GraphVisualProfile = useMemo(() => {
@@ -129,8 +146,33 @@ const ForceGraphViewer: React.FC<ForceGraphViewerProps> = ({
   }, [inputNodes, inputLinks]);
 
   /* ── Interaction state ──────────────────────────────────────────────────── */
-  const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+  const [internalSelectedName, setInternalSelectedName] = useState<string | null>(null);
+  const isControlled = selectedNodeName !== undefined;
+  const selectedName = isControlled ? selectedNodeName : internalSelectedName;
+
+  const selectedNode = useMemo(() => {
+    if (!selectedName) return null;
+    return graphData.nodes.find((n) => n.id === selectedName) ?? null;
+  }, [graphData.nodes, selectedName]);
+
   const [highlightedLink, setHighlightedLink] = useState<GraphLink | null>(null);
+
+  const changeSelection = useCallback(
+    (name: string | null) => {
+      if (!isControlled) {
+        setInternalSelectedName(name);
+      }
+      onSelectedNodeChange?.(name);
+    },
+    [isControlled, onSelectedNodeChange]
+  );
+
+  // Reset highlighted link whenever selectedName changes (adjusting state during render)
+  const [prevSelectedName, setPrevSelectedName] = useState(selectedName);
+  if (prevSelectedName !== selectedName) {
+    setPrevSelectedName(selectedName);
+    setHighlightedLink(null);
+  }
 
   const highlightedLinkKey = highlightedLink ? linkKey(highlightedLink) : null;
 
@@ -168,28 +210,31 @@ const ForceGraphViewer: React.FC<ForceGraphViewerProps> = ({
   }, [selectedNode, graphData.links]);
 
   /* ── Event handlers ─────────────────────────────────────────────────────── */
-  const handleNodeClick = useCallback((node: GraphNode) => {
-    setSelectedNode(node);
-    setHighlightedLink(null);
-  }, []);
+  const handleNodeClick = useCallback(
+    (node: GraphNode) => {
+      changeSelection(node.id);
+      setHighlightedLink(null);
+    },
+    [changeSelection]
+  );
 
   const handleLinkClick = useCallback((link: GraphLink) => {
     setHighlightedLink(link);
   }, []);
 
   const handleBackgroundClick = useCallback(() => {
-    setSelectedNode(null);
+    changeSelection(null);
     setHighlightedLink(null);
-  }, []);
+  }, [changeSelection]);
 
   const handleConnectionClick = useCallback((link: GraphLink) => {
     setHighlightedLink(link);
   }, []);
 
   const handlePanelClose = useCallback(() => {
-    setSelectedNode(null);
+    changeSelection(null);
     setHighlightedLink(null);
-  }, []);
+  }, [changeSelection]);
 
   /* ── Responsive width ───────────────────────────────────────────────────── */
   const containerRef = useRef<HTMLDivElement>(null);

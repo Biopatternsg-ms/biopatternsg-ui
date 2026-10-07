@@ -73,6 +73,30 @@
  *
  * Si se pasa `linkDistance`, sobrescribe la separación definida por el perfil.
  *
+ * ## Selección controlada / buscador de nodos
+ *
+ * `ForceGraphViewer` permite controlar la selección desde el componente padre:
+ * - `selectedNodeName`: Nombre del nodo seleccionado (`string | null`).
+ * - `onSelectedNodeChange`: Notificación cuando la selección cambia internamente (clic en nodo, clic en fondo, o cerrar panel).
+ *
+ * Esto permite sincronizarlo bidireccionalmente con componentes como `NodeSearchSelect`:
+ *
+ * ```tsx
+ * const [selectedNodeName, setSelectedNodeName] = useState<string | null>(null);
+ *
+ * <NodeSearchSelect
+ *   nodes={nodes}
+ *   value={selectedNodeName}
+ *   onChange={setSelectedNodeName}
+ * />
+ * <ForceGraphViewer
+ *   nodes={nodes}
+ *   links={links}
+ *   selectedNodeName={selectedNodeName}
+ *   onSelectedNodeChange={setSelectedNodeName}
+ * />
+ * ```
+ *
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -80,6 +104,7 @@ import { useState } from "react";
 import { Header } from "@/components/organisms/Header";
 import { Footer } from "@/components/organisms/Footer";
 import { ForceGraphViewer } from "@/components/organisms/forceGraph/ForceGraphViewer";
+import { NodeSearchSelect } from "@/components/molecules/NodeSearchSelect";
 import type {
   GraphNodeInput,
   GraphLinkInput,
@@ -203,6 +228,7 @@ const exampleLinks: GraphLinkInput[] = [
 const GrafoExample = () => {
   const legendEntries = Object.entries(TYPE_COLOR_MAP);
   const [background, setBackground] = useState<GraphBackground>("black");
+  const [selectedNodeName, setSelectedNodeName] = useState<string | null>(null);
 
   return (
     <div className="bg-background text-on-background font-body min-h-screen">
@@ -240,28 +266,40 @@ const GrafoExample = () => {
 
         {/* ── Graph ───────────────────────────────────────────────────────────── */}
         <section className="max-w-screen-2xl mx-auto px-8">
-          {/* ── Background selector (demo de perfiles) ──────────────────────── */}
-          <div className="flex items-center gap-2 mb-3 text-xs text-on-surface-variant">
-            <span className="font-semibold uppercase tracking-wide mr-1">Fondo:</span>
-            {BACKGROUND_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setBackground(opt.value)}
-                aria-pressed={background === opt.value}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full border transition-colors cursor-pointer ${
-                  background === opt.value
-                    ? "border-primary text-primary bg-primary-container/15"
-                    : "border-outline-variant/30 hover:border-outline-variant"
-                }`}
-              >
-                <span
-                  className="w-3 h-3 rounded-full border border-outline-variant/40 flex-shrink-0"
-                  style={{ backgroundColor: opt.swatch }}
-                />
-                {opt.label}
-              </button>
-            ))}
+          {/* ── Controls: Background selector & Node search ─────────────────── */}
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3 text-xs text-on-surface-variant">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold uppercase tracking-wide mr-1">Fondo:</span>
+              {BACKGROUND_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setBackground(opt.value)}
+                  aria-pressed={background === opt.value}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full border transition-colors cursor-pointer ${
+                    background === opt.value
+                      ? "border-primary text-primary bg-primary-container/15"
+                      : "border-outline-variant/30 hover:border-outline-variant"
+                  }`}
+                >
+                  <span
+                    className="w-3 h-3 rounded-full border border-outline-variant/40 flex-shrink-0"
+                    style={{ backgroundColor: opt.swatch }}
+                  />
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-80">
+              <span className="font-semibold uppercase tracking-wide shrink-0">Nodo:</span>
+              <NodeSearchSelect
+                nodes={exampleNodes}
+                value={selectedNodeName}
+                onChange={setSelectedNodeName}
+                className="flex-1"
+              />
+            </div>
           </div>
 
           <div className="rounded-2xl border border-outline-variant/15 shadow-ambient overflow-hidden">
@@ -270,6 +308,8 @@ const GrafoExample = () => {
               links={exampleLinks}
               height={700}
               background={background}
+              selectedNodeName={selectedNodeName}
+              onSelectedNodeChange={setSelectedNodeName}
             />
           </div>
         </section>
