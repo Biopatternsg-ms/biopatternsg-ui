@@ -190,7 +190,13 @@ export const BiologicalRolesModal: React.FC<BiologicalRolesModalProps> = ({
         <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6 custom-scrollbar">
           {loading ? (
             <div className="py-20 flex flex-col items-center justify-center">
-              <LoadingSpinner size="lg" variant="primary" label="Loading biological roles..." />
+              <LoadingSpinner
+                backdrop={false}
+                card={false}
+                size="lg"
+                variant="primary"
+                label="Loading biological roles..."
+              />
             </div>
           ) : totalEntities === 0 ? (
             <div className="py-16 flex flex-col items-center justify-center text-center gap-3">

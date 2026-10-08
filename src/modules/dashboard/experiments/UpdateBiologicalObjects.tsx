@@ -1,0 +1,896 @@
+/*
+ * Copyright © 2026 biopatternsg (biopatternsg@gmail.com)
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { useState, useEffect, useMemo } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  ArrowLeft,
+  Search,
+  CheckCircle2,
+  X,
+  Plus,
+  Loader2,
+  RotateCcw,
+  SlidersHorizontal,
+  Dna,
+  Save,
+  Tag,
+  Layers,
+  Check,
+  AlertTriangle,
+} from "lucide-react";
+import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
+import { Button } from "@/components/atoms/Button";
+import { Breadcrumb } from "@/components/atoms/Breadcrumb";
+import { Badge } from "@/components/atoms/Badge";
+import { Input } from "@/components/atoms/Input";
+import { experimentService } from "@/services/experimentService";
+import type {
+  BiologicalObjectItem,
+  ExperimentExecution,
+  RestrictionLevel,
+} from "@/services/models/Experiment";
+import { SuccessModal } from "@/components/molecules/SuccessModal";
+import {
+  CATEGORY_STYLES,
+  CATEGORIES_LIST,
+} from "@/config/biologicalCategories";
+
+interface EditableBiologicalObject extends BiologicalObjectItem {
+  id: string;
+  isModified: boolean;
+}
+
+export const UpdateBiologicalObjects = () => {
+  const { networkId, experimentId } = useParams<{ networkId: string; experimentId: string }>();
+  const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(true);
+  const [experimentData, setExperimentData] = useState<ExperimentExecution | null>(null);
+  const [initialObjects, setInitialObjects] = useState<BiologicalObjectItem[]>([]);
+  const [objects, setObjects] = useState<EditableBiologicalObject[]>([]);
+  const [restrictionLevel, setRestrictionLevel] = useState<RestrictionLevel>("VERY_RESTRICTED");
+
+  // Filters
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
+  const [filterModifiedOnly, setFilterModifiedOnly] = useState(false);
+
+  // Quick-add state for an entity
+  const [activeAddRoleEntityId, setActiveAddRoleEntityId] = useState<string | null>(null);
+  const [customRoleInput, setCustomRoleInput] = useState("");
+
+  // Submission & Modals
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [successModalData, setSuccessModalData] = useState<{ title: string; message: string } | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const expId = experimentId;
+    if (!expId) return;
+
+    let ignore = false;
+    async function loadData(id: string) {
+      try {
+        setLoading(true);
+
+        const [execData, inferenceConfigData, bioObjectsData] = await Promise.allSettled([
+          experimentService.getExperimentExecution(id),
+          experimentService.getInferenceByPipelineId(id),
+          experimentService.getBiologicalObjects(id),
+        ]);
+
+        if (ignore) return;
+
+        if (execData.status === "fulfilled") {
+          setExperimentData(execData.value);
+        }
+
+        if (inferenceConfigData.status === "fulfilled" && inferenceConfigData.value) {
+          setRestrictionLevel(inferenceConfigData.value.restrictionLevel || "VERY_RESTRICTED");
+        }
+
+        if (bioObjectsData.status === "fulfilled" && bioObjectsData.value) {
+          const items = bioObjectsData.value;
+          setInitialObjects(items);
+          setObjects(
+            items.map((item, idx) => ({
+              ...item,
+              id: `${item.symbol || item.name}-${idx}`,
+              isModified: false,
+            }))
+          );
+        }
+      } catch (err) {
+        console.error("Error loading biological objects:", err);
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    }
+
+    loadData(expId);
+    return () => {
+      ignore = true;
+    };
+  }, [experimentId]);
+
+  // Handler to add a role to an entity
+  const handleAddRole = (entityId: string, roleToAdd: string) => {
+    const normalizedRole = roleToAdd.trim().toUpperCase();
+    if (!normalizedRole) return;
+
+    setObjects((prev) =>
+      prev.map((obj) => {
+        if (obj.id !== entityId) return obj;
+        if (obj.roles.includes(normalizedRole)) return obj;
+
+        const updatedRoles = [...obj.roles, normalizedRole];
+        const initial = initialObjects.find((io) => (io.symbol || io.name) === (obj.symbol || obj.name));
+        const initialRoles = initial ? initial.roles || [] : [];
+        const isModified =
+          updatedRoles.length !== initialRoles.length ||
+          updatedRoles.some((r) => !initialRoles.includes(r));
+
+        return {
+          ...obj,
+          roles: updatedRoles,
+          isModified,
+        };
+      })
+    );
+
+    setCustomRoleInput("");
+    setActiveAddRoleEntityId(null);
+  };
+
+  // Handler to remove a role from an entity
+  const handleRemoveRole = (entityId: string, roleToRemove: string) => {
+    setObjects((prev) =>
+      prev.map((obj) => {
+        if (obj.id !== entityId) return obj;
+
+        const updatedRoles = obj.roles.filter((r) => r !== roleToRemove);
+        const initial = initialObjects.find((io) => (io.symbol || io.name) === (obj.symbol || obj.name));
+        const initialRoles = initial ? initial.roles || [] : [];
+        const isModified =
+          updatedRoles.length !== initialRoles.length ||
+          updatedRoles.some((r) => !initialRoles.includes(r));
+
+        return {
+          ...obj,
+          roles: updatedRoles,
+          isModified,
+        };
+      })
+    );
+  };
+
+  // Handler to reset single entity back to initial
+  const handleResetEntity = (entityId: string) => {
+    setObjects((prev) =>
+      prev.map((obj) => {
+        if (obj.id !== entityId) return obj;
+        const initial = initialObjects.find((io) => (io.symbol || io.name) === (obj.symbol || obj.name));
+        if (!initial) return obj;
+
+        return {
+          ...obj,
+          roles: [...initial.roles],
+          isModified: false,
+        };
+      })
+    );
+  };
+
+  // Handler to reset all entities back to initial
+  const handleResetAll = () => {
+    setObjects(
+      initialObjects.map((item, idx) => ({
+        ...item,
+        id: `${item.symbol || item.name}-${idx}`,
+        isModified: false,
+      }))
+    );
+  };
+
+  // Confirm and save roles to backend
+  const handleConfirmSave = async () => {
+    setIsConfirmModalOpen(false);
+    setIsSubmitting(true);
+    try {
+      const pipeId = experimentId || "pipeline-demo-123";
+
+      // Build the roles dictionary: { [symbol]: string[] }
+      const rolesMap: Record<string, string[]> = {};
+      objects.forEach((obj) => {
+        const key = obj.symbol || obj.name;
+        rolesMap[key] = obj.roles;
+      });
+
+      const response = await experimentService.saveBiologicalObjectsRoles(pipeId, rolesMap);
+
+      if (!response.ok) {
+        throw new Error(`Failed to save biological objects roles: ${response.statusText}`);
+      }
+
+      setIsSubmitting(false);
+      setSuccessModalData({
+        title: "Biological Objects Roles Saved",
+        message:
+          "The confirmed biological roles have been successfully synchronized to the Knowledge Base (kb_objects) and Inference configuration. The Update Biological Objects step is now complete.",
+      });
+    } catch (err) {
+      console.error("Error saving biological objects roles:", err);
+      setIsSubmitting(false);
+      setErrorMessage(
+        err instanceof Error
+          ? err.message
+          : "Error saving biological objects roles. Please check backend connection."
+      );
+    }
+  };
+
+  // Filtered list
+  const filteredObjects = useMemo(() => {
+    return objects.filter((item) => {
+      // Modified only filter
+      if (filterModifiedOnly && !item.isModified) {
+        return false;
+      }
+
+      // Category filter
+      if (selectedCategory !== "ALL") {
+        const matchesCategory = item.roles.includes(selectedCategory);
+        if (!matchesCategory) return false;
+      }
+
+      // Search term
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase();
+        const symbolMatch = (item.symbol || item.name).toLowerCase().includes(term);
+        const descMatch = (item.description || "").toLowerCase().includes(term);
+        const synonymMatch = (item.synonyms || item.alternativeIds || []).some((s) =>
+          s.toLowerCase().includes(term)
+        );
+        const rolesMatch = item.roles.some((r) => r.toLowerCase().includes(term));
+        return symbolMatch || descMatch || synonymMatch || rolesMatch;
+      }
+
+      return true;
+    });
+  }, [objects, filterModifiedOnly, selectedCategory, searchTerm]);
+
+  const modifiedCount = useMemo(() => objects.filter((o) => o.isModified).length, [objects]);
+
+  const totalAssignedRoles = useMemo(
+    () => objects.reduce((sum, o) => sum + o.roles.length, 0),
+    [objects]
+  );
+
+  const formatRestrictionLabel = (level: RestrictionLevel) => {
+    switch (level) {
+      case "VERY_RESTRICTED":
+        return "Very Restricted";
+      case "RESTRICTED":
+        return "Restricted";
+      case "UNRESTRICTED":
+        return "Unrestricted";
+      default:
+        return level;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20">
+      {/* Top Header & Breadcrumb */}
+      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <Breadcrumb
+                items={[
+                  { label: "Experiments", href: `/dashboard/experiments/${networkId || ""}` },
+                  {
+                    label: experimentData?.experimentName || "Experiment Execution",
+                    href: `/dashboard/experiments/${networkId || ""}/execution/${experimentId || ""}`,
+                  },
+                  { label: "Update Biological Objects" },
+                ]}
+              />
+              <div className="flex items-center gap-3 mt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    navigate(
+                      `/dashboard/experiments/${networkId || ""}/execution/${experimentId || ""}`
+                    )
+                  }
+                  className="mr-1"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-1" />
+                  Back to Execution
+                </Button>
+                <div className="p-2 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400">
+                  <Dna className="w-6 h-6" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    Update Biological Objects
+                    {modifiedCount > 0 && (
+                      <Badge variant="pending" className="text-xs">
+                        {modifiedCount} Modified
+                      </Badge>
+                    )}
+                  </h1>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Review and curate biological roles and biotypes resulting from the restriction criteria.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick stats & Actions */}
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/50 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600">
+                <Layers className="w-3.5 h-3.5 text-teal-500" />
+                <span>Restriction:</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  {formatRestrictionLabel(restrictionLevel)}
+                </span>
+                <span className="text-slate-400">•</span>
+                <span>Entities:</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  {objects.length}
+                </span>
+                <span className="text-slate-400">•</span>
+                <span>Active Roles:</span>
+                <span className="font-semibold text-teal-600 dark:text-teal-400">
+                  {totalAssignedRoles}
+                </span>
+              </div>
+
+              {modifiedCount > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleResetAll}
+                  className="text-slate-600 dark:text-slate-300"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                  Reset All
+                </Button>
+              )}
+
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setIsConfirmModalOpen(true)}
+                disabled={isSubmitting || objects.length === 0}
+                className="bg-teal-600 hover:bg-teal-700 text-white shadow-xs"
+              >
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4 mr-1.5" />
+                )}
+                Confirm & Save Roles
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        {/* Error Banner */}
+        {errorMessage && (
+          <div className="mb-4 p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 flex items-center justify-between animate-in fade-in">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0" />
+              <div className="text-xs">
+                <span className="font-semibold block">Failed to save biological roles</span>
+                <span>{errorMessage}</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setErrorMessage(null)}
+              className="text-rose-500 hover:text-rose-700 dark:hover:text-rose-200 p-1"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Toolbar: Search and Filter Pills */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-xs mb-6 space-y-4">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Input
+                placeholder="Search by symbol, synonyms, or role..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Filter Modified Toggle */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant={filterModifiedOnly ? "surface" : "outline"}
+                size="sm"
+                onClick={() => setFilterModifiedOnly(!filterModifiedOnly)}
+                className={`text-xs ${
+                  filterModifiedOnly
+                    ? "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700"
+                    : ""
+                }`}
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5 mr-1.5" />
+                Modified Only {modifiedCount > 0 && `(${modifiedCount})`}
+              </Button>
+            </div>
+          </div>
+
+          {/* Category Filter Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+            <span className="text-slate-400 font-medium whitespace-nowrap mr-1">Filter by Role:</span>
+            <button
+              type="button"
+              onClick={() => setSelectedCategory("ALL")}
+              className={`px-2.5 py-1 rounded-full font-medium transition-colors whitespace-nowrap ${
+                selectedCategory === "ALL"
+                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300"
+              }`}
+            >
+              All ({objects.length})
+            </button>
+            {CATEGORIES_LIST.map((cat) => {
+              const count = objects.filter((o) => o.roles.includes(cat.key)).length;
+              const isSelected = selectedCategory === cat.key;
+              const style = CATEGORY_STYLES[cat.key];
+
+              return (
+                <button
+                  key={cat.key}
+                  type="button"
+                  onClick={() => setSelectedCategory(isSelected ? "ALL" : cat.key)}
+                  className={`px-2.5 py-1 rounded-full font-medium transition-colors whitespace-nowrap border flex items-center gap-1.5 ${
+                    isSelected
+                      ? `${style?.bg || "bg-teal-500/10"} ${style?.text || "text-teal-600"} border-teal-500 font-semibold ring-1 ring-teal-500`
+                      : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  <span>{cat.label}</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Content Section */}
+        {loading ? (
+          <div className="py-20 flex flex-col items-center justify-center">
+            <LoadingSpinner size="lg" />
+            <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
+              Loading biological objects from pipeline inferences...
+            </p>
+          </div>
+        ) : filteredObjects.length === 0 ? (
+          <div className="bg-white dark:bg-slate-800 rounded-xl p-12 text-center border border-slate-200 dark:border-slate-700 shadow-xs">
+            <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-400 flex items-center justify-center mx-auto mb-3">
+              <Search className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-semibold text-slate-900 dark:text-white">
+              No biological objects found
+            </h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+              No entities match the current search query or role filter. Try resetting your filters.
+            </p>
+            <div className="mt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSearchTerm("");
+                  setSelectedCategory("ALL");
+                  setFilterModifiedOnly(false);
+                }}
+              >
+                Reset Filters
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1">
+              <span>
+                Showing <strong className="text-slate-700 dark:text-slate-200">{filteredObjects.length}</strong> of{" "}
+                <strong className="text-slate-700 dark:text-slate-200">{objects.length}</strong> biological entities
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredObjects.map((item) => {
+                const entitySymbol = item.symbol || item.name;
+                const synonymsList = item.synonyms || item.alternativeIds || [];
+                const isAddActive = activeAddRoleEntityId === item.id;
+
+                // Categories not yet added to this entity
+                const availableCategoriesToAdd = CATEGORIES_LIST.filter(
+                  (c) => !item.roles.includes(c.key)
+                );
+
+                return (
+                  <div
+                    key={item.id}
+                    className={`bg-white dark:bg-slate-800 rounded-xl border p-5 shadow-xs transition-all flex flex-col justify-between ${
+                      item.isModified
+                        ? "border-amber-300 dark:border-amber-700/60 ring-1 ring-amber-300/50"
+                        : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+                    }`}
+                  >
+                    <div>
+                      {/* Card Header: Symbol & Modified Badge */}
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-base font-bold text-slate-900 dark:text-white tracking-wide truncate">
+                              {entitySymbol}
+                            </span>
+                            {item.isModified && (
+                              <Badge
+                                variant="pending"
+                                className="text-[10px] px-1.5 py-0 uppercase tracking-wider font-semibold"
+                              >
+                                Modified
+                              </Badge>
+                            )}
+                          </div>
+                          {item.description && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5" title={item.description}>
+                              {item.description}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Reset individual button */}
+                        {item.isModified && (
+                          <button
+                            type="button"
+                            onClick={() => handleResetEntity(item.id)}
+                            title="Revert to original roles"
+                            className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 dark:hover:text-slate-300 transition-colors"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Synonyms / Alternative IDs */}
+                      {synonymsList.length > 0 && (
+                        <div className="mb-3">
+                          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-1">
+                            Identifiers / Synonyms ({synonymsList.length})
+                          </span>
+                          <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto">
+                            {synonymsList.slice(0, 4).map((syn, synIdx) => (
+                              <span
+                                key={synIdx}
+                                className="text-[11px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-600/60 truncate max-w-[180px]"
+                                title={syn}
+                              >
+                                {syn}
+                              </span>
+                            ))}
+                            {synonymsList.length > 4 && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700/40 text-slate-500">
+                                +{synonymsList.length - 4} more
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Source Metadata: Biotypes & MeSH Roles info */}
+                      <div className="grid grid-cols-2 gap-2 mb-4 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-700/50 text-[11px]">
+                        <div>
+                          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-0.5">
+                            Biotypes
+                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {item.biotypes && item.biotypes.length > 0 ? (
+                              item.biotypes.map((b, bIdx) => (
+                                <span
+                                  key={bIdx}
+                                  className="text-[10px] px-1.5 py-0.2 rounded-sm bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800"
+                                >
+                                  {b}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-slate-400 italic text-[10px]">None</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-0.5">
+                            MeSH Roles
+                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {item.meshRoles && item.meshRoles.length > 0 ? (
+                              item.meshRoles.map((m, mIdx) => (
+                                <span
+                                  key={mIdx}
+                                  className="text-[10px] px-1.5 py-0.2 rounded-sm bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800"
+                                >
+                                  {m}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-slate-400 italic text-[10px]">None</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Unified Editable Roles Section */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                            <Tag className="w-3.5 h-3.5 text-teal-500" />
+                            Confirmed Roles ({item.roles.length}):
+                          </span>
+                        </div>
+
+                        {/* Roles Badges list */}
+                        <div className="flex flex-wrap gap-1.5 min-h-[32px] items-center">
+                          {item.roles.length === 0 ? (
+                            <span className="text-xs text-amber-600 dark:text-amber-400 italic">
+                              No roles assigned. Add at least one role.
+                            </span>
+                          ) : (
+                            item.roles.map((role) => {
+                              const style = CATEGORY_STYLES[role] || {
+                                label: role,
+                                bg: "bg-slate-100 dark:bg-slate-700",
+                                text: "text-slate-700 dark:text-slate-200",
+                                border: "border-slate-300 dark:border-slate-600",
+                              };
+
+                              return (
+                                <span
+                                  key={role}
+                                  className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md font-medium border transition-colors ${style.bg} ${style.text} ${style.border}`}
+                                >
+                                  <span>{style.label || role}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveRole(item.id, role)}
+                                    title={`Remove ${role}`}
+                                    className="p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors ml-0.5"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </span>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Add Role Section */}
+                    <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/60">
+                      {isAddActive ? (
+                        <div className="space-y-2 bg-slate-50 dark:bg-slate-900/80 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 animate-in fade-in duration-200">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                              Select Role to Add:
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveAddRoleEntityId(null);
+                                setCustomRoleInput("");
+                              }}
+                              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          {/* Quick selection of standard biological categories */}
+                          <div className="flex flex-wrap gap-1">
+                            {availableCategoriesToAdd.length > 0 ? (
+                              availableCategoriesToAdd.map((cat) => (
+                                <button
+                                  key={cat.key}
+                                  type="button"
+                                  onClick={() => handleAddRole(item.id, cat.key)}
+                                  className="text-[11px] px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 hover:border-teal-400 dark:hover:border-teal-600 transition-colors"
+                                >
+                                  + {cat.label}
+                                </button>
+                              ))
+                            ) : (
+                              <span className="text-[10px] text-slate-400 italic">
+                                All predefined categories already added.
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Custom role input */}
+                          <div className="flex items-center gap-1.5 pt-1">
+                            <Input
+                              placeholder="Or custom role..."
+                              value={customRoleInput}
+                              onChange={(e) => setCustomRoleInput(e.target.value)}
+                              className="text-xs h-7 bg-white dark:bg-slate-800"
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && customRoleInput.trim()) {
+                                  e.preventDefault();
+                                  handleAddRole(item.id, customRoleInput);
+                                }
+                              }}
+                            />
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              className="h-7 px-2 text-xs bg-teal-600 hover:bg-teal-700 text-white"
+                              disabled={!customRoleInput.trim()}
+                              onClick={() => handleAddRole(item.id, customRoleInput)}
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveAddRoleEntityId(item.id);
+                            setCustomRoleInput("");
+                          }}
+                          className="w-full py-1 px-2 rounded-md border border-dashed border-slate-200 dark:border-slate-700 text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 hover:border-teal-400 dark:hover:border-teal-500 text-xs font-medium flex items-center justify-center gap-1 transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Add Role
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Confirmation Modal */}
+      {isConfirmModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-700 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-full bg-teal-100 text-teal-600 dark:bg-teal-900/40 dark:text-teal-400">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Confirm Biological Roles
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Save curated roles to knowledge base and complete pipeline step
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-900/60 rounded-lg p-3 text-xs text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700 space-y-2">
+              <div className="flex justify-between py-1 border-b border-slate-200 dark:border-slate-700">
+                <span>Total Entities to Update:</span>
+                <strong className="text-slate-900 dark:text-white">{objects.length}</strong>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-200 dark:border-slate-700">
+                <span>Entities with Modified Roles:</span>
+                <strong className={modifiedCount > 0 ? "text-amber-600 dark:text-amber-400" : "text-slate-900 dark:text-white"}>
+                  {modifiedCount}
+                </strong>
+              </div>
+              <div className="flex justify-between py-1">
+                <span>Total Active Roles Assigned:</span>
+                <strong className="text-teal-600 dark:text-teal-400">{totalAssignedRoles}</strong>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Saving will persist the curated roles list into the <code className="text-teal-600 dark:text-teal-400">roles</code> attribute
+              of MongoDB collection <code className="text-teal-600 dark:text-teal-400">kb_objects</code>, update inference configuration,
+              and mark step <strong>Update Biological Objects</strong> as <strong>COMPLETED</strong>.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsConfirmModalOpen(false)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleConfirmSave}
+                disabled={isSubmitting}
+                className="bg-teal-600 hover:bg-teal-700 text-white"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4 mr-1.5" />
+                    Confirm & Save
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {successModalData && (
+        <SuccessModal
+          open={true}
+          title={successModalData.title}
+          message={successModalData.message}
+          onClose={() => {
+            setSuccessModalData(null);
+            navigate(
+              `/dashboard/experiments/${networkId || ""}/execution/${experimentId || ""}`
+            );
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+export default UpdateBiologicalObjects;

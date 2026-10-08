@@ -55,6 +55,7 @@ const stepIcons: Record<string, LucideIcon> = {
   Cpu: Cpu,
   Activity: Activity,
   FileText: FileText,
+  Dna: Dna,
 };
 
 function StepIcon({ name, className }: { name: string; className?: string }) {
@@ -102,6 +103,23 @@ const MANUAL_STEP_CONFIG: Record<string, ManualStepDefinition> = {
     buttonLabel: "Configure Inferences",
     buttonIcon: Activity,
   },
+
+  // Update Biological Objects
+  "step-update_biological_objects": {
+    routeSegment: "biological-objects",
+    buttonLabel: "Update Biological Objects",
+    buttonIcon: Dna,
+  },
+  "UPDATE_BIOLOGICAL_OBJECTS": {
+    routeSegment: "biological-objects",
+    buttonLabel: "Update Biological Objects",
+    buttonIcon: Dna,
+  },
+  "Update Biological Objects": {
+    routeSegment: "biological-objects",
+    buttonLabel: "Update Biological Objects",
+    buttonIcon: Dna,
+  },
 };
 
 function getManualStepConfig(step: PipelineStepExecution): ManualStepDefinition | null {
@@ -118,7 +136,21 @@ function getManualStepRoute(step: PipelineStepExecution, networkId?: string, exp
 
 export function isStepActionDisabled(step: PipelineStepExecution, execution?: ExperimentExecution | null): boolean {
   if (!execution?.steps?.length) return false;
-  const idx = execution.steps.findIndex((s) => s.id === step.id);
+  const targetId = String(step.id || "").toLowerCase();
+  const targetName = String(step.name || "").toLowerCase();
+  const targetStep = String((step as { step?: string }).step || "").toLowerCase();
+
+  const idx = execution.steps.findIndex((s) => {
+    const sId = String(s.id || "").toLowerCase();
+    const sName = String(s.name || "").toLowerCase();
+    const sStep = String((s as { step?: string }).step || "").toLowerCase();
+    return (
+      (targetId && sId === targetId) ||
+      (targetName && sName === targetName) ||
+      (targetStep && sStep === targetStep)
+    );
+  });
+
   if (idx <= 0) return false;
   return execution.steps.slice(0, idx).some((s) => s.status !== "COMPLETED");
 }
@@ -723,13 +755,17 @@ const ExperimentExecutionView = () => {
                       {/* List of steps belonging to this stage */}
                       <div className="flex flex-col gap-1.5 pl-1 mt-1">
                         {stage.steps.map((step) => {
-                          const isStepCompleted = step.status === "COMPLETED";
-                          const isStepActive = step.status === "ACTIVE";
-                          const isStepPending = step.status === "PENDING";
-                          const isStepFailed = step.status === "FAILED";
+                          const firstActiveStep = data.steps.find((s) => s.status === "ACTIVE" && !isStepActionDisabled(s, data));
                           const manualRoute = getManualStepRoute(step, networkId || data.networkId, experimentId);
                           const isManualStep = step.isManual || !!manualRoute;
                           const stepDisabled = isStepActionDisabled(step, data);
+                          const isStepCompleted = step.status === "COMPLETED";
+                          const isFirstActive = firstActiveStep
+                            ? firstActiveStep.id === step.id || (step.name && firstActiveStep.name === step.name)
+                            : false;
+                          const isStepActive = step.status === "ACTIVE" && !stepDisabled && isFirstActive;
+                          const isStepPending = step.status === "PENDING" || (step.status === "ACTIVE" && stepDisabled);
+                          const isStepFailed = step.status === "FAILED";
                           const canNavigate = manualRoute && !isStepCompleted && !stepDisabled;
 
                           return (
@@ -798,6 +834,8 @@ const ExperimentExecutionView = () => {
                                   <span className="text-[10px] text-on-surface-variant/60 font-medium whitespace-nowrap">
                                     {isStepActive ? (
                                       <span className="text-amber-500 font-bold">Running</span>
+                                    ) : stepDisabled ? (
+                                      "--:--"
                                     ) : (
                                       step.duration || "--:--"
                                     )}
@@ -914,6 +952,7 @@ const ExperimentExecutionView = () => {
                     </h4>
                     <div className={`grid gap-4 mt-1 ${visibleSteps.length === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"}`}>
                       {visibleSteps.map((step, sIdx) => {
+                        const firstActiveStep = data.steps.find((s) => s.status === "ACTIVE" && !isStepActionDisabled(s, data));
                         const stepMetrics = parseRawMetrics(step.metrics);
                         const manualRoute = getManualStepRoute(step, networkId || data.networkId, experimentId);
                         const manualConfig = getManualStepConfig(step);
@@ -925,6 +964,10 @@ const ExperimentExecutionView = () => {
                         const isManualStep = step.isManual || !!manualRoute || isRolesStep;
                         const stepDisabled = isStepActionDisabled(step, data);
                         const isStepCompleted = step.status === "COMPLETED";
+                        const isFirstActive = firstActiveStep
+                          ? firstActiveStep.id === step.id || (step.name && firstActiveStep.name === step.name)
+                          : false;
+                        const isStepActive = step.status === "ACTIVE" && !stepDisabled && isFirstActive;
                         const ActionIcon = manualConfig?.buttonIcon || Edit3;
 
                         return (
@@ -947,7 +990,7 @@ const ExperimentExecutionView = () => {
                                 <div className="w-5 h-5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-300/60 flex items-center justify-center shrink-0 mt-0.5">
                                   <Clock className="w-3 h-3 font-bold" />
                                 </div>
-                              ) : step.status === "ACTIVE" ? (
+                              ) : isStepActive ? (
                                 <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 animate-pulse mt-0.5">
                                   <Loader2 className="w-3 h-3 animate-spin" />
                                 </div>
@@ -967,7 +1010,7 @@ const ExperimentExecutionView = () => {
                                   >
                                     {step.name}
                                   </span>
-                                  {step.duration && (
+                                  {isStepCompleted && step.duration && (
                                     <span className="text-[10px] text-on-surface-variant/60 font-medium whitespace-nowrap">
                                       {step.duration}
                                     </span>
@@ -1019,27 +1062,14 @@ const ExperimentExecutionView = () => {
                                 <span className="text-[11px] text-on-surface-variant font-medium">
                                   {isStepCompleted ? "Discovered Roles Available" : "Automated MeSH Traversal"}
                                 </span>
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setIsRolesModalOpen(true)}
-                                    className="text-xs text-primary font-bold hover:bg-primary/10 px-2 py-1 h-auto"
-                                  >
-                                    Modal
-                                  </Button>
+                                <div className="flex items-center shrink-0">
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() =>
-                                      navigate(
-                                        `/dashboard/experiments/${networkId || data.networkId}/biological-roles/${experimentId || data.experimentId}`
-                                      )
-                                    }
-                                    className="gap-1.5 font-bold text-xs shrink-0 border-primary/30 text-primary hover:bg-primary/10"
+                                    onClick={() => setIsRolesModalOpen(true)}
+                                    className="font-bold text-xs shrink-0 border-primary/30 text-primary hover:bg-primary/10 px-2.5 py-1 h-auto"
                                   >
-                                    <Dna className="w-3.5 h-3.5" />
-                                    View Roles
+                                    Summary
                                   </Button>
                                 </div>
                               </div>

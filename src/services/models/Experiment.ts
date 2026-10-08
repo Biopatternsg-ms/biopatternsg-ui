@@ -138,3 +138,15 @@ export interface InferenceResponse {
   roles?: Record<string, string[]>;
 }
 
+export interface BiologicalObjectItem {
+  symbol?: string;
+  name: string;
+  synonyms?: string[];
+  biotypes: string[];
+  meshRoles: string[];
+  roles: string[];
+  alternativeIds?: string[];
+  description?: string;
+}
+
+

@@ -31,6 +31,7 @@ import {
   PUBMED_KB_EVENTS_BY_TERM_ENDPOINT,
   PUBMED_KB_EVENTS_BY_RESTRICTION_ENDPOINT,
   PUBMED_GENERATE_KB_ENDPOINT,
+  INFERENCES_BIOLOGICAL_OBJECTS_ENDPOINT,
 } from "./apiConfig";
 
 import type {
@@ -45,6 +46,7 @@ import type {
   RestrictionLevel,
   InferenceConfig,
   InferenceResponse,
+  BiologicalObjectItem,
 } from "./models/Experiment";
 
 export interface PaginatedResponse<T> {
@@ -419,6 +421,45 @@ export const experimentService = {
           }
         }
 
+        // 4. Ensure "Update Biological Objects" manual step is present right after "Find Biological Roles"
+        const hasUpdateBiologicalObjects = steps.some(
+          (s: PipelineStepExecution) =>
+            s.id === "step-update_biological_objects" ||
+            s.id === "UPDATE_BIOLOGICAL_OBJECTS" ||
+            s.name === "Update Biological Objects" ||
+            (s as { step?: string }).step === "update_biological_objects"
+        );
+
+        if (!hasUpdateBiologicalObjects) {
+          const findRolesIdx = steps.findIndex(
+            (s: PipelineStepExecution) =>
+              s.id === "step-find_roles" ||
+              s.id === "FIND_ROLES" ||
+              s.name === "Find Biological Roles" ||
+              (s as { step?: string }).step === "find_roles"
+          );
+
+          const updateBioStep: PipelineStepExecution = {
+            id: "step-update_biological_objects",
+            name: "Update Biological Objects",
+            status: "PENDING",
+            duration: "Manual",
+            outputText: "Manual Action Required",
+            description: "Review, curate, and update biological roles and biotypes for entities resulting from restriction.",
+            iconName: "Dna",
+            isManual: true,
+            metrics: {
+              status: "Awaiting Role Confirmation",
+            },
+          };
+
+          if (findRolesIdx !== -1) {
+            steps.splice(findRolesIdx + 1, 0, updateBioStep);
+          } else {
+            steps.push(updateBioStep);
+          }
+        }
+
         return {
           ...data,
           steps,
@@ -523,6 +564,93 @@ export const experimentService = {
     }
 
     return DEFAULT_MOCK_KB_EVENTS;
+  },
+
+  /**
+   * Retrieves the biological objects resulting from restriction with unified roles.
+   * GET /inferences/biological-objects/{pipelineId}
+   */
+  async getBiologicalObjects(pipelineId: string): Promise<BiologicalObjectItem[]> {
+    try {
+      const response = await authFetch(`${INFERENCES_BIOLOGICAL_OBJECTS_ENDPOINT}/${pipelineId}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {
+      console.warn("Failed to fetch biological objects from backend, using fallback mock", err);
+    }
+
+    return [
+      {
+        symbol: "CYP7A1",
+        name: "CYP7A1",
+        alternativeIds: ["CYP7A1", "LOC101790267"],
+        biotypes: ["PROTEIN"],
+        meshRoles: ["PROTEIN", "ENZYME"],
+        roles: ["PROTEIN", "ENZYME"],
+        description: "Cytochrome P450 family 7 subfamily A member 1"
+      },
+      {
+        symbol: "FXR",
+        name: "FXR",
+        alternativeIds: ["FXR", "NR1H4"],
+        biotypes: ["PROTEIN", "RECEPTOR"],
+        meshRoles: ["PROTEIN", "RECEPTOR", "TRANSCRIPTION_FACTOR"],
+        roles: ["PROTEIN", "RECEPTOR", "TRANSCRIPTION_FACTOR"],
+        description: "Nuclear receptor subfamily 1 group H member 4"
+      },
+      {
+        symbol: "LXR",
+        name: "LXR",
+        alternativeIds: ["NR1H2", "NR1H3"],
+        biotypes: ["PROTEIN"],
+        meshRoles: ["PROTEIN", "RECEPTOR", "TRANSCRIPTION_FACTOR"],
+        roles: ["PROTEIN", "RECEPTOR", "TRANSCRIPTION_FACTOR"]
+      },
+      {
+        symbol: "RXR",
+        name: "RXR",
+        alternativeIds: ["LOC100136128", "RXRA"],
+        biotypes: ["PROTEIN"],
+        meshRoles: ["PROTEIN", "RECEPTOR", "TRANSCRIPTION_FACTOR"],
+        roles: ["PROTEIN", "RECEPTOR", "TRANSCRIPTION_FACTOR"]
+      },
+      {
+        symbol: "SHP",
+        name: "SHP",
+        alternativeIds: ["NR0B2", "LAMC1"],
+        biotypes: ["PROTEIN"],
+        meshRoles: ["PROTEIN", "RECEPTOR", "TRANSCRIPTION_FACTOR"],
+        roles: ["PROTEIN", "RECEPTOR", "TRANSCRIPTION_FACTOR"]
+      },
+      {
+        symbol: "TP53",
+        name: "TP53",
+        alternativeIds: ["TP53", "P53"],
+        biotypes: ["PROTEIN"],
+        meshRoles: ["PROTEIN", "TRANSCRIPTION_FACTOR"],
+        roles: ["PROTEIN", "TRANSCRIPTION_FACTOR"]
+      },
+      {
+        symbol: "BILE ACID",
+        name: "BILE ACID",
+        alternativeIds: ["BILE ACID MALABSORPTION PRIMARY", "GBA2", "BILE ACIDS AND SALTS"],
+        biotypes: ["LIGAND"],
+        meshRoles: ["LIGAND"],
+        roles: ["LIGAND"]
+      }
+    ];
+  },
+
+  /**
+   * Updates confirmed biological roles for objects in inferences and kb_objects.
+   * PUT /inferences/biological-objects/{pipelineId}
+   */
+  async saveBiologicalObjectsRoles(pipelineId: string, roles: Record<string, string[]>): Promise<Response> {
+    return authFetch(`${INFERENCES_BIOLOGICAL_OBJECTS_ENDPOINT}/${pipelineId}`, {
+      method: "PUT",
+      body: JSON.stringify({ roles }),
+    });
   },
 };
 
@@ -648,6 +776,20 @@ export function getMockExecutionData(experimentId: string, experimentName = "Pro
           { label: "ROLES IDENTIFIED", value: "128" },
           { label: "ENTITIES WITH ACTIVE ROLES", value: "115" },
           { label: "STATUS", value: "Biological roles identified successfully" }
+        ]
+      },
+      {
+        id: "step-update_biological_objects",
+        name: "Update Biological Objects",
+        status: "PENDING",
+        duration: "Manual",
+        outputText: "Manual Action Required",
+        description: "Review, curate, and update biological roles and biotypes for entities resulting from restriction.",
+        iconName: "Dna",
+        isManual: true,
+        metrics: [
+          { label: "TOTAL OBJECTS", value: "7" },
+          { label: "STATUS", value: "Awaiting Role Confirmation" }
         ]
       },
       {
