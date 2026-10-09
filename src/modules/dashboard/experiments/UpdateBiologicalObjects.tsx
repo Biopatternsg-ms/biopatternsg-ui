@@ -813,39 +813,20 @@ export const UpdateBiologicalObjects = () => {
 
                         {/* Actions Column */}
                         <td className="py-3.5 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                if (isAddActive) {
-                                  setActiveAddRoleEntityId(null);
-                                  setCustomRoleInput("");
-                                } else {
-                                  setActiveAddRoleEntityId(item.id);
-                                  setCustomRoleInput("");
-                                }
-                              }}
-                              className={`h-7 px-2 text-xs gap-1 ${
-                                isAddActive
-                                  ? "bg-teal-50 dark:bg-teal-950/40 border-teal-500 text-teal-600 dark:text-teal-400"
-                                  : "text-slate-600 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400"
-                              }`}
-                              title={isAddActive ? "Close" : "Add Role"}
-                            >
-                              <Plus className="w-3 h-3" />
-                              <span className="hidden sm:inline">Role</span>
-                            </Button>
-
-                            {item.isModified && (
-                              <button
-                                type="button"
+                          <div className="flex items-center justify-end">
+                            {item.isModified ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
                                 onClick={() => handleResetEntity(item.id)}
                                 title="Revert to original roles"
-                                className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 dark:hover:text-slate-300 transition-colors"
+                                className="h-7 px-2 text-xs gap-1 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700/60 hover:bg-amber-50 dark:hover:bg-amber-950/40"
                               >
-                                <RotateCcw className="w-3.5 h-3.5" />
-                              </button>
+                                <RotateCcw className="w-3 h-3" />
+                                <span>Revert</span>
+                              </Button>
+                            ) : (
+                              <span className="text-slate-300 dark:text-slate-600 text-xs select-none">-</span>
                             )}
                           </div>
                         </td>
