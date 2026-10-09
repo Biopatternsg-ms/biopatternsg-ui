@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -30,10 +30,11 @@ import {
   SlidersHorizontal,
   Dna,
   Save,
-  Tag,
   Layers,
   Check,
   AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
 import { Button } from "@/components/atoms/Button";
@@ -43,7 +44,6 @@ import { Input } from "@/components/atoms/Input";
 import { experimentService } from "@/services/experimentService";
 import type {
   BiologicalObjectItem,
-  ExperimentExecution,
   RestrictionLevel,
 } from "@/services/models/Experiment";
 import { SuccessModal } from "@/components/molecules/SuccessModal";
@@ -62,7 +62,7 @@ export const UpdateBiologicalObjects = () => {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
-  const [experimentData, setExperimentData] = useState<ExperimentExecution | null>(null);
+  const [experimentName, setExperimentName] = useState<string>("Experiment Execution");
   const [initialObjects, setInitialObjects] = useState<BiologicalObjectItem[]>([]);
   const [objects, setObjects] = useState<EditableBiologicalObject[]>([]);
   const [restrictionLevel, setRestrictionLevel] = useState<RestrictionLevel>("VERY_RESTRICTED");
@@ -71,6 +71,14 @@ export const UpdateBiologicalObjects = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [filterModifiedOnly, setFilterModifiedOnly] = useState(false);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory, filterModifiedOnly]);
 
   // Quick-add state for an entity
   const [activeAddRoleEntityId, setActiveAddRoleEntityId] = useState<string | null>(null);
@@ -82,25 +90,29 @@ export const UpdateBiologicalObjects = () => {
   const [successModalData, setSuccessModalData] = useState<{ title: string; message: string } | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const hasFetchedRef = useRef<string | null>(null);
+
   useEffect(() => {
     const expId = experimentId;
     if (!expId) return;
 
-    let ignore = false;
+    if (hasFetchedRef.current === expId) return;
+    hasFetchedRef.current = expId;
+
     async function loadData(id: string) {
       try {
         setLoading(true);
 
-        const [execData, inferenceConfigData, bioObjectsData] = await Promise.allSettled([
-          experimentService.getExperimentExecution(id),
+        const [pipeData, inferenceConfigData, bioObjectsData] = await Promise.allSettled([
+          experimentService.getPipelineById(id),
           experimentService.getInferenceByPipelineId(id),
           experimentService.getBiologicalObjects(id),
         ]);
 
-        if (ignore) return;
+        if (hasFetchedRef.current !== id) return;
 
-        if (execData.status === "fulfilled") {
-          setExperimentData(execData.value);
+        if (pipeData.status === "fulfilled" && pipeData.value?.name) {
+          setExperimentName(pipeData.value.name);
         }
 
         if (inferenceConfigData.status === "fulfilled" && inferenceConfigData.value) {
@@ -121,14 +133,13 @@ export const UpdateBiologicalObjects = () => {
       } catch (err) {
         console.error("Error loading biological objects:", err);
       } finally {
-        if (!ignore) setLoading(false);
+        if (hasFetchedRef.current === id) {
+          setLoading(false);
+        }
       }
     }
 
     loadData(expId);
-    return () => {
-      ignore = true;
-    };
   }, [experimentId]);
 
   // Handler to add a role to an entity
@@ -277,6 +288,12 @@ export const UpdateBiologicalObjects = () => {
     });
   }, [objects, filterModifiedOnly, selectedCategory, searchTerm]);
 
+  const totalPages = Math.max(1, Math.ceil(filteredObjects.length / pageSize));
+  const paginatedObjects = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredObjects.slice(startIndex, startIndex + pageSize);
+  }, [filteredObjects, currentPage, pageSize]);
+
   const modifiedCount = useMemo(() => objects.filter((o) => o.isModified).length, [objects]);
 
   const totalAssignedRoles = useMemo(
@@ -308,7 +325,7 @@ export const UpdateBiologicalObjects = () => {
                 items={[
                   { label: "Experiments", href: `/dashboard/experiments/${networkId || ""}` },
                   {
-                    label: experimentData?.experimentName || "Experiment Execution",
+                    label: experimentName,
                     href: `/dashboard/experiments/${networkId || ""}/execution/${experimentId || ""}`,
                   },
                   { label: "Update Biological Objects" },
@@ -538,265 +555,389 @@ export const UpdateBiologicalObjects = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1">
               <span>
-                Showing <strong className="text-slate-700 dark:text-slate-200">{filteredObjects.length}</strong> of{" "}
-                <strong className="text-slate-700 dark:text-slate-200">{objects.length}</strong> biological entities
+                Showing <strong className="text-slate-700 dark:text-slate-200">
+                  {filteredObjects.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}
+                  -
+                  {Math.min(currentPage * pageSize, filteredObjects.length)}
+                </strong> of{" "}
+                <strong className="text-slate-700 dark:text-slate-200">{filteredObjects.length}</strong> biological entities
+                {filteredObjects.length !== objects.length && (
+                  <span className="text-slate-400"> (filtered from {objects.length} total)</span>
+                )}
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredObjects.map((item) => {
-                const entitySymbol = item.symbol || item.name;
-                const synonymsList = item.synonyms || item.alternativeIds || [];
-                const isAddActive = activeAddRoleEntityId === item.id;
+            {/* Table View */}
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xs">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/60 text-[11px] uppercase font-semibold tracking-wider text-slate-500 dark:text-slate-400">
+                    <th className="py-3 px-4 min-w-[170px]">Entity / Symbol</th>
+                    <th className="py-3 px-4 min-w-[180px]">Synonyms / IDs</th>
+                    <th className="py-3 px-4 min-w-[130px]">Biotypes</th>
+                    <th className="py-3 px-4 min-w-[140px]">MeSH Roles</th>
+                    <th className="py-3 px-4 min-w-[320px]">Confirmed Roles</th>
+                    <th className="py-3 px-4 text-right min-w-[110px]">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-xs">
+                  {paginatedObjects.map((item) => {
+                    const entitySymbol = item.symbol || item.name;
+                    const synonymsList = item.synonyms || item.alternativeIds || [];
+                    const isAddActive = activeAddRoleEntityId === item.id;
 
-                // Categories not yet added to this entity
-                const availableCategoriesToAdd = CATEGORIES_LIST.filter(
-                  (c) => !item.roles.includes(c.key)
-                );
+                    // Categories not yet added to this entity
+                    const availableCategoriesToAdd = CATEGORIES_LIST.filter(
+                      (c) => !item.roles.includes(c.key)
+                    );
 
-                return (
-                  <div
-                    key={item.id}
-                    className={`bg-white dark:bg-slate-800 rounded-xl border p-5 shadow-xs transition-all flex flex-col justify-between ${
-                      item.isModified
-                        ? "border-amber-300 dark:border-amber-700/60 ring-1 ring-amber-300/50"
-                        : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
-                    }`}
-                  >
-                    <div>
-                      {/* Card Header: Symbol & Modified Badge */}
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-base font-bold text-slate-900 dark:text-white tracking-wide truncate">
-                              {entitySymbol}
-                            </span>
-                            {item.isModified && (
-                              <Badge
-                                variant="pending"
-                                className="text-[10px] px-1.5 py-0 uppercase tracking-wider font-semibold"
+                    return (
+                      <tr
+                        key={item.id}
+                        className={`transition-colors align-top ${
+                          item.isModified
+                            ? "bg-amber-50/40 dark:bg-amber-950/20 hover:bg-amber-50/70 dark:hover:bg-amber-950/30"
+                            : "hover:bg-slate-50/70 dark:hover:bg-slate-700/30"
+                        }`}
+                      >
+                        {/* Entity / Symbol */}
+                        <td className="py-3.5 px-4">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-slate-900 dark:text-white text-sm">
+                                {entitySymbol}
+                              </span>
+                              {item.isModified && (
+                                <Badge
+                                  variant="pending"
+                                  className="text-[9px] px-1.5 py-0 uppercase tracking-wider font-semibold"
+                                >
+                                  Modified
+                                </Badge>
+                              )}
+                            </div>
+                            {item.description && (
+                              <p
+                                className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 max-w-xs"
+                                title={item.description}
                               >
-                                Modified
-                              </Badge>
+                                {item.description}
+                              </p>
                             )}
                           </div>
-                          {item.description && (
-                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5" title={item.description}>
-                              {item.description}
-                            </p>
+                        </td>
+
+                        {/* Synonyms / Alternative IDs */}
+                        <td className="py-3.5 px-4">
+                          {synonymsList.length > 0 ? (
+                            <div className="flex flex-wrap gap-1 max-w-[220px]">
+                              {synonymsList.slice(0, 3).map((syn, synIdx) => (
+                                <span
+                                  key={synIdx}
+                                  className="text-[11px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-600/60 truncate max-w-[170px]"
+                                  title={syn}
+                                >
+                                  {syn}
+                                </span>
+                              ))}
+                              {synonymsList.length > 3 && (
+                                <span
+                                  className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700/40 text-slate-500 dark:text-slate-400 cursor-help"
+                                  title={synonymsList.slice(3).join(", ")}
+                                >
+                                  +{synonymsList.length - 3} more
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 italic text-[11px]">-</span>
                           )}
-                        </div>
+                        </td>
 
-                        {/* Reset individual button */}
-                        {item.isModified && (
-                          <button
-                            type="button"
-                            onClick={() => handleResetEntity(item.id)}
-                            title="Revert to original roles"
-                            className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 dark:hover:text-slate-300 transition-colors"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Synonyms / Alternative IDs */}
-                      {synonymsList.length > 0 && (
-                        <div className="mb-3">
-                          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-1">
-                            Identifiers / Synonyms ({synonymsList.length})
-                          </span>
-                          <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto">
-                            {synonymsList.slice(0, 4).map((syn, synIdx) => (
-                              <span
-                                key={synIdx}
-                                className="text-[11px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-600/60 truncate max-w-[180px]"
-                                title={syn}
-                              >
-                                {syn}
-                              </span>
-                            ))}
-                            {synonymsList.length > 4 && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700/40 text-slate-500">
-                                +{synonymsList.length - 4} more
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Source Metadata: Biotypes & MeSH Roles info */}
-                      <div className="grid grid-cols-2 gap-2 mb-4 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-700/50 text-[11px]">
-                        <div>
-                          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-0.5">
-                            Biotypes
-                          </span>
-                          <div className="flex flex-wrap gap-1">
-                            {item.biotypes && item.biotypes.length > 0 ? (
-                              item.biotypes.map((b, bIdx) => (
+                        {/* Biotypes */}
+                        <td className="py-3.5 px-4">
+                          {item.biotypes && item.biotypes.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {item.biotypes.map((b, bIdx) => (
                                 <span
                                   key={bIdx}
-                                  className="text-[10px] px-1.5 py-0.2 rounded-sm bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800"
+                                  className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800"
                                 >
                                   {b}
                                 </span>
-                              ))
-                            ) : (
-                              <span className="text-slate-400 italic text-[10px]">None</span>
-                            )}
-                          </div>
-                        </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-500 italic text-[10px]">None</span>
+                          )}
+                        </td>
 
-                        <div>
-                          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-0.5">
-                            MeSH Roles
-                          </span>
-                          <div className="flex flex-wrap gap-1">
-                            {item.meshRoles && item.meshRoles.length > 0 ? (
-                              item.meshRoles.map((m, mIdx) => (
+                        {/* MeSH Roles */}
+                        <td className="py-3.5 px-4">
+                          {item.meshRoles && item.meshRoles.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {item.meshRoles.map((m, mIdx) => (
                                 <span
                                   key={mIdx}
-                                  className="text-[10px] px-1.5 py-0.2 rounded-sm bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800"
+                                  className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800"
                                 >
                                   {m}
                                 </span>
-                              ))
-                            ) : (
-                              <span className="text-slate-400 italic text-[10px]">None</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Unified Editable Roles Section */}
-                      <div>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                            <Tag className="w-3.5 h-3.5 text-teal-500" />
-                            Confirmed Roles ({item.roles.length}):
-                          </span>
-                        </div>
-
-                        {/* Roles Badges list */}
-                        <div className="flex flex-wrap gap-1.5 min-h-[32px] items-center">
-                          {item.roles.length === 0 ? (
-                            <span className="text-xs text-amber-600 dark:text-amber-400 italic">
-                              No roles assigned. Add at least one role.
-                            </span>
+                              ))}
+                            </div>
                           ) : (
-                            item.roles.map((role) => {
-                              const style = CATEGORY_STYLES[role] || {
-                                label: role,
-                                bg: "bg-slate-100 dark:bg-slate-700",
-                                text: "text-slate-700 dark:text-slate-200",
-                                border: "border-slate-300 dark:border-slate-600",
-                              };
+                            <span className="text-slate-400 dark:text-slate-500 italic text-[10px]">None</span>
+                          )}
+                        </td>
 
-                              return (
-                                <span
-                                  key={role}
-                                  className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-md font-medium border transition-colors ${style.bg} ${style.text} ${style.border}`}
+                        {/* Confirmed Roles */}
+                        <td className="py-3.5 px-4">
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap gap-1.5 items-center">
+                              {item.roles.length === 0 ? (
+                                <span className="text-xs text-amber-600 dark:text-amber-400 italic">
+                                  No roles assigned
+                                </span>
+                              ) : (
+                                item.roles.map((role) => {
+                                  const style = CATEGORY_STYLES[role] || {
+                                    label: role,
+                                    bg: "bg-slate-100 dark:bg-slate-700",
+                                    text: "text-slate-700 dark:text-slate-200",
+                                    border: "border-slate-300 dark:border-slate-600",
+                                  };
+
+                                  return (
+                                    <span
+                                      key={role}
+                                      className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium border transition-colors ${style.bg} ${style.text} ${style.border}`}
+                                    >
+                                      <span>{style.label || role}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveRole(item.id, role)}
+                                        title={`Remove ${role}`}
+                                        className="p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors ml-0.5"
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </button>
+                                    </span>
+                                  );
+                                })
+                              )}
+
+                              {!isAddActive && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveAddRoleEntityId(item.id);
+                                    setCustomRoleInput("");
+                                  }}
+                                  className="inline-flex items-center gap-0.5 text-[11px] px-2 py-0.5 rounded-md border border-dashed border-slate-300 dark:border-slate-600 text-slate-500 hover:text-teal-600 hover:border-teal-400 dark:hover:text-teal-400 dark:hover:border-teal-500 transition-colors"
+                                  title="Add role"
                                 >
-                                  <span>{style.label || role}</span>
+                                  <Plus className="w-3 h-3" />
+                                  <span>Add</span>
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Inline Role Picker when active */}
+                            {isAddActive && (
+                              <div className="bg-slate-50 dark:bg-slate-900/80 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 space-y-2 animate-in fade-in duration-150">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                                    Select role to add:
+                                  </span>
                                   <button
                                     type="button"
-                                    onClick={() => handleRemoveRole(item.id, role)}
-                                    title={`Remove ${role}`}
-                                    className="p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors ml-0.5"
+                                    onClick={() => {
+                                      setActiveAddRoleEntityId(null);
+                                      setCustomRoleInput("");
+                                    }}
+                                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                    title="Close"
                                   >
-                                    <X className="w-3 h-3" />
+                                    <X className="w-3.5 h-3.5" />
                                   </button>
-                                </span>
-                              );
-                            })
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                                </div>
 
-                    {/* Add Role Section */}
-                    <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700/60">
-                      {isAddActive ? (
-                        <div className="space-y-2 bg-slate-50 dark:bg-slate-900/80 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 animate-in fade-in duration-200">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
-                              Select Role to Add:
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setActiveAddRoleEntityId(null);
-                                setCustomRoleInput("");
-                              }}
-                              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                                {/* Standard quick buttons */}
+                                <div className="flex flex-wrap gap-1">
+                                  {availableCategoriesToAdd.length > 0 ? (
+                                    availableCategoriesToAdd.map((cat) => (
+                                      <button
+                                        key={cat.key}
+                                        type="button"
+                                        onClick={() => handleAddRole(item.id, cat.key)}
+                                        className="text-[11px] px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 hover:border-teal-400 dark:hover:border-teal-600 transition-colors"
+                                      >
+                                        + {cat.label}
+                                      </button>
+                                    ))
+                                  ) : (
+                                    <span className="text-[10px] text-slate-400 italic">
+                                      All standard roles assigned.
+                                    </span>
+                                  )}
+                                </div>
 
-                          {/* Quick selection of standard biological categories */}
-                          <div className="flex flex-wrap gap-1">
-                            {availableCategoriesToAdd.length > 0 ? (
-                              availableCategoriesToAdd.map((cat) => (
-                                <button
-                                  key={cat.key}
-                                  type="button"
-                                  onClick={() => handleAddRole(item.id, cat.key)}
-                                  className="text-[11px] px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 hover:border-teal-400 dark:hover:border-teal-600 transition-colors"
-                                >
-                                  + {cat.label}
-                                </button>
-                              ))
-                            ) : (
-                              <span className="text-[10px] text-slate-400 italic">
-                                All predefined categories already added.
-                              </span>
+                                {/* Custom role input */}
+                                <div className="flex items-center gap-1.5 pt-1">
+                                  <Input
+                                    placeholder="Or custom role..."
+                                    value={customRoleInput}
+                                    onChange={(e) => setCustomRoleInput(e.target.value)}
+                                    className="text-xs h-7 bg-white dark:bg-slate-800"
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter" && customRoleInput.trim()) {
+                                        e.preventDefault();
+                                        handleAddRole(item.id, customRoleInput);
+                                      }
+                                    }}
+                                  />
+                                  <Button
+                                    variant="primary"
+                                    size="sm"
+                                    className="h-7 px-2 text-xs bg-teal-600 hover:bg-teal-700 text-white"
+                                    disabled={!customRoleInput.trim()}
+                                    onClick={() => handleAddRole(item.id, customRoleInput)}
+                                  >
+                                    <Plus className="w-3.5 h-3.5" />
+                                  </Button>
+                                </div>
+                              </div>
                             )}
                           </div>
+                        </td>
 
-                          {/* Custom role input */}
-                          <div className="flex items-center gap-1.5 pt-1">
-                            <Input
-                              placeholder="Or custom role..."
-                              value={customRoleInput}
-                              onChange={(e) => setCustomRoleInput(e.target.value)}
-                              className="text-xs h-7 bg-white dark:bg-slate-800"
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" && customRoleInput.trim()) {
-                                  e.preventDefault();
-                                  handleAddRole(item.id, customRoleInput);
+                        {/* Actions Column */}
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                if (isAddActive) {
+                                  setActiveAddRoleEntityId(null);
+                                  setCustomRoleInput("");
+                                } else {
+                                  setActiveAddRoleEntityId(item.id);
+                                  setCustomRoleInput("");
                                 }
                               }}
-                            />
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              className="h-7 px-2 text-xs bg-teal-600 hover:bg-teal-700 text-white"
-                              disabled={!customRoleInput.trim()}
-                              onClick={() => handleAddRole(item.id, customRoleInput)}
+                              className={`h-7 px-2 text-xs gap-1 ${
+                                isAddActive
+                                  ? "bg-teal-50 dark:bg-teal-950/40 border-teal-500 text-teal-600 dark:text-teal-400"
+                                  : "text-slate-600 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400"
+                              }`}
+                              title={isAddActive ? "Close" : "Add Role"}
                             >
-                              <Plus className="w-3.5 h-3.5" />
+                              <Plus className="w-3 h-3" />
+                              <span className="hidden sm:inline">Role</span>
                             </Button>
+
+                            {item.isModified && (
+                              <button
+                                type="button"
+                                onClick={() => handleResetEntity(item.id)}
+                                title="Revert to original roles"
+                                className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 dark:hover:text-slate-300 transition-colors"
+                              >
+                                <RotateCcw className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setActiveAddRoleEntityId(item.id);
-                            setCustomRoleInput("");
-                          }}
-                          className="w-full py-1 px-2 rounded-md border border-dashed border-slate-200 dark:border-slate-700 text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 hover:border-teal-400 dark:hover:border-teal-500 text-xs font-medium flex items-center justify-center gap-1 transition-colors"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          Add Role
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 border-t border-slate-200 dark:border-slate-700 text-xs">
+                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                  <span>
+                    Page <strong className="text-slate-700 dark:text-slate-200">{currentPage}</strong> of{" "}
+                    <strong className="text-slate-700 dark:text-slate-200">{totalPages}</strong>
+                  </span>
+                  <span className="text-slate-300 dark:text-slate-600">|</span>
+                  <div className="flex items-center gap-1.5">
+                    <span>Per page:</span>
+                    <select
+                      value={pageSize}
+                      onChange={(e) => {
+                        setPageSize(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    className="h-8 px-2.5 gap-1 text-xs"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    Previous
+                  </Button>
+
+                  <div className="flex items-center gap-1 px-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum: number;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+
+                      return (
+                        <button
+                          key={pageNum}
+                          type="button"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`w-8 h-8 rounded-lg font-medium text-xs transition-colors ${
+                            currentPage === pageNum
+                              ? "bg-teal-600 text-white shadow-xs"
+                              : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60"
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    className="h-8 px-2.5 gap-1 text-xs"
+                  >
+                    Next
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
