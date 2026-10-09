@@ -652,6 +652,16 @@ export const experimentService = {
       body: JSON.stringify({ roles }),
     });
   },
+
+  /**
+   * Resets biological roles for objects in inferences and kb_objects to default Biotypes + MeSH.
+   * DELETE /inferences/biological-objects/{pipelineId}/roles
+   */
+  async resetBiologicalObjectsRoles(pipelineId: string): Promise<Response> {
+    return authFetch(`${INFERENCES_BIOLOGICAL_OBJECTS_ENDPOINT}/${pipelineId}/roles`, {
+      method: "DELETE",
+    });
+  },
 };
 
 export function getMockExecutionData(experimentId: string, experimentName = "Protein Folding Analysis"): ExperimentExecution {

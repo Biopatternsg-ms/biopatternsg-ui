@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -86,11 +86,53 @@ export const UpdateBiologicalObjects = () => {
 
   // Submission & Modals
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  const [successModalData, setSuccessModalData] = useState<{ title: string; message: string } | null>(null);
+  const [isResetConfirmModalOpen, setIsResetConfirmModalOpen] = useState(false);
+  const [successModalData, setSuccessModalData] = useState<{
+    title: string;
+    message: string;
+    navigateOnClose?: boolean;
+  } | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const hasFetchedRef = useRef<string | null>(null);
+
+  const loadData = useCallback(async (id: string) => {
+    try {
+      setLoading(true);
+
+      const [pipeData, inferenceConfigData, bioObjectsData] = await Promise.allSettled([
+        experimentService.getPipelineById(id),
+        experimentService.getInferenceByPipelineId(id),
+        experimentService.getBiologicalObjects(id),
+      ]);
+
+      if (pipeData.status === "fulfilled" && pipeData.value?.name) {
+        setExperimentName(pipeData.value.name);
+      }
+
+      if (inferenceConfigData.status === "fulfilled" && inferenceConfigData.value) {
+        setRestrictionLevel(inferenceConfigData.value.restrictionLevel || "VERY_RESTRICTED");
+      }
+
+      if (bioObjectsData.status === "fulfilled" && bioObjectsData.value) {
+        const items = bioObjectsData.value;
+        setInitialObjects(items);
+        setObjects(
+          items.map((item, idx) => ({
+            ...item,
+            id: `${item.symbol || item.name}-${idx}`,
+            isModified: false,
+          }))
+        );
+      }
+    } catch (err) {
+      console.error("Error loading biological objects:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const expId = experimentId;
@@ -99,48 +141,39 @@ export const UpdateBiologicalObjects = () => {
     if (hasFetchedRef.current === expId) return;
     hasFetchedRef.current = expId;
 
-    async function loadData(id: string) {
-      try {
-        setLoading(true);
-
-        const [pipeData, inferenceConfigData, bioObjectsData] = await Promise.allSettled([
-          experimentService.getPipelineById(id),
-          experimentService.getInferenceByPipelineId(id),
-          experimentService.getBiologicalObjects(id),
-        ]);
-
-        if (hasFetchedRef.current !== id) return;
-
-        if (pipeData.status === "fulfilled" && pipeData.value?.name) {
-          setExperimentName(pipeData.value.name);
-        }
-
-        if (inferenceConfigData.status === "fulfilled" && inferenceConfigData.value) {
-          setRestrictionLevel(inferenceConfigData.value.restrictionLevel || "VERY_RESTRICTED");
-        }
-
-        if (bioObjectsData.status === "fulfilled" && bioObjectsData.value) {
-          const items = bioObjectsData.value;
-          setInitialObjects(items);
-          setObjects(
-            items.map((item, idx) => ({
-              ...item,
-              id: `${item.symbol || item.name}-${idx}`,
-              isModified: false,
-            }))
-          );
-        }
-      } catch (err) {
-        console.error("Error loading biological objects:", err);
-      } finally {
-        if (hasFetchedRef.current === id) {
-          setLoading(false);
-        }
-      }
-    }
-
     loadData(expId);
-  }, [experimentId]);
+  }, [experimentId, loadData]);
+
+  // Handler to reset all roles back to initial state (backend + reload)
+  const handleConfirmReset = async () => {
+    setIsResetConfirmModalOpen(false);
+    setIsResetting(true);
+    setErrorMessage(null);
+    try {
+      const pipeId = experimentId || "pipeline-demo-123";
+      const response = await experimentService.resetBiologicalObjectsRoles(pipeId);
+      if (!response.ok) {
+        throw new Error(`Failed to reset biological objects roles: ${response.statusText}`);
+      }
+
+      await loadData(pipeId);
+      setSuccessModalData({
+        title: "Biological Roles Reset",
+        message:
+          "All biological roles have been reset to their initial state derived purely from Biotypes and MeSH criteria.",
+        navigateOnClose: false,
+      });
+    } catch (err) {
+      console.error("Error resetting biological roles:", err);
+      setErrorMessage(
+        err instanceof Error
+          ? err.message
+          : "Error resetting biological roles. Please check backend connection."
+      );
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   // Handler to add a role to an entity
   const handleAddRole = (entityId: string, roleToAdd: string) => {
@@ -246,6 +279,7 @@ export const UpdateBiologicalObjects = () => {
         title: "Biological Objects Roles Saved",
         message:
           "The confirmed biological roles have been successfully synchronized to the Knowledge Base (kb_objects) and Inference configuration. The Update Biological Objects step is now complete.",
+        navigateOnClose: true,
       });
     } catch (err) {
       console.error("Error saving biological objects roles:", err);
@@ -390,17 +424,34 @@ export const UpdateBiologicalObjects = () => {
                   size="sm"
                   onClick={handleResetAll}
                   className="text-slate-600 dark:text-slate-300"
+                  title="Discard unsaved local changes"
                 >
                   <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
-                  Reset All
+                  Discard Changes
                 </Button>
               )}
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsResetConfirmModalOpen(true)}
+                disabled={isSubmitting || isResetting || objects.length === 0}
+                className="text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700/60"
+                title="Reset all biological roles to original state derived from Biotypes and MeSH"
+              >
+                {isResetting ? (
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                )}
+                Reset Roles
+              </Button>
 
               <Button
                 variant="primary"
                 size="sm"
                 onClick={() => setIsConfirmModalOpen(true)}
-                disabled={isSubmitting || objects.length === 0}
+                disabled={isSubmitting || isResetting || objects.length === 0}
                 className="bg-teal-600 hover:bg-teal-700 text-white shadow-xs"
               >
                 {isSubmitting ? (
@@ -997,6 +1048,61 @@ export const UpdateBiologicalObjects = () => {
         </div>
       )}
 
+      {/* Reset Confirmation Modal */}
+      {isResetConfirmModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 dark:border-slate-700 space-y-4">
+            <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400">
+              <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center">
+                <RotateCcw className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  Reset Biological Roles?
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Revert to original Biotypes & MeSH evaluation
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              This action will clear all previously saved roles in the Knowledge Base (<code className="text-amber-600 dark:text-amber-400 font-mono">kb_objects</code>) and Inference configuration, returning all biological objects to their original roles evaluated purely from <strong>Biotypes</strong> and <strong>MeSH terms</strong>.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsResetConfirmModalOpen(false)}
+                disabled={isResetting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleConfirmReset}
+                disabled={isResetting}
+                className="bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                {isResetting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                    Resetting...
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw className="w-4 h-4 mr-1.5" />
+                    Confirm Reset
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Success Modal */}
       {successModalData && (
         <SuccessModal
@@ -1004,10 +1110,13 @@ export const UpdateBiologicalObjects = () => {
           title={successModalData.title}
           message={successModalData.message}
           onClose={() => {
+            const shouldNavigate = successModalData.navigateOnClose ?? true;
             setSuccessModalData(null);
-            navigate(
-              `/dashboard/experiments/${networkId || ""}/execution/${experimentId || ""}`
-            );
+            if (shouldNavigate) {
+              navigate(
+                `/dashboard/experiments/${networkId || ""}/execution/${experimentId || ""}`
+              );
+            }
           }}
         />
       )}
