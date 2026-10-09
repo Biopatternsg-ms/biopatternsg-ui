@@ -367,16 +367,16 @@ export const UpdateBiologicalObjects = () => {
               />
               <div className="flex items-center gap-3 mt-2">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={() =>
                     navigate(
                       `/dashboard/experiments/${networkId || ""}/execution/${experimentId || ""}`
                     )
                   }
-                  className="mr-1"
+                  className="mr-1 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white font-semibold shadow-xs"
                 >
-                  <ArrowLeft className="w-4 h-4 mr-1" />
+                  <ArrowLeft className="w-4 h-4 mr-1 text-slate-600 dark:text-slate-300" />
                   Back to Execution
                 </Button>
                 <div className="p-2 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400">
@@ -420,29 +420,29 @@ export const UpdateBiologicalObjects = () => {
 
               {modifiedCount > 0 && (
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={handleResetAll}
-                  className="text-slate-600 dark:text-slate-300"
+                  className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 font-semibold shadow-xs"
                   title="Discard unsaved local changes"
                 >
-                  <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                  <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-slate-500 dark:text-slate-400" />
                   Discard Changes
                 </Button>
               )}
 
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => setIsResetConfirmModalOpen(true)}
                 disabled={isSubmitting || isResetting || objects.length === 0}
-                className="text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700/60"
+                className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 font-semibold shadow-xs"
                 title="Reset all biological roles to original state derived from Biotypes and MeSH"
               >
                 {isResetting ? (
                   <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
                 ) : (
-                  <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                  <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-slate-500 dark:text-slate-400" />
                 )}
                 Reset Roles
               </Button>
@@ -512,20 +512,31 @@ export const UpdateBiologicalObjects = () => {
             </div>
 
             {/* Filter Modified Toggle */}
-            <div className="flex items-center gap-2">
-              <Button
-                variant={filterModifiedOnly ? "surface" : "outline"}
-                size="sm"
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
                 onClick={() => setFilterModifiedOnly(!filterModifiedOnly)}
-                className={`text-xs ${
+                className={`inline-flex items-center gap-2 h-9 px-3 rounded-lg text-xs font-semibold border transition-all duration-200 shadow-xs cursor-pointer ${
                   filterModifiedOnly
-                    ? "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-700"
-                    : ""
+                    ? "bg-amber-500 text-white border-amber-600 ring-2 ring-amber-400/40 shadow-sm"
+                    : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white"
                 }`}
+                title={filterModifiedOnly ? "Showing modified only. Click to show all." : "Filter to view only modified entities"}
               >
-                <SlidersHorizontal className="w-3.5 h-3.5 mr-1.5" />
-                Modified Only {modifiedCount > 0 && `(${modifiedCount})`}
-              </Button>
+                <SlidersHorizontal className={`w-3.5 h-3.5 ${filterModifiedOnly ? "text-white" : "text-slate-500 dark:text-slate-400"}`} />
+                <span>Modified Only</span>
+                <span
+                  className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold ${
+                    filterModifiedOnly
+                      ? "bg-amber-700 text-white"
+                      : modifiedCount > 0
+                      ? "bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700"
+                      : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+                  }`}
+                >
+                  {modifiedCount}
+                </span>
+              </button>
             </div>
           </div>
 
@@ -590,13 +601,14 @@ export const UpdateBiologicalObjects = () => {
             </p>
             <div className="mt-4">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => {
                   setSearchTerm("");
                   setSelectedCategory("ALL");
                   setFilterModifiedOnly(false);
                 }}
+                className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 font-semibold shadow-xs"
               >
                 Reset Filters
               </Button>
@@ -867,11 +879,11 @@ export const UpdateBiologicalObjects = () => {
                           <div className="flex items-center justify-end">
                             {item.isModified ? (
                               <Button
-                                variant="outline"
+                                variant="ghost"
                                 size="sm"
                                 onClick={() => handleResetEntity(item.id)}
                                 title="Revert to original roles"
-                                className="h-7 px-2 text-xs gap-1 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700/60 hover:bg-amber-50 dark:hover:bg-amber-950/40"
+                                className="h-7 px-2 text-xs gap-1 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 bg-amber-50/70 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 font-medium"
                               >
                                 <RotateCcw className="w-3 h-3" />
                                 <span>Revert</span>
@@ -917,11 +929,11 @@ export const UpdateBiologicalObjects = () => {
 
                 <div className="flex items-center gap-1">
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
                     disabled={currentPage <= 1}
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    className="h-8 px-2.5 gap-1 text-xs"
+                    className="h-8 px-2.5 gap-1 text-xs bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium shadow-xs disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                     Previous
@@ -958,11 +970,11 @@ export const UpdateBiologicalObjects = () => {
                   </div>
 
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
                     disabled={currentPage >= totalPages}
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    className="h-8 px-2.5 gap-1 text-xs"
+                    className="h-8 px-2.5 gap-1 text-xs bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium shadow-xs disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     Next
                     <ChevronRight className="w-3.5 h-3.5" />
@@ -1017,10 +1029,11 @@ export const UpdateBiologicalObjects = () => {
 
             <div className="flex items-center justify-end gap-3 pt-2">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => setIsConfirmModalOpen(false)}
                 disabled={isSubmitting}
+                className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium"
               >
                 Cancel
               </Button>
@@ -1072,10 +1085,11 @@ export const UpdateBiologicalObjects = () => {
 
             <div className="flex items-center justify-end gap-3 pt-2">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => setIsResetConfirmModalOpen(false)}
                 disabled={isResetting}
+                className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium"
               >
                 Cancel
               </Button>
