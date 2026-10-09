@@ -122,3 +122,31 @@ export interface KbEventResponse {
   second: string;
   pubmedIds: string[];
 }
+
+export type RestrictionLevel = "RESTRICTED" | "VERY_RESTRICTED" | "UNRESTRICTED";
+
+export interface InferenceConfig {
+  restrictionLevel: RestrictionLevel;
+  startObjects?: string[];
+  endObjects?: string[];
+}
+
+export interface InferenceResponse {
+  id?: string;
+  pipelineId: string;
+  restrictionLevel: RestrictionLevel;
+  roles?: Record<string, string[]>;
+}
+
+export interface BiologicalObjectItem {
+  symbol?: string;
+  name: string;
+  synonyms?: string[];
+  biotypes: string[];
+  meshRoles: string[];
+  roles: string[];
+  alternativeIds?: string[];
+  description?: string;
+}
+
+

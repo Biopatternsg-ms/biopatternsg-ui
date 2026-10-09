@@ -20,20 +20,67 @@
 import { Badge } from "@/components/atoms/Badge";
 import type { PipelineStatus as PipelineStatusType } from "@/services/models/Experiment";
 
-// Map technical steps to friendly labels
+// Map technical steps to friendly labels matching execution pipeline steps
 const STEP_LABELS: Record<string, string> = {
-  CONFIG: "Configuration",
-  LAUNCH: "Launch",
-  TRANSCRIPTION_FACTOR: "Transcription Factor",
-  EXPERT_OBJECTS: "Expert Objects",
-  SEARCH_LEVELS: "Search Levels",
-  COMBINATIONS: "Combinations",
+  // Enum keys
+  CONFIG: "Configuration Setup",
+  LAUNCH: "Launch Pipeline",
+  TRANSCRIPTION_FACTOR: "Transcription Factor Config",
+  EXPERT_OBJECTS: "Expert Objects Processing",
+  SEARCH_LEVELS: "Search Levels Processing",
+  COMBINATIONS: "Pubmed Combinations Generation",
   SEARCH_PUBMED_IDS: "Search PubMed IDs",
-  SEARCH_PUBTATOR: "Search PubTator",
-  BUILD_KNOWLEDGE_BASE: "Build Knowledge Base",
+  SEARCH_PUBTATOR: "Search PubTator Annotations",
+  BUILD_KNOWLEDGE_BASE: "Build Knowledge Base Graph",
   GENERATE_ALIGNED_OBJECTS: "Generate Aligned Objects",
   UPDATE_ALIGNED_OBJECTS: "Update Aligned Objects",
   UPDATE_SYNONYMS: "Update Synonyms",
+  CONFIGURE_INFERENCES: "Configure Inferences",
+  FIND_ROLES: "Find Biological Roles",
+  UPDATE_BIOLOGICAL_OBJECTS: "Update Biological Objects",
+
+  // Lowercase keys
+  configuration: "Configuration Setup",
+  launched: "Launch Pipeline",
+  transcription_factor: "Transcription Factor Config",
+  expert_objects: "Expert Objects Processing",
+  search_levels: "Search Levels Processing",
+  combinations: "Pubmed Combinations Generation",
+  search_pubmed_ids: "Search PubMed IDs",
+  search_pubtator: "Search PubTator Annotations",
+  build_knowledge_base: "Build Knowledge Base Graph",
+  generate_aligned_objects: "Generate Aligned Objects",
+  update_aligned_objects: "Update Aligned Objects",
+  update_synonyms: "Update Synonyms",
+  configure_inferences: "Configure Inferences",
+  find_roles: "Find Biological Roles",
+  update_biological_objects: "Update Biological Objects",
+
+  // Prefixed step- keys
+  "step-configuration": "Configuration Setup",
+  "step-launched": "Launch Pipeline",
+  "step-transcription_factor": "Transcription Factor Config",
+  "step-expert_objects": "Expert Objects Processing",
+  "step-search_levels": "Search Levels Processing",
+  "step-combinations": "Pubmed Combinations Generation",
+  "step-search_pubmed_ids": "Search PubMed IDs",
+  "step-search_pubtator": "Search PubTator Annotations",
+  "step-build_knowledge_base": "Build Knowledge Base Graph",
+  "step-generate_aligned_objects": "Generate Aligned Objects",
+  "step-update_aligned_objects": "Update Aligned Objects",
+  "step-configure_inferences": "Configure Inferences",
+  "step-find_roles": "Find Biological Roles",
+  "step-update_biological_objects": "Update Biological Objects",
+
+  // Legacy mappings
+  Configuration: "Configuration Setup",
+  Launch: "Launch Pipeline",
+  "Transcription Factor": "Transcription Factor Config",
+  "Expert Objects": "Expert Objects Processing",
+  "Search Levels": "Search Levels Processing",
+  Combinations: "Pubmed Combinations Generation",
+  "Search PubTator": "Search PubTator Annotations",
+  "Build Knowledge Base": "Build Knowledge Base Graph",
 };
 
 // Map status to friendly text and Badge variant
@@ -49,7 +96,15 @@ const STATUS_CONFIG: Record<
 
 export function getFriendlyStepLabel(step?: string): string {
   if (!step) return "Unknown";
-  return STEP_LABELS[step] || step;
+  if (STEP_LABELS[step]) return STEP_LABELS[step];
+
+  const cleanStep = step.replace(/^step-/, "");
+  if (STEP_LABELS[cleanStep]) return STEP_LABELS[cleanStep];
+
+  const upperStep = cleanStep.toUpperCase();
+  if (STEP_LABELS[upperStep]) return STEP_LABELS[upperStep];
+
+  return step;
 }
 
 const formatStatusDate = (dateVal?: string | number) => {
