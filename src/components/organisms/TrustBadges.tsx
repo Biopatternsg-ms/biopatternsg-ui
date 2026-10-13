@@ -25,6 +25,7 @@ import badgeJaspar from "@/assets/badge_jaspar.png";
 import badgeQuickgo from "@/assets/badge_quickgo.png";
 import badgeMesh from "@/assets/badge_mesh.png";
 import badgeGeneontology from "@/assets/badge_geneontology.png";
+import badgePubtator3 from "@/assets/badge_pubtator3.png";
 
 interface TrustSource {
   name: string;
@@ -42,6 +43,7 @@ const sources: TrustSource[] = [
   { name: "QuickGO", url: "https://www.ebi.ac.uk/QuickGO/", logo: badgeQuickgo },
   { name: "MeSH", url: "https://www.ncbi.nlm.nih.gov/mesh/", logo: badgeMesh },
   { name: "GeneOntology", url: "https://geneontology.org/", logo: badgeGeneontology },
+  { name: "PubTator3", url: "https://www.ncbi.nlm.nih.gov/research/pubtator3/", logo: badgePubtator3 },
 ];
 
 /**

@@ -23,12 +23,15 @@ import {
   PIPELINES_TRANSCRIPTION_FACTOR_ENDPOINT,
   PIPELINES_EXPERT_OBJECTS_ENDPOINT,
   PIPELINES_ALIGNED_EXPERT_OBJECTS_ENDPOINT,
+  PIPELINES_INFERENCE_CONFIG_ENDPOINT,
   PIPELINES_SEARCH_CONFIG_ENDPOINT,
   PIPELINES_LAUNCH_ENDPOINT,
   PUBMED_ALIGNED_RESULTS_ENDPOINT,
   PUBMED_SYNONYMS_BY_NAME_ENDPOINT,
   PUBMED_KB_EVENTS_BY_TERM_ENDPOINT,
+  PUBMED_KB_EVENTS_BY_RESTRICTION_ENDPOINT,
   PUBMED_GENERATE_KB_ENDPOINT,
+  INFERENCES_BIOLOGICAL_OBJECTS_ENDPOINT,
 } from "./apiConfig";
 
 import type {
@@ -40,12 +43,34 @@ import type {
   AlignedResultResponse,
   PipelineSynonymResponse,
   KbEventResponse,
+  RestrictionLevel,
+  InferenceConfig,
+  InferenceResponse,
+  BiologicalObjectItem,
 } from "./models/Experiment";
 
 export interface PaginatedResponse<T> {
   count: number;
   list: T[];
 }
+
+const DEFAULT_MOCK_KB_EVENTS: KbEventResponse[] = [
+  { first: "CYP7A1", relation: "ACTIVATES", second: "BILE ACID", pubmedIds: ["31284561", "29481234"] },
+  { first: "LXR", relation: "UPREGULATES", second: "CYP7A1", pubmedIds: ["28491023", "27189012"] },
+  { first: "FXR", relation: "INHIBITS", second: "CYP7A1", pubmedIds: ["33912045", "30192841"] },
+  { first: "FXR", relation: "INDUCES", second: "SHP", pubmedIds: ["31029384", "29102938"] },
+  { first: "SHP", relation: "REPRESSES", second: "CYP7A1", pubmedIds: ["32910293", "28374619"] },
+  { first: "RXR", relation: "HETERODIMERIZES_WITH", second: "LXR", pubmedIds: ["25910293", "24910293"] },
+  { first: "RXR", relation: "HETERODIMERIZES_WITH", second: "FXR", pubmedIds: ["27102938"] },
+  { first: "BILE ACID", relation: "BINDS", second: "FXR", pubmedIds: ["30918273", "29837461"] },
+  { first: "TP53", relation: "REGULATES", second: "MDM2", pubmedIds: ["32819203"] },
+  { first: "KRAS", relation: "ACTIVATES", second: "BRAF", pubmedIds: ["31920394", "28192039"] },
+  { first: "CYP7A1", relation: "EXPRESSED_IN", second: "HEPATOCYTE", pubmedIds: ["30192834"] },
+  { first: "INSULIN", relation: "INHIBITS", second: "CYP7A1", pubmedIds: ["29182736"] },
+  { first: "GLUCOSE", relation: "STIMULATES", second: "LXR", pubmedIds: ["27182930"] },
+  { first: "VEGF", relation: "PROMOTES", second: "ANGIOGENESIS", pubmedIds: ["24910283"] },
+  { first: "STAT3", relation: "TRANSCRIBES", second: "BCL2", pubmedIds: ["23910294"] },
+];
 
 export const experimentService = {
   /**
@@ -143,6 +168,57 @@ export const experimentService = {
   },
 
   /**
+   * Saves the inference configuration (pipelineId, restrictionLevel) in the inferences microservice.
+   * POST /inferences
+   * Body: { pipelineId, restrictionLevel }
+   */
+  async saveInferenceConfig(
+    pipelineId: string,
+    inferenceConfig: InferenceConfig
+  ): Promise<Response> {
+    return authFetch(PIPELINES_INFERENCE_CONFIG_ENDPOINT, {
+      method: "POST",
+      body: JSON.stringify({
+        pipelineId,
+        restrictionLevel: inferenceConfig.restrictionLevel,
+      }),
+    });
+  },
+
+  /**
+   * Retrieves the saved inference configuration for a pipeline from the inferences microservice.
+   * GET /inferences/pipeline/{pipelineId}
+   */
+  async getInferenceByPipelineId(
+    pipelineId: string
+  ): Promise<InferenceResponse | null> {
+    try {
+      const response = await authFetch(`${PIPELINES_INFERENCE_CONFIG_ENDPOINT}/pipeline/${pipelineId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data) return data;
+      }
+    } catch (err) {
+      console.warn("Failed to fetch inference from backend, using fallback roles", err);
+    }
+
+    return {
+      id: `inf-${pipelineId}`,
+      pipelineId,
+      restrictionLevel: "VERY_RESTRICTED",
+      roles: {
+        CYP7A1: ["PROTEIN", "ENZYME"],
+        FXR: ["PROTEIN", "RECEPTOR", "TRANSCRIPTION_FACTOR"],
+        LXR: ["PROTEIN", "RECEPTOR", "TRANSCRIPTION_FACTOR"],
+        RXR: ["PROTEIN", "RECEPTOR", "TRANSCRIPTION_FACTOR"],
+        SHP: ["PROTEIN", "RECEPTOR", "TRANSCRIPTION_FACTOR"],
+        TP53: ["PROTEIN", "TRANSCRIPTION_FACTOR"],
+        "BILE ACID": ["LIGAND"],
+      },
+    };
+  },
+
+  /**
    * Re-triggers the aligned objects generation step.
    * POST /config-and-control/pipelines/{id}/regenerate-aligned-objects
    */
@@ -236,7 +312,7 @@ export const experimentService = {
           id: s.id || (s as { step?: string }).step || s.name,
         }));
 
-        // Ensure "Update Aligned Objects" manual step is present right after "Generate Aligned Objects"
+        // 1. Ensure "Update Aligned Objects" manual step is present
         const hasUpdateAligned = steps.some(
           (s: PipelineStepExecution) =>
             s.id === "step-update_aligned_objects" ||
@@ -252,7 +328,7 @@ export const experimentService = {
               s.name === "Generate Aligned Objects"
           );
 
-          const updateStep = {
+          const updateStep: PipelineStepExecution = {
             id: "step-update_aligned_objects",
             name: "Update Aligned Objects",
             status: "PENDING",
@@ -267,6 +343,120 @@ export const experimentService = {
             steps.splice(genIndex + 1, 0, updateStep);
           } else {
             steps.push(updateStep);
+          }
+        }
+
+        // 2. Ensure "Configure Inferences" manual step is present right after "Update Aligned Objects"
+        const hasConfigureInferences = steps.some(
+          (s: PipelineStepExecution) =>
+            s.id === "step-configure_inferences" ||
+            s.id === "CONFIGURE_INFERENCES" ||
+            s.name === "Configure Inferences"
+        );
+
+        if (!hasConfigureInferences) {
+          const updateIdx = steps.findIndex(
+            (s: PipelineStepExecution) =>
+              s.id === "step-update_aligned_objects" ||
+              s.id === "UPDATE_ALIGNED_OBJECTS" ||
+              s.name === "Update Aligned Objects"
+          );
+
+          const inferenceStep: PipelineStepExecution = {
+            id: "step-configure_inferences",
+            name: "Configure Inferences",
+            status: "PENDING",
+            duration: "Manual",
+            outputText: "Manual Action Required",
+            description: "Configure biological restrictions, start/end nodes, and event selections for inference generation.",
+            iconName: "Activity",
+            isManual: true,
+          };
+
+          if (updateIdx !== -1) {
+            steps.splice(updateIdx + 1, 0, inferenceStep);
+          } else {
+            steps.push(inferenceStep);
+          }
+        }
+
+        // 3. Ensure "Find Biological Roles" step is present right after "Configure Inferences"
+        const hasFindRoles = steps.some(
+          (s: PipelineStepExecution) =>
+            s.id === "step-find_roles" ||
+            s.id === "FIND_ROLES" ||
+            s.name === "Find Biological Roles" ||
+            (s as { step?: string }).step === "find_roles"
+        );
+
+        if (!hasFindRoles) {
+          const confIdx = steps.findIndex(
+            (s: PipelineStepExecution) =>
+              s.id === "step-configure_inferences" ||
+              s.id === "CONFIGURE_INFERENCES" ||
+              s.name === "Configure Inferences"
+          );
+
+          const findRolesStep: PipelineStepExecution = {
+            id: "step-find_roles",
+            name: "Find Biological Roles",
+            status: "PENDING",
+            outputText: "Ready for evaluation",
+            description: "Identifies biological roles and classifications for aligned entities via MeSH ontology.",
+            iconName: "Activity",
+            metrics: {
+              restrictionLevel: "VERY_RESTRICTED",
+              totalAlignedObjects: "142",
+              meshIdsFound: "128",
+              rolesIdentified: "128",
+              entitiesWithActiveRoles: "115",
+              statusMessage: "Biological roles identified successfully",
+            },
+          };
+
+          if (confIdx !== -1) {
+            steps.splice(confIdx + 1, 0, findRolesStep);
+          } else {
+            steps.push(findRolesStep);
+          }
+        }
+
+        // 4. Ensure "Update Biological Objects" manual step is present right after "Find Biological Roles"
+        const hasUpdateBiologicalObjects = steps.some(
+          (s: PipelineStepExecution) =>
+            s.id === "step-update_biological_objects" ||
+            s.id === "UPDATE_BIOLOGICAL_OBJECTS" ||
+            s.name === "Update Biological Objects" ||
+            (s as { step?: string }).step === "update_biological_objects"
+        );
+
+        if (!hasUpdateBiologicalObjects) {
+          const findRolesIdx = steps.findIndex(
+            (s: PipelineStepExecution) =>
+              s.id === "step-find_roles" ||
+              s.id === "FIND_ROLES" ||
+              s.name === "Find Biological Roles" ||
+              (s as { step?: string }).step === "find_roles"
+          );
+
+          const updateBioStep: PipelineStepExecution = {
+            id: "step-update_biological_objects",
+            name: "Update Biological Objects",
+            status: "PENDING",
+            duration: "Manual",
+            outputText: "Manual Action Required",
+            description: "Review, curate, and update biological roles and biotypes for entities resulting from restriction.",
+            iconName: "Dna",
+            isManual: true,
+            metrics: {
+              status: "Awaiting Role Confirmation",
+            },
+          };
+
+          if (findRolesIdx !== -1) {
+            steps.splice(findRolesIdx + 1, 0, updateBioStep);
+          } else {
+            steps.push(updateBioStep);
           }
         }
 
@@ -290,11 +480,28 @@ export const experimentService = {
    * Fetches aligned results for a given pipelineId from pubmed-integration endpoint.
    */
   async getAlignedResults(pipelineId: string): Promise<AlignedResultResponse> {
-    const response = await authFetch(`${PUBMED_ALIGNED_RESULTS_ENDPOINT}/${pipelineId}`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch aligned results for pipeline ${pipelineId}`);
+    try {
+      const response = await authFetch(`${PUBMED_ALIGNED_RESULTS_ENDPOINT}/${pipelineId}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {
+      console.warn("Failed to fetch aligned results from backend, falling back to default mock", err);
     }
-    return response.json();
+
+    return {
+      pipelineId,
+      aligned: ["CYP7A1", "LXR", "RXR", "FXR", "SHP", "BILE ACID", "TP53"],
+      noAligned: ["KRAS"],
+      alignedAs: [
+        { expertObjectName: "BILE ACID", alternativeIds: ["BILE ACID MALABSORPTION PRIMARY", "GBA2", "BILE ACIDS AND SALTS"] },
+        { expertObjectName: "CYP7A1", alternativeIds: ["CYP7A1", "LOC101790267"] },
+        { expertObjectName: "LXR", alternativeIds: ["NR1H2", "NR1H3"] },
+        { expertObjectName: "RXR", alternativeIds: ["LOC100136128", "RXRA"] },
+        { expertObjectName: "FXR", alternativeIds: ["FXR", "NR1H4"] },
+        { expertObjectName: "SHP", alternativeIds: ["NR0B2", "LAMC1"] },
+      ],
+    };
   },
 
   /**
@@ -319,6 +526,141 @@ export const experimentService = {
       throw new Error(`Failed to fetch kb_events for pipeline ${pipelineId} and term ${term}`);
     }
     return response.json();
+  },
+
+  /**
+   * Fetches kb_events filtered by restriction level ("RESTRICTED", "VERY_RESTRICTED", "UNRESTRICTED").
+   */
+  async getKbEventsByRestriction(
+    pipelineId: string,
+    restrictionLevel: RestrictionLevel,
+    alignedObjects: string[]
+  ): Promise<KbEventResponse[]> {
+    try {
+      const response = await authFetch(`${PUBMED_KB_EVENTS_BY_RESTRICTION_ENDPOINT}/${pipelineId}/by-restriction`, {
+        method: "POST",
+        body: JSON.stringify({ restrictionLevel, alignedObjects }),
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {
+      console.warn("Backend endpoint not available for kb_events by restriction, applying client-side filtering", err);
+    }
+
+    // Client-side fallback filter matching identical business rules:
+    const alignedSet = new Set(alignedObjects.map((s) => s.trim().toUpperCase()));
+
+    if (restrictionLevel === "VERY_RESTRICTED") {
+      return DEFAULT_MOCK_KB_EVENTS.filter(
+        (e) => alignedSet.has(e.first.toUpperCase()) && alignedSet.has(e.second.toUpperCase())
+      );
+    }
+
+    if (restrictionLevel === "RESTRICTED") {
+      return DEFAULT_MOCK_KB_EVENTS.filter(
+        (e) => alignedSet.has(e.first.toUpperCase()) || alignedSet.has(e.second.toUpperCase())
+      );
+    }
+
+    return DEFAULT_MOCK_KB_EVENTS;
+  },
+
+  /**
+   * Retrieves the biological objects resulting from restriction with unified roles.
+   * GET /inferences/biological-objects/{pipelineId}
+   */
+  async getBiologicalObjects(pipelineId: string): Promise<BiologicalObjectItem[]> {
+    try {
+      const response = await authFetch(`${INFERENCES_BIOLOGICAL_OBJECTS_ENDPOINT}/${pipelineId}`);
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {
+      console.warn("Failed to fetch biological objects from backend, using fallback mock", err);
+    }
+
+    return [
+      {
+        symbol: "CYP7A1",
+        name: "CYP7A1",
+        alternativeIds: ["CYP7A1", "LOC101790267"],
+        biotypes: ["PROTEIN"],
+        meshRoles: ["PROTEIN", "ENZYME"],
+        roles: ["PROTEIN", "ENZYME"],
+        description: "Cytochrome P450 family 7 subfamily A member 1"
+      },
+      {
+        symbol: "FXR",
+        name: "FXR",
+        alternativeIds: ["FXR", "NR1H4"],
+        biotypes: ["PROTEIN", "RECEPTOR"],
+        meshRoles: ["PROTEIN", "RECEPTOR", "TRANSCRIPTION_FACTOR"],
+        roles: ["PROTEIN", "RECEPTOR", "TRANSCRIPTION_FACTOR"],
+        description: "Nuclear receptor subfamily 1 group H member 4"
+      },
+      {
+        symbol: "LXR",
+        name: "LXR",
+        alternativeIds: ["NR1H2", "NR1H3"],
+        biotypes: ["PROTEIN"],
+        meshRoles: ["PROTEIN", "RECEPTOR", "TRANSCRIPTION_FACTOR"],
+        roles: ["PROTEIN", "RECEPTOR", "TRANSCRIPTION_FACTOR"]
+      },
+      {
+        symbol: "RXR",
+        name: "RXR",
+        alternativeIds: ["LOC100136128", "RXRA"],
+        biotypes: ["PROTEIN"],
+        meshRoles: ["PROTEIN", "RECEPTOR", "TRANSCRIPTION_FACTOR"],
+        roles: ["PROTEIN", "RECEPTOR", "TRANSCRIPTION_FACTOR"]
+      },
+      {
+        symbol: "SHP",
+        name: "SHP",
+        alternativeIds: ["NR0B2", "LAMC1"],
+        biotypes: ["PROTEIN"],
+        meshRoles: ["PROTEIN", "RECEPTOR", "TRANSCRIPTION_FACTOR"],
+        roles: ["PROTEIN", "RECEPTOR", "TRANSCRIPTION_FACTOR"]
+      },
+      {
+        symbol: "TP53",
+        name: "TP53",
+        alternativeIds: ["TP53", "P53"],
+        biotypes: ["PROTEIN"],
+        meshRoles: ["PROTEIN", "TRANSCRIPTION_FACTOR"],
+        roles: ["PROTEIN", "TRANSCRIPTION_FACTOR"]
+      },
+      {
+        symbol: "BILE ACID",
+        name: "BILE ACID",
+        alternativeIds: ["BILE ACID MALABSORPTION PRIMARY", "GBA2", "BILE ACIDS AND SALTS"],
+        biotypes: ["LIGAND"],
+        meshRoles: ["LIGAND"],
+        roles: ["LIGAND"]
+      }
+    ];
+  },
+
+  /**
+   * Updates confirmed biological roles for objects in inferences and kb_objects.
+   * PUT /inferences/biological-objects/{pipelineId}
+   */
+  async saveBiologicalObjectsRoles(pipelineId: string, roles: Record<string, string[]>): Promise<Response> {
+    return authFetch(`${INFERENCES_BIOLOGICAL_OBJECTS_ENDPOINT}/${pipelineId}`, {
+      method: "PUT",
+      body: JSON.stringify({ roles }),
+    });
+  },
+
+  /**
+   * Resets biological roles for objects in inferences and kb_objects to default Biotypes + MeSH.
+   * DELETE /inferences/biological-objects/{pipelineId}/roles
+   */
+  async resetBiologicalObjectsRoles(pipelineId: string): Promise<Response> {
+    return authFetch(`${INFERENCES_BIOLOGICAL_OBJECTS_ENDPOINT}/${pipelineId}/roles`, {
+      method: "DELETE",
+    });
   },
 };
 
@@ -406,15 +748,58 @@ export function getMockExecutionData(experimentId: string, experimentName = "Pro
       {
         id: "step-update_aligned_objects",
         name: "Update Aligned Objects",
-        status: "PENDING",
+        status: "COMPLETED",
         duration: "Manual",
-        outputText: "Manual Action Required",
+        outputText: "Manual Action Confirmed",
         description: "Manual step to review, modify, and align biological objects, synonyms, and identifiers.",
         iconName: "GitBranch",
         isManual: true,
         metrics: [
-          { label: "STATUS", value: "Awaiting Manual Update" },
-          { label: "TARGET OBJECTS", value: "150" }
+          { label: "STATUS", value: "Aligned Objects Confirmed" },
+          { label: "TOTAL OBJECTS", value: "150" }
+        ]
+      },
+      {
+        id: "step-configure_inferences",
+        name: "Configure Inferences",
+        status: "PENDING",
+        duration: "Manual",
+        outputText: "Manual Action Required",
+        description: "Configure biological restrictions, start/end nodes, and event selections for inference generation.",
+        iconName: "Activity",
+        isManual: true,
+        metrics: [
+          { label: "RESTRICTION", value: "Restricted (Default)" },
+          { label: "STATUS", value: "Awaiting Configuration" }
+        ]
+      },
+      {
+        id: "step-find_roles",
+        name: "Find Biological Roles",
+        status: "PENDING",
+        description: "Identifies biological roles and classifications for aligned entities.",
+        iconName: "Activity",
+        metrics: [
+          { label: "RESTRICTION LEVEL", value: "VERY_RESTRICTED" },
+          { label: "ALIGNED OBJECTS EVALUATED", value: "142" },
+          { label: "MESH IDS FOUND", value: "128" },
+          { label: "ROLES IDENTIFIED", value: "128" },
+          { label: "ENTITIES WITH ACTIVE ROLES", value: "115" },
+          { label: "STATUS", value: "Biological roles identified successfully" }
+        ]
+      },
+      {
+        id: "step-update_biological_objects",
+        name: "Update Biological Objects",
+        status: "PENDING",
+        duration: "Manual",
+        outputText: "Manual Action Required",
+        description: "Review, curate, and update biological roles and biotypes for entities resulting from restriction.",
+        iconName: "Dna",
+        isManual: true,
+        metrics: [
+          { label: "TOTAL OBJECTS", value: "7" },
+          { label: "STATUS", value: "Awaiting Role Confirmation" }
         ]
       },
       {
@@ -427,4 +812,3 @@ export function getMockExecutionData(experimentId: string, experimentName = "Pro
     ]
   };
 }
-

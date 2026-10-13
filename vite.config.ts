@@ -44,6 +44,11 @@ export default defineConfig(({ mode }) => {
           target: env.VITE_PUBMED_URL || serverUrl,
           changeOrigin: true,
           secure: false,
+        },
+        "/inferences": {
+          target: env.VITE_INFERENCES_URL || serverUrl,
+          changeOrigin: true,
+          secure: false,
         }
       },
     },
