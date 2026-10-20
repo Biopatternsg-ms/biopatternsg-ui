@@ -32,7 +32,20 @@ import {
   PUBMED_KB_EVENTS_BY_RESTRICTION_ENDPOINT,
   PUBMED_GENERATE_KB_ENDPOINT,
   INFERENCES_BIOLOGICAL_OBJECTS_ENDPOINT,
+  PATHWAYS_RUN_ENDPOINT,
+  pathwaysGraphEndpoint,
+  pathwaysListEndpoint,
+  deletePathwaysEndpoint,
 } from "./apiConfig";
+
+import type {
+  PathwayInferenceRequest,
+  PathwayInferenceResponse,
+  PathwayGraph,
+  BiologicalPathway,
+  PathwayQueryParams,
+  PaginatedPathwaysResponse,
+} from "./models/Pathway";
 
 import type {
   Experiment,
@@ -661,6 +674,93 @@ export const experimentService = {
     return authFetch(`${INFERENCES_BIOLOGICAL_OBJECTS_ENDPOINT}/${pipelineId}/roles`, {
       method: "DELETE",
     });
+  },
+
+  /**
+   * Executes biological pathway inference in RAM and persists results to MongoDB.
+   * Clears previous pathways and graph for the pipeline before running.
+   * POST /inferences/pathways/run
+   */
+  async runPathwayInference(request: PathwayInferenceRequest): Promise<PathwayInferenceResponse> {
+    const response = await authFetch(PATHWAYS_RUN_ENDPOINT, {
+      method: "POST",
+      body: JSON.stringify(request),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => null);
+      throw new Error(err?.message || `Failed to run pathway inference: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  /**
+   * Retrieves the consolidated pathway graph for a pipeline.
+   * GET /inferences/pathways/{pipelineId}/graph
+   */
+  async getPathwayGraph(pipelineId: string): Promise<PathwayGraph | null> {
+    try {
+      const response = await authFetch(pathwaysGraphEndpoint(pipelineId));
+      if (response.ok) {
+        return await response.json();
+      }
+      return null;
+    } catch (err) {
+      console.warn(`Failed to fetch pathway graph for pipeline ${pipelineId}:`, err);
+      return null;
+    }
+  },
+
+  /**
+   * Retrieves paginated biological pathways with optional filtering.
+   * GET /inferences/pathways/{pipelineId}
+   */
+  async getPathways(
+    pipelineId: string,
+    params?: PathwayQueryParams
+  ): Promise<PaginatedPathwaysResponse> {
+    const query = new URLSearchParams();
+    if (params?.page !== undefined) query.set("page", String(params.page));
+    if (params?.size !== undefined) query.set("size", String(params.size));
+    if (params?.startObject) query.set("startObject", params.startObject);
+    if (params?.endObject) query.set("endObject", params.endObject);
+    if (params?.containsObject) query.set("containsObject", params.containsObject);
+
+    const queryString = query.toString();
+    const url = `${pathwaysListEndpoint(pipelineId)}${queryString ? `?${queryString}` : ""}`;
+
+    const response = await authFetch(url);
+    if (!response.ok) {
+      if (response.status === 404) {
+        return { list: [], total: 0, page: params?.page ?? 0, size: params?.size ?? 50 };
+      }
+      throw new Error(`Failed to fetch pathways: ${response.statusText}`);
+    }
+
+    const totalHeader = response.headers.get("X-Total-Count");
+    const pageHeader = response.headers.get("X-Page");
+    const sizeHeader = response.headers.get("X-Page-Size");
+
+    const list: BiologicalPathway[] = await response.json();
+    return {
+      list,
+      total: totalHeader ? parseInt(totalHeader, 10) : list.length,
+      page: pageHeader ? parseInt(pageHeader, 10) : (params?.page ?? 0),
+      size: sizeHeader ? parseInt(sizeHeader, 10) : (params?.size ?? 50),
+    };
+  },
+
+  /**
+   * Deletes all pathways and graph for a pipeline.
+   * DELETE /inferences/pathways/{pipelineId}
+   */
+  async deletePathways(pipelineId: string): Promise<{ status: string; pipelineId: string; deletedPathwaysCount: number }> {
+    const response = await authFetch(deletePathwaysEndpoint(pipelineId), {
+      method: "DELETE",
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to delete pathways: ${response.statusText}`);
+    }
+    return response.json();
   },
 };
 

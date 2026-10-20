@@ -78,6 +78,16 @@ export const INFERENCES_PATH = "inferences";
 export const PIPELINES_INFERENCE_CONFIG_ENDPOINT = `${CONFIG_AND_CONTROL}/${INFERENCES_PATH}`;
 export const INFERENCES_BIOLOGICAL_OBJECTS_PATH = "inferences/biological-objects";
 export const INFERENCES_BIOLOGICAL_OBJECTS_ENDPOINT = `${CONFIG_AND_CONTROL}/${INFERENCES_BIOLOGICAL_OBJECTS_PATH}`;
+
+/** Pathways Inference endpoints */
+export const PATHWAYS_RUN_PATH = "inferences/pathways/run";
+export const PATHWAYS_RUN_ENDPOINT = `${CONFIG_AND_CONTROL}/${PATHWAYS_RUN_PATH}`;
+export const pathwaysGraphEndpoint = (pipelineId: string) =>
+  `${CONFIG_AND_CONTROL}/inferences/pathways/${pipelineId}/graph`;
+export const pathwaysListEndpoint = (pipelineId: string) =>
+  `${CONFIG_AND_CONTROL}/inferences/pathways/${pipelineId}`;
+export const deletePathwaysEndpoint = (pipelineId: string) =>
+  `${CONFIG_AND_CONTROL}/inferences/pathways/${pipelineId}`;
 export const PIPELINES_SEARCH_CONFIG_ENDPOINT = `${PIPELINES_ENDPOINT}/search-config`;
 export const PIPELINES_LAUNCH_ENDPOINT = `${PIPELINES_ENDPOINT}/launch`;
 

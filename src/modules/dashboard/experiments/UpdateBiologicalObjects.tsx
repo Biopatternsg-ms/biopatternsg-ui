@@ -270,11 +270,20 @@ export const UpdateBiologicalObjects = () => {
         throw new Error(`Failed to save biological objects roles: ${response.statusText}`);
       }
 
+      try {
+        await experimentService.updatePipelineStep(pipeId, "UPDATE_BIOLOGICAL_OBJECTS", "COMPLETED", {
+          totalEntitiesEvaluated: String(objects.length),
+          statusMessage: "Biological roles confirmed by researcher",
+        });
+      } catch (stepErr) {
+        console.warn("Update step endpoint warning:", stepErr);
+      }
+
       setIsSubmitting(false);
       setSuccessModalData({
         title: "Biological Objects Roles Saved",
         message:
-          "The confirmed biological roles have been successfully synchronized to the Knowledge Base (kb_objects) and Inference configuration. The Update Biological Objects step is now complete.",
+          "The confirmed biological roles have been successfully synchronized. Pathway inference has been triggered automatically.",
         navigateOnClose: true,
       });
     } catch (err) {

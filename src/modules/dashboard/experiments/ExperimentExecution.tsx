@@ -192,6 +192,12 @@ const METRIC_LABELS: Record<string, string> = {
   meshIdsFound: "MESH IDS FOUND",
   rolesIdentified: "ROLES IDENTIFIED",
   entitiesWithActiveRoles: "ENTITIES WITH ACTIVE ROLES",
+  totalEntitiesEvaluated: "TOTAL ENTITIES EVALUATED",
+  pathwaysCount: "PATHWAYS INFERRED",
+  graphNodesCount: "GRAPH NODES",
+  graphEdgesCount: "GRAPH EDGES",
+  executionTimeMs: "INFERENCE TIME (MS)",
+  inferenceStatus: "INFERENCE STATUS",
   statusMessage: "STATUS",
 };
 
