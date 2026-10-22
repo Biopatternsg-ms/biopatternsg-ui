@@ -31,6 +31,7 @@ import {
   getNodeId,
   linkKey,
   colorForType,
+  buildTypeColorMap,
 } from "@/components/organisms/forceGraph/forceGraphTypes";
 import {
   getGraphProfile,
@@ -60,6 +61,8 @@ export interface ForceGraphViewerProps {
    * node spacing, link color and link width). Default: "black".
    */
   background?: GraphBackground;
+  /** Mapa tipo → color. Si se omite, se genera con buildTypeColorMap(nodes). */
+  typeColorMap?: Record<string, string>;
   /** Name of the selected node (controlled mode). `null` = none. Omit for uncontrolled. */
   selectedNodeName?: string | null;
   /** Fired whenever selection changes from inside the graph (node click → name, background click / panel close → null). */
@@ -108,6 +111,7 @@ const ForceGraphViewer: React.FC<ForceGraphViewerProps> = ({
   height = 650,
   linkDistance,
   background = DEFAULT_GRAPH_BACKGROUND,
+  typeColorMap,
   selectedNodeName,
   onSelectedNodeChange,
 }) => {
@@ -119,6 +123,11 @@ const ForceGraphViewer: React.FC<ForceGraphViewerProps> = ({
       : { ...base, spacing: { ...base.spacing, linkDistance } };
   }, [background, linkDistance]);
 
+  const colorMap = useMemo(
+    () => typeColorMap ?? buildTypeColorMap(inputNodes),
+    [typeColorMap, inputNodes]
+  );
+
   /* ── Transform & deduplicate input → internal data ─────────────────────── */
   const graphData: ForceGraphData = useMemo(() => {
     // Deduplicate nodes by name
@@ -129,7 +138,7 @@ const ForceGraphViewer: React.FC<ForceGraphViewerProps> = ({
           id: n.name,
           name: n.name,
           type: n.type,
-          color: colorForType(n.type),
+          color: colorForType(n.type, colorMap),
         });
       }
     }
@@ -143,7 +152,7 @@ const ForceGraphViewer: React.FC<ForceGraphViewerProps> = ({
     }));
 
     return { nodes, links };
-  }, [inputNodes, inputLinks]);
+  }, [inputNodes, inputLinks, colorMap]);
 
   /* ── Interaction state ──────────────────────────────────────────────────── */
   const [internalSelectedName, setInternalSelectedName] = useState<string | null>(null);

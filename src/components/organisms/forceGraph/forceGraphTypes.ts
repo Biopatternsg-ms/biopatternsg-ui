@@ -85,19 +85,34 @@ export interface ForceGraphData {
    COLOR PALETTE — Biological type → color mapping
    ───────────────────────────────────────────────────────────────────────────── */
 
-/** Map from biological node type to display color. */
-export const TYPE_COLOR_MAP: Record<string, string> = {
-  "Protein":          "#0066ff",
-  "Small Molecule":   "#ff6b35",
-  "Second Messenger": "#10b981",
-  "Gene":             "#f59e0b",
-  "RNA":              "#ec4899",
-  "Lipid":            "#8b5cf6",
-  "Protein Complex":  "#06b6d4",
-};
-
 /** Fallback color for unknown types. */
 export const DEFAULT_NODE_COLOR = "#94a3b8";
+
+/** Fixed palette of 8 colors assigned dynamically to node types (alphabetical order). */
+export const TYPE_COLOR_PALETTE: readonly string[] = [
+  "#0066ff",
+  "#ff6b35",
+  "#10b981",
+  "#f59e0b",
+  "#ec4899",
+  "#8b5cf6",
+  "#06b6d4",
+  "#15363aff",
+];
+
+/**
+ * Build a dynamic type → color map from the unique `type` values of the given nodes.
+ * Types are sorted alphabetically and each one receives the palette color at its index.
+ * At most 8 distinct types are expected; any extra type falls back to DEFAULT_NODE_COLOR.
+ */
+export function buildTypeColorMap(nodes: ReadonlyArray<{ type: string }>): Record<string, string> {
+  const uniqueTypes = Array.from(new Set(nodes.map((n) => n.type))).sort((a, b) =>
+    a.localeCompare(b),
+  );
+  return Object.fromEntries(
+    uniqueTypes.map((type, index) => [type, TYPE_COLOR_PALETTE[index] ?? DEFAULT_NODE_COLOR]),
+  );
+}
 
 /**
  * Highlight color for selected/active elements.
@@ -123,7 +138,7 @@ export function linkKey(link: GraphLink): string {
   return `${getNodeId(link.source)}__${getNodeId(link.target)}__${link.interaction}`;
 }
 
-/** Resolve node color from type. */
-export function colorForType(type: string): string {
-  return TYPE_COLOR_MAP[type] ?? DEFAULT_NODE_COLOR;
+/** Resolve node color from type using the given dynamic color map. */
+export function colorForType(type: string, colorMap: Record<string, string>): string {
+  return colorMap[type] ?? DEFAULT_NODE_COLOR;
 }
