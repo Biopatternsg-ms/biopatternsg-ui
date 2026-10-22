@@ -47,11 +47,12 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/results-graph" element={<ResultsGraph />} />
         <Route element={<PublicRoute />}>
           <Route path="/" element={<Landing />} />
           {/* <Route path="/register" element={<Register />} /> */}
           <Route path="/recovery-password" element={<RecoveryPassword />} />
-          <Route path="/results-graph" element={<ResultsGraph />} />
+
         </Route>
 
         <Route element={<ProtectedRoute />}>

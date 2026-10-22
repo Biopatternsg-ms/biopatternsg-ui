@@ -100,138 +100,73 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Header } from "@/components/organisms/Header";
 import { Footer } from "@/components/organisms/Footer";
 import { ForceGraphViewer } from "@/components/organisms/forceGraph/ForceGraphViewer";
 import { NodeSearchSelect } from "@/components/molecules/NodeSearchSelect";
+import { GraphDataUploadModal } from "@/components/molecules/GraphDataUploadModal";
 import type {
   GraphNodeInput,
   GraphLinkInput,
 } from "@/components/organisms/forceGraph/forceGraphTypes";
 import { buildTypeColorMap } from "@/components/organisms/forceGraph/forceGraphTypes";
 import type { GraphBackground } from "@/components/organisms/forceGraph/forceGraphProfiles";
+import { filterLinksByValidNodes } from "@/utils/graphDataParser";
 
-/** Opciones del selector de fondo (demo). */
+export interface ResultsGraphLocationState {
+  title?: string;
+  description?: string;
+  nodes?: GraphNodeInput[];
+  links?: GraphLinkInput[];
+}
+
+const DEFAULT_TITLE = "Experiment title";
+const DEFAULT_DESCRIPTION =
+  "Description or relevant information you would like to share about the experiment.";
+
+/** Background selector options. */
 const BACKGROUND_OPTIONS: { value: GraphBackground; label: string; swatch: string }[] = [
-  { value: "black", label: "Negro", swatch: "rgba(10,10,20,1)" },
-  { value: "white", label: "Blanco", swatch: "#ffffff" },
-  { value: "skyblue", label: "Azul cielo", swatch: "#87ceeb" },
+  { value: "black", label: "Black", swatch: "rgba(10,10,20,1)" },
+  { value: "white", label: "White", swatch: "#ffffff" },
+  { value: "skyblue", label: "Sky blue", swatch: "#87ceeb" },
 ];
-
-/* ═════════════════════════════════════════════════════════════════════════════
-   DATOS — Red de señalización celular (Epinephrine → ADRB2 → cascada)
-   ═════════════════════════════════════════════════════════════════════════════ */
-
-const exampleNodes: GraphNodeInput[] = [
-  { name: "Epinephrine", type: "Small Molecule" },
-  { name: "ADRB2", type: "Protein" },
-  { name: "Gs_alpha", type: "Protein" },
-  { name: "Adenylyl_Cyclase", type: "Protein" },
-  { name: "cAMP", type: "Second Messenger" },
-  { name: "PRKACA", type: "Protein" },
-  { name: "CREB1", type: "Protein" },
-  { name: "CBP", type: "Protein" },
-  { name: "CRE_Element", type: "Gene" },
-  { name: "c-Fos_mRNA", type: "RNA" },
-  { name: "FOS", type: "Protein" },
-  { name: "miR-155", type: "RNA" },
-  { name: "Gq_alpha", type: "Protein" },
-  { name: "PLCB1", type: "Protein" },
-  { name: "PIP2", type: "Lipid" },
-  { name: "IP3", type: "Second Messenger" },
-  { name: "DAG", type: "Lipid" },
-  { name: "ITPR1", type: "Protein" },
-  { name: "Calcium_Ion", type: "Small Molecule" },
-  { name: "PRKCA", type: "Protein" },
-  { name: "CALM1", type: "Protein" },
-  { name: "CAMK2A", type: "Protein" },
-  { name: "NFKB1", type: "Protein" },
-  { name: "RELA", type: "Protein" },
-  { name: "NF-kappa-B_Complex", type: "Protein Complex" },
-  { name: "NFKBIA", type: "Protein" },
-  { name: "EIF4E", type: "Protein" },
-  { name: "EIF4G1", type: "Protein" },
-  { name: "eIF4F_Complex", type: "Protein Complex" },
-  { name: "Cyclin_D1_mRNA", type: "RNA" },
-];
-
-const exampleLinks: GraphLinkInput[] = [
-  { object1: "Epinephrine", interaction: "agonism / ligand binding", object2: "ADRB2" },
-  { object1: "ADRB2", interaction: "GDP/GTP exchange activation", object2: "Gs_alpha" },
-  { object1: "Gs_alpha", interaction: "enzymatic activation", object2: "Adenylyl_Cyclase" },
-  { object1: "Adenylyl_Cyclase", interaction: "enzymatic synthesis", object2: "cAMP" },
-  { object1: "cAMP", interaction: "allosteric activation", object2: "PRKACA" },
-  { object1: "PRKACA", interaction: "regulatory phosphorylation", object2: "CREB1" },
-  { object1: "CREB1", interaction: "co-activator recruitment", object2: "CBP" },
-  { object1: "CREB1", interaction: "sequence-specific binding", object2: "CRE_Element" },
-  { object1: "CRE_Element", interaction: "transcriptional induction", object2: "c-Fos_mRNA" },
-  { object1: "c-Fos_mRNA", interaction: "translation template", object2: "FOS" },
-  { object1: "miR-155", interaction: "mRNA degradation / silencing", object2: "FOS" },
-  { object1: "ADRB2", interaction: "heterotrimeric coupling", object2: "Gq_alpha" },
-  { object1: "Gq_alpha", interaction: "enzymatic activation", object2: "PLCB1" },
-  { object1: "PLCB1", interaction: "enzymatic cleavage", object2: "PIP2" },
-  { object1: "PIP2", interaction: "metabolic precursor", object2: "IP3" },
-  { object1: "PIP2", interaction: "metabolic precursor", object2: "DAG" },
-  { object1: "IP3", interaction: "ligand-gated channel opening", object2: "ITPR1" },
-  { object1: "ITPR1", interaction: "intracellular release", object2: "Calcium_Ion" },
-  { object1: "Calcium_Ion", interaction: "co-factor activation", object2: "PRKCA" },
-  { object1: "DAG", interaction: "allosteric membrane recruitment", object2: "PRKCA" },
-  { object1: "Calcium_Ion", interaction: "stoichiometric binding", object2: "CALM1" },
-  { object1: "CALM1", interaction: "allosteric activation", object2: "CAMK2A" },
-  { object1: "PRKCA", interaction: "phosphorylation / activation", object2: "NFKBIA" },
-  { object1: "NFKB1", interaction: "subunit assembly", object2: "NF-kappa-B_Complex" },
-  { object1: "RELA", interaction: "subunit assembly", object2: "NF-kappa-B_Complex" },
-  { object1: "NFKBIA", interaction: "inhibitory complex binding", object2: "NF-kappa-B_Complex" },
-  { object1: "NF-kappa-B_Complex", interaction: "transcriptional induction", object2: "Cyclin_D1_mRNA" },
-  { object1: "PRKACA", interaction: "phosphorylation / dissociation", object2: "NFKBIA" },
-  { object1: "EIF4E", interaction: "multiprotein assembly", object2: "eIF4F_Complex" },
-  { object1: "EIF4G1", interaction: "scaffold assembly", object2: "eIF4F_Complex" },
-  { object1: "eIF4F_Complex", interaction: "5-prime cap recognition / translation", object2: "Cyclin_D1_mRNA" },
-  { object1: "PRKACA", interaction: "desensitization phosphorylation", object2: "ADRB2" },
-  { object1: "PRKCA", interaction: "desensitization phosphorylation", object2: "ADRB2" },
-  { object1: "CAMK2A", interaction: "regulatory phosphorylation", object2: "CREB1" },
-  { object1: "CBP", interaction: "histone acetyltransferase coactivation", object2: "RELA" },
-  { object1: "NF-kappa-B_Complex", interaction: "transcriptional induction", object2: "miR-155" },
-  { object1: "NF-kappa-B_Complex", interaction: "transcriptional feedback induction", object2: "NFKBIA" },
-  { object1: "Calcium_Ion", interaction: "allosteric regulation", object2: "Adenylyl_Cyclase" },
-  { object1: "CAMK2A", interaction: "regulatory phosphorylation", object2: "ITPR1" },
-  { object1: "PRKACA", interaction: "inhibitory phosphorylation", object2: "PLCB1" },
-  { object1: "PRKCA", interaction: "inhibitory phosphorylation", object2: "PLCB1" },
-  { object1: "CALM1", interaction: "allosteric calcium sensor binding", object2: "Adenylyl_Cyclase" },
-  { object1: "CALM1", interaction: "functional binding", object2: "ITPR1" },
-  { object1: "PRKACA", interaction: "regulatory phosphorylation", object2: "ITPR1" },
-  { object1: "FOS", interaction: "transcriptional activation", object2: "Cyclin_D1_mRNA" },
-  { object1: "FOS", interaction: "promoter binding", object2: "CRE_Element" },
-  { object1: "FOS", interaction: "transcriptional repression", object2: "ADRB2" },
-  { object1: "CREB1", interaction: "transcriptional induction", object2: "Cyclin_D1_mRNA" },
-  { object1: "PRKCA", interaction: "direct activation", object2: "RELA" },
-  { object1: "CAMK2A", interaction: "regulatory phosphorylation", object2: "NFKBIA" },
-  { object1: "PRKACA", interaction: "direct phosphorylation / activation", object2: "RELA" },
-  { object1: "PIP2", interaction: "membrane anchorage", object2: "ADRB2" },
-  { object1: "PIP2", interaction: "actin/membrane crosslinking", object2: "PLCB1" },
-  { object1: "eIF4F_Complex", interaction: "translational initiation", object2: "c-Fos_mRNA" },
-  { object1: "Calcium_Ion", interaction: "negative feedback inactivation", object2: "ITPR1" },
-  { object1: "NFKB1", interaction: "direct physical association", object2: "CBP" },
-  { object1: "PRKCA", interaction: "activation phosphorylation", object2: "EIF4G1" },
-  { object1: "miR-155", interaction: "translational repression", object2: "NFKB1" },
-  { object1: "miR-155", interaction: "post-transcriptional repression", object2: "CREB1" },
-  { object1: "Gs_alpha", interaction: "intrinsic GTPase deactivation", object2: "Adenylyl_Cyclase" },
-  { object1: "Gq_alpha", interaction: "GTP hydrolysis deactivation", object2: "PLCB1" },
-  { object1: "cAMP", interaction: "negative cooperativity dissociation", object2: "PRKACA" },
-];
-
-/** Dynamic type → color map derived from the example nodes (alphabetical order). */
-const exampleTypeColorMap = buildTypeColorMap(exampleNodes);
 
 /* ═════════════════════════════════════════════════════════════════════════════
    PAGE VIEW
    ═════════════════════════════════════════════════════════════════════════════ */
 
 const ResultsGraph = () => {
-  const legendEntries = Object.entries(exampleTypeColorMap);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const routeState = (location.state as ResultsGraphLocationState | null) ?? null;
+  const title = routeState?.title?.trim() ? routeState.title : DEFAULT_TITLE;
+  const description = routeState?.description?.trim()
+    ? routeState.description
+    : DEFAULT_DESCRIPTION;
+
+  const hasInitialData =
+    Array.isArray(routeState?.nodes) &&
+    routeState.nodes.length > 0 &&
+    Array.isArray(routeState?.links);
+
+  const [arrayNodes, setArrayNodes] = useState<GraphNodeInput[]>(() =>
+    hasInitialData && routeState?.nodes ? routeState.nodes : []
+  );
+  const [arrayLinks, setArrayLinks] = useState<GraphLinkInput[]>(() =>
+    hasInitialData && routeState?.nodes && routeState?.links
+      ? filterLinksByValidNodes(routeState.nodes, routeState.links)
+      : []
+  );
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState<boolean>(!hasInitialData);
+
   const [background, setBackground] = useState<GraphBackground>("black");
   const [selectedNodeName, setSelectedNodeName] = useState<string | null>(null);
+
+  const typeColorMap = useMemo(() => buildTypeColorMap(arrayNodes), [arrayNodes]);
+  const legendEntries = useMemo(() => Object.entries(typeColorMap), [typeColorMap]);
 
   return (
     <div className="bg-background text-on-background font-body min-h-screen">
@@ -241,16 +176,13 @@ const ResultsGraph = () => {
         {/* ── Page heading ────────────────────────────────────────────────────── */}
         <section className="px-8 pt-10 pb-6 max-w-screen-2xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary-container/15 text-primary rounded-full text-xs font-semibold tracking-wide uppercase mb-4">
-            Force-Directed Graph
+            EXPERIMENT GRAPH
           </div>
           <h1 className="text-4xl md:text-5xl font-headline font-bold text-on-surface tracking-tight mb-4">
-            Red de Señalización Celular
+            {title}
           </h1>
           <p className="text-lg text-on-surface-variant max-w-3xl leading-relaxed mb-4">
-            Cascada de señalización{" "}
-            <strong className="text-on-surface">Epinephrine → ADRB2</strong> con
-            vías Gs/cAMP/PKA, Gq/PLC/Calcio, y regulación NF-κB.
-            Los nodos se distribuyen automáticamente mediante simulación de fuerzas físicas.
+            {description}
           </p>
 
           {/* ── Color legend ──────────────────────────────────────────────────── */}
@@ -272,7 +204,7 @@ const ResultsGraph = () => {
           {/* ── Controls: Background selector & Node search ─────────────────── */}
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3 text-xs text-on-surface-variant">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold uppercase tracking-wide mr-1">Fondo:</span>
+              <span className="font-semibold uppercase tracking-wide mr-1">Background:</span>
               {BACKGROUND_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
@@ -295,10 +227,10 @@ const ResultsGraph = () => {
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-80">
-              <span className="font-semibold uppercase tracking-wide shrink-0">Nodo:</span>
+              <span className="font-semibold uppercase tracking-wide shrink-0">Node:</span>
               <NodeSearchSelect
-                nodes={exampleNodes}
-                typeColorMap={exampleTypeColorMap}
+                nodes={arrayNodes}
+                typeColorMap={typeColorMap}
                 value={selectedNodeName}
                 onChange={setSelectedNodeName}
                 className="flex-1"
@@ -308,9 +240,9 @@ const ResultsGraph = () => {
 
           <div className="rounded-2xl border border-outline-variant/15 shadow-ambient overflow-hidden">
             <ForceGraphViewer
-              nodes={exampleNodes}
-              links={exampleLinks}
-              typeColorMap={exampleTypeColorMap}
+              nodes={arrayNodes}
+              links={arrayLinks}
+              typeColorMap={typeColorMap}
               height={700}
               background={background}
               selectedNodeName={selectedNodeName}
@@ -321,6 +253,17 @@ const ResultsGraph = () => {
       </main>
 
       <Footer />
+
+      <GraphDataUploadModal
+        open={isUploadModalOpen}
+        onLoaded={({ nodes, links }) => {
+          setArrayNodes(nodes);
+          setArrayLinks(links);
+          setSelectedNodeName(null);
+          setIsUploadModalOpen(false);
+        }}
+        onCancel={() => navigate(-1)}
+      />
     </div>
   );
 };

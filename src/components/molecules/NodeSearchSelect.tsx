@@ -46,7 +46,7 @@ export interface NodeSearchSelectProps {
   value: string | null;
   /** Callback fired when a node is selected or cleared. */
   onChange: (name: string | null) => void;
-  /** Placeholder for search input. Default: "Buscar nodo...". */
+  /** Placeholder for search input. Default: "Search node...". */
   placeholder?: string;
   /** Extra class names for outer container. */
   className?: string;
@@ -66,7 +66,7 @@ const NodeSearchSelect: React.FC<NodeSearchSelectProps> = ({
   typeColorMap,
   value,
   onChange,
-  placeholder = "Buscar nodo...",
+  placeholder = "Search node...",
   className,
 }) => {
   const listboxId = useId();
@@ -253,7 +253,7 @@ const NodeSearchSelect: React.FC<NodeSearchSelectProps> = ({
             type="button"
             onClick={handleClear}
             className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer"
-            aria-label="Limpiar selección"
+            aria-label="Clear selection"
           >
             <X className="w-3.5 h-3.5 opacity-70" />
           </button>
@@ -265,7 +265,7 @@ const NodeSearchSelect: React.FC<NodeSearchSelectProps> = ({
           id={listboxId}
           ref={listRef}
           role="listbox"
-          aria-label="Nodos"
+          aria-label="Nodes"
           onMouseDown={(e) => e.preventDefault()}
           className="absolute left-0 right-0 top-full mt-1.5 z-40 max-h-72 overflow-y-auto bg-surface-card border border-outline-variant/20 rounded-xl shadow-lg p-1.5 focus:outline-none custom-scrollbar"
         >
@@ -310,7 +310,7 @@ const NodeSearchSelect: React.FC<NodeSearchSelectProps> = ({
               className="px-3 py-4 text-sm text-on-surface-variant text-center"
               role="presentation"
             >
-              Sin resultados
+              No results found
             </li>
           )}
         </ul>
