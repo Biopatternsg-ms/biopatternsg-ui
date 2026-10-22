@@ -25,7 +25,7 @@ import type {
 import {
   getNodeId,
   linkKey,
-  colorForType,
+  DEFAULT_NODE_COLOR,
 } from "@/components/organisms/forceGraph/forceGraphTypes";
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -75,9 +75,12 @@ function resolveLabel(ref: string | GraphNode, allNodes: GraphNode[]): string {
   return allNodes.find((n) => n.id === id)?.name ?? id;
 }
 
-function resolveType(ref: string | GraphNode, allNodes: GraphNode[]): string {
+function resolveColor(ref: string | GraphNode, allNodes: GraphNode[]): string {
+  if (typeof ref !== "string" && ref.color) {
+    return ref.color;
+  }
   const id = getNodeId(ref);
-  return allNodes.find((n) => n.id === id)?.type ?? "";
+  return allNodes.find((n) => n.id === id)?.color ?? DEFAULT_NODE_COLOR;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -102,7 +105,7 @@ const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
   onClose,
   isOpen,
 }) => {
-  const typeColor = colorForType(node.type);
+  const typeColor = node.color ?? DEFAULT_NODE_COLOR;
 
   return (
     <div
@@ -177,10 +180,9 @@ const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
               const otherLabel = isOutgoing
                 ? resolveLabel(link.target, allNodes)
                 : resolveLabel(link.source, allNodes);
-              const otherType = isOutgoing
-                ? resolveType(link.target, allNodes)
-                : resolveType(link.source, allNodes);
-              const otherColor = colorForType(otherType);
+              const otherColor = isOutgoing
+                ? resolveColor(link.target, allNodes)
+                : resolveColor(link.source, allNodes);
               const isActive = highlightedLinkKey === linkKey(link);
 
               return (

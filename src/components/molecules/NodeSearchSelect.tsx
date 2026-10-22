@@ -28,7 +28,10 @@ import React, {
 import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { GraphNodeInput } from "@/components/organisms/forceGraph/forceGraphTypes";
-import { colorForType } from "@/components/organisms/forceGraph/forceGraphTypes";
+import {
+  colorForType,
+  buildTypeColorMap,
+} from "@/components/organisms/forceGraph/forceGraphTypes";
 
 /* ─────────────────────────────────────────────────────────────────────────────
    PROPS
@@ -37,6 +40,8 @@ import { colorForType } from "@/components/organisms/forceGraph/forceGraphTypes"
 export interface NodeSearchSelectProps {
   /** Node definitions to pick from. */
   nodes: GraphNodeInput[];
+  /** Mapa opcional tipo → color. Si se omite, se genera con buildTypeColorMap(nodes). */
+  typeColorMap?: Record<string, string>;
   /** Selected node name (`null` = none). */
   value: string | null;
   /** Callback fired when a node is selected or cleared. */
@@ -58,6 +63,7 @@ export interface NodeSearchSelectProps {
  */
 const NodeSearchSelect: React.FC<NodeSearchSelectProps> = ({
   nodes,
+  typeColorMap,
   value,
   onChange,
   placeholder = "Buscar nodo...",
@@ -72,6 +78,11 @@ const NodeSearchSelect: React.FC<NodeSearchSelectProps> = ({
   const [isTyping, setIsTyping] = useState(false);
   const [typedQuery, setTypedQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(-1);
+
+  const colorMap = useMemo(
+    () => typeColorMap ?? buildTypeColorMap(nodes),
+    [typeColorMap, nodes]
+  );
 
   // Sync internal state when controlled value changes from outside
   const [prevValue, setPrevValue] = useState(value);
@@ -283,7 +294,7 @@ const NodeSearchSelect: React.FC<NodeSearchSelectProps> = ({
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span
                       className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: colorForType(node.type) }}
+                      style={{ backgroundColor: colorForType(node.type, colorMap) }}
                       aria-hidden="true"
                     />
                     <span className="truncate font-medium">{node.name}</span>
