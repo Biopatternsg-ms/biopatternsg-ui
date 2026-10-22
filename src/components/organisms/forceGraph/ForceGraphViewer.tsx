@@ -295,7 +295,7 @@ const ForceGraphViewer: React.FC<ForceGraphViewerProps> = ({
           highlightedLinkKey={highlightedLinkKey}
           onConnectionClick={handleConnectionClick}
           onClose={handlePanelClose}
-          isOpen={selectedNode != null}
+          isOpen={true}
         />
       )}
     </div>
