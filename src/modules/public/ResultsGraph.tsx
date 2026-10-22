@@ -52,7 +52,7 @@
  *
  * ## Comportamiento automático
  *
- * - Los nodos se colorean según su `type` (ver TYPE_COLOR_MAP en forceGraphTypes.ts).
+ * - Los nodos se colorean según su `type`: los tipos únicos se ordenan alfabéticamente y reciben un color de TYPE_COLOR_PALETTE (ver buildTypeColorMap en forceGraphTypes.ts). Opcionalmente puede pasarse `typeColorMap` para compartir el mismo mapa con otros componentes.
  * - Nodos con el mismo `name` se deduplicatan automáticamente.
  * - d3-force asigna posiciones automáticamente (sin coordenadas).
  * - Cada enlace tiene una flecha direccional en el extremo destino.
@@ -109,7 +109,7 @@ import type {
   GraphNodeInput,
   GraphLinkInput,
 } from "@/components/organisms/forceGraph/forceGraphTypes";
-import { TYPE_COLOR_MAP } from "@/components/organisms/forceGraph/forceGraphTypes";
+import { buildTypeColorMap } from "@/components/organisms/forceGraph/forceGraphTypes";
 import type { GraphBackground } from "@/components/organisms/forceGraph/forceGraphProfiles";
 
 /** Opciones del selector de fondo (demo). */
@@ -221,12 +221,15 @@ const exampleLinks: GraphLinkInput[] = [
   { object1: "cAMP", interaction: "negative cooperativity dissociation", object2: "PRKACA" },
 ];
 
+/** Dynamic type → color map derived from the example nodes (alphabetical order). */
+const exampleTypeColorMap = buildTypeColorMap(exampleNodes);
+
 /* ═════════════════════════════════════════════════════════════════════════════
    PAGE VIEW
    ═════════════════════════════════════════════════════════════════════════════ */
 
 const ResultsGraph = () => {
-  const legendEntries = Object.entries(TYPE_COLOR_MAP);
+  const legendEntries = Object.entries(exampleTypeColorMap);
   const [background, setBackground] = useState<GraphBackground>("black");
   const [selectedNodeName, setSelectedNodeName] = useState<string | null>(null);
 
@@ -295,6 +298,7 @@ const ResultsGraph = () => {
               <span className="font-semibold uppercase tracking-wide shrink-0">Nodo:</span>
               <NodeSearchSelect
                 nodes={exampleNodes}
+                typeColorMap={exampleTypeColorMap}
                 value={selectedNodeName}
                 onChange={setSelectedNodeName}
                 className="flex-1"
@@ -306,6 +310,7 @@ const ResultsGraph = () => {
             <ForceGraphViewer
               nodes={exampleNodes}
               links={exampleLinks}
+              typeColorMap={exampleTypeColorMap}
               height={700}
               background={background}
               selectedNodeName={selectedNodeName}
