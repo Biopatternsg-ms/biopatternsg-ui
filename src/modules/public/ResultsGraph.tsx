@@ -225,7 +225,7 @@ const exampleLinks: GraphLinkInput[] = [
    PAGE VIEW
    ═════════════════════════════════════════════════════════════════════════════ */
 
-const GrafoExample = () => {
+const ResultsGraph = () => {
   const legendEntries = Object.entries(TYPE_COLOR_MAP);
   const [background, setBackground] = useState<GraphBackground>("black");
   const [selectedNodeName, setSelectedNodeName] = useState<string | null>(null);
@@ -320,4 +320,4 @@ const GrafoExample = () => {
   );
 };
 
-export default GrafoExample;
+export default ResultsGraph;
