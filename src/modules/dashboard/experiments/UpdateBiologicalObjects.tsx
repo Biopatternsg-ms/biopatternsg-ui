@@ -362,7 +362,7 @@ export const UpdateBiologicalObjects = () => {
         backdrop
         size="lg"
         variant="primary"
-        label="Loading biological objects..."
+        label="Loading object roles..."
         sublabel="Fetching pipeline inferences and biological entities"
       />
     );
@@ -375,7 +375,7 @@ export const UpdateBiologicalObjects = () => {
         networkId={networkId}
         experimentId={experimentId}
         experimentName={experimentName}
-        stepTitle="Update Biological Objects"
+        stepTitle="Update Object Roles"
         stepDescription="Review and curate biological roles and biotypes resulting from the restriction criteria before completing this step."
         icon={Dna}
         extraBadges={
@@ -1037,7 +1037,7 @@ export const UpdateBiologicalObjects = () => {
             <p className="text-xs text-on-surface-variant leading-relaxed">
               Saving will persist the curated roles list into the <code className="text-primary font-mono bg-primary/5 px-1 py-0.5 rounded">roles</code> attribute
               of MongoDB collection <code className="text-primary font-mono bg-primary/5 px-1 py-0.5 rounded">kb_objects</code>, update inference configuration,
-              and mark step <strong>Update Biological Objects</strong> as <strong>COMPLETED</strong>.
+              and mark step <strong>Update Object Roles</strong> as <strong>COMPLETED</strong>.
             </p>
 
             <div className="flex items-center justify-end gap-3 pt-2">

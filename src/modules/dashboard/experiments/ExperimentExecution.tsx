@@ -106,20 +106,35 @@ const MANUAL_STEP_CONFIG: Record<string, ManualStepDefinition> = {
     buttonIcon: Activity,
   },
 
-  // Update Biological Objects
+  // Update Object Roles
   "step-update_biological_objects": {
     routeSegment: "biological-objects",
-    buttonLabel: "Update Biological Objects",
+    buttonLabel: "Update Object Roles",
+    buttonIcon: Dna,
+  },
+  "step-update_object_roles": {
+    routeSegment: "biological-objects",
+    buttonLabel: "Update Object Roles",
     buttonIcon: Dna,
   },
   "UPDATE_BIOLOGICAL_OBJECTS": {
     routeSegment: "biological-objects",
-    buttonLabel: "Update Biological Objects",
+    buttonLabel: "Update Object Roles",
+    buttonIcon: Dna,
+  },
+  "UPDATE_OBJECT_ROLES": {
+    routeSegment: "biological-objects",
+    buttonLabel: "Update Object Roles",
     buttonIcon: Dna,
   },
   "Update Biological Objects": {
     routeSegment: "biological-objects",
-    buttonLabel: "Update Biological Objects",
+    buttonLabel: "Update Object Roles",
+    buttonIcon: Dna,
+  },
+  "Update Object Roles": {
+    routeSegment: "biological-objects",
+    buttonLabel: "Update Object Roles",
     buttonIcon: Dna,
   },
 
@@ -402,6 +417,14 @@ const STAGE_DEFINITIONS = [
       "FIND_ROLES",
       "Find Biological Roles",
       "find_roles",
+      "step-update_biological_objects",
+      "UPDATE_BIOLOGICAL_OBJECTS",
+      "Update Biological Objects",
+      "update_biological_objects",
+      "step-update_object_roles",
+      "UPDATE_OBJECT_ROLES",
+      "Update Object Roles",
+      "update_object_roles",
       "step-select_closing_objects",
       "SELECT_CLOSING_OBJECTS",
       "Select Closing Objects",

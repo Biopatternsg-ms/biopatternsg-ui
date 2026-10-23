@@ -134,10 +134,35 @@ export default function ConfigureInferences() {
         restrictionLevel,
       });
 
+      // Delete prior pathways to prevent stale results
+      try {
+        await experimentService.deletePathways(pipeId);
+      } catch (pathwayErr) {
+        console.warn("Could not delete prior pathways (might not exist yet):", pathwayErr);
+      }
+
+      // Reset subsequent pipeline steps to PENDING in config-and-control
+      try {
+        await experimentService.updatePipelineStep(pipeId, "FIND_ROLES", "PENDING", {
+          statusMessage: "Awaiting execution with updated restriction level",
+        });
+        await experimentService.updatePipelineStep(pipeId, "UPDATE_BIOLOGICAL_OBJECTS", "PENDING", {
+          statusMessage: "Awaiting role confirmation",
+        });
+        await experimentService.updatePipelineStep(pipeId, "SELECT_CLOSING_OBJECTS", "PENDING", {
+          statusMessage: "Awaiting closing objects selection",
+        });
+        await experimentService.updatePipelineStep(pipeId, "INFER_PATHWAYS", "PENDING", {
+          statusMessage: "Awaiting pathway inference",
+        });
+      } catch (stepResetErr) {
+        console.warn("Downstream steps reset warning:", stepResetErr);
+      }
+
       setIsSubmitting(false);
       setSuccessModalData({
         title: "Inferences Configured Successfully",
-        message: `Inference restriction strategy set to ${restrictionLevel.replace("_", " ")}.`,
+        message: `Inference restriction strategy set to ${restrictionLevel.replace("_", " ")}. Subsequent steps have been reset to run with the new criteria.`,
       });
     } catch (err) {
       console.error("Error saving inference configuration:", err);

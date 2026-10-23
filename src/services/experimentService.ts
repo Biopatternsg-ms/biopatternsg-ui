@@ -435,13 +435,17 @@ export const experimentService = {
           }
         }
 
-        // 4. Ensure "Update Biological Objects" manual step is present right after "Find Biological Roles"
+        // 4. Ensure "Update Object Roles" manual step is present right after "Find Biological Roles"
         const hasUpdateBiologicalObjects = steps.some(
           (s: PipelineStepExecution) =>
             s.id === "step-update_biological_objects" ||
+            s.id === "step-update_object_roles" ||
             s.id === "UPDATE_BIOLOGICAL_OBJECTS" ||
+            s.id === "UPDATE_OBJECT_ROLES" ||
             s.name === "Update Biological Objects" ||
-            (s as { step?: string }).step === "update_biological_objects"
+            s.name === "Update Object Roles" ||
+            (s as { step?: string }).step === "update_biological_objects" ||
+            (s as { step?: string }).step === "update_object_roles"
         );
 
         if (!hasUpdateBiologicalObjects) {
@@ -455,7 +459,7 @@ export const experimentService = {
 
           const updateBioStep: PipelineStepExecution = {
             id: "step-update_biological_objects",
-            name: "Update Biological Objects",
+            name: "Update Object Roles",
             status: "PENDING",
             duration: "Manual",
             outputText: "Manual Action Required",
@@ -474,7 +478,7 @@ export const experimentService = {
           }
         }
 
-        // 5. Ensure "Select Closing Objects" manual step is present right after "Update Biological Objects"
+        // 5. Ensure "Select Closing Objects" manual step is present right after "Update Object Roles"
         const hasSelectClosingObjects = steps.some(
           (s: PipelineStepExecution) =>
             s.id === "step-select_closing_objects" ||
@@ -487,9 +491,13 @@ export const experimentService = {
           const updateBioIdx = steps.findIndex(
             (s: PipelineStepExecution) =>
               s.id === "step-update_biological_objects" ||
+              s.id === "step-update_object_roles" ||
               s.id === "UPDATE_BIOLOGICAL_OBJECTS" ||
+              s.id === "UPDATE_OBJECT_ROLES" ||
               s.name === "Update Biological Objects" ||
-              (s as { step?: string }).step === "update_biological_objects"
+              s.name === "Update Object Roles" ||
+              (s as { step?: string }).step === "update_biological_objects" ||
+              (s as { step?: string }).step === "update_object_roles"
           );
 
           const selectClosingStep: PipelineStepExecution = {
@@ -1004,7 +1012,7 @@ export function getMockExecutionData(experimentId: string, experimentName = "Pro
       },
       {
         id: "step-update_biological_objects",
-        name: "Update Biological Objects",
+        name: "Update Object Roles",
         status: "PENDING",
         duration: "Manual",
         outputText: "Manual Action Required",
