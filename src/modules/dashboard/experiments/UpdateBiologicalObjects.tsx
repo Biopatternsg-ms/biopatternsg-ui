@@ -713,12 +713,18 @@ export const UpdateBiologicalObjects = () => {
                                 <SynonymChip key={synIdx} synonym={syn} />
                               ))}
                               {synonymsList.length > 3 && (
-                                <span
-                                  className="inline-flex items-center bg-primary/5 text-primary border border-primary/20 px-2 py-1 rounded-lg text-[10px] font-mono font-semibold cursor-help"
-                                  title={synonymsList.slice(3).join(", ")}
-                                >
-                                  +{synonymsList.length - 3} more
-                                </span>
+                                <div className="relative group/chip inline-flex">
+                                  <span
+                                    className="inline-flex items-center bg-primary/5 hover:bg-primary/10 text-primary border border-primary/20 px-2 py-1 rounded-lg text-[10px] font-mono font-semibold cursor-help transition-all shadow-2xs whitespace-nowrap"
+                                    title={synonymsList.slice(3).join(", ")}
+                                  >
+                                    +{synonymsList.length - 3} more
+                                  </span>
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1 bg-inverse-surface text-inverse-on-surface text-[10px] font-mono font-medium rounded-lg shadow-xl max-w-xs truncate z-50 invisible opacity-0 group-hover/chip:visible group-hover/chip:opacity-100 transition-all duration-150 pointer-events-none">
+                                    {synonymsList.slice(3).join(", ")}
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-inverse-surface" />
+                                  </div>
+                                </div>
                               )}
                             </div>
                           ) : (
