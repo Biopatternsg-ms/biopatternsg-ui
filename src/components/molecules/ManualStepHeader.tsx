@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-import React from "react";
+import type { ReactNode } from "react";
 import { ArrowLeft, type LucideIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Breadcrumb } from "@/components/atoms/Breadcrumb";
@@ -33,12 +33,12 @@ export interface ManualStepHeaderProps {
   stepDescription: string;
   badgeLabel?: string;
   badgeVariant?: "inProgress" | "pending" | "completed" | "primary";
-  extraBadges?: React.ReactNode;
+  extraBadges?: ReactNode;
   icon: LucideIcon;
   backHref?: string;
   backLabel?: string;
   onBack?: () => void;
-  actions?: React.ReactNode;
+  actions?: ReactNode;
   className?: string;
 }
 

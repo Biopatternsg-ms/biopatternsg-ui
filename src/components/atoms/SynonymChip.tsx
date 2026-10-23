@@ -17,7 +17,6 @@
  * limitations under the License.
  */
 
-import React from "react";
 import { SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 

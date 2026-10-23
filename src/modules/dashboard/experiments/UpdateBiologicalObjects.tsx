@@ -49,7 +49,6 @@ import type {
 } from "@/services/models/Experiment";
 import { SuccessModal } from "@/components/molecules/SuccessModal";
 import {
-  CATEGORY_STYLES,
   CATEGORIES_LIST,
 } from "@/config/biologicalCategories";
 import { cn } from "@/lib/utils";
@@ -575,7 +574,6 @@ export const UpdateBiologicalObjects = () => {
           {CATEGORIES_LIST.map((cat) => {
             const count = objects.filter((o) => o.roles.includes(cat.key)).length;
             const isSelected = selectedCategory === cat.key;
-            const style = CATEGORY_STYLES[cat.key];
 
             return (
               <button

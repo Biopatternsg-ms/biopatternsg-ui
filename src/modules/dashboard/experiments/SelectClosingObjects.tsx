@@ -20,14 +20,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
   Search,
   X,
   Loader2,
   RotateCcw,
   SlidersHorizontal,
   Target,
-  Layers,
   Check,
   AlertTriangle,
   Info,
@@ -37,11 +35,9 @@ import {
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
 import { Button } from "@/components/atoms/Button";
-import { Breadcrumb } from "@/components/atoms/Breadcrumb";
 import { Badge } from "@/components/atoms/Badge";
 import { Input } from "@/components/atoms/Input";
 import { ManualStepHeader } from "@/components/molecules/ManualStepHeader";
-import { StepStatsBar } from "@/components/molecules/StepStatsBar";
 import { experimentService } from "@/services/experimentService";
 import type { BiologicalObjectItem } from "@/services/models/Experiment";
 import { SuccessModal } from "@/components/molecules/SuccessModal";

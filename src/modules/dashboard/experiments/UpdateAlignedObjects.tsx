@@ -43,7 +43,6 @@ import {
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
 import { Button } from "@/components/atoms/Button";
-import { Breadcrumb } from "@/components/atoms/Breadcrumb";
 import { Badge } from "@/components/atoms/Badge";
 import { Input } from "@/components/atoms/Input";
 import { SynonymChip } from "@/components/atoms/SynonymChip";

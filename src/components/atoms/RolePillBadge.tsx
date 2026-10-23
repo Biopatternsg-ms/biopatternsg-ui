@@ -17,7 +17,6 @@
  * limitations under the License.
  */
 
-import React from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CATEGORY_STYLES } from "@/config/biologicalCategories";

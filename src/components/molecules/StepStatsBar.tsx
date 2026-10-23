@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-import React from "react";
+import { Fragment } from "react";
 import { cn } from "@/lib/utils";
 
 export interface StepStatItem {
@@ -42,7 +42,7 @@ export function StepStatsBar({ stats, className }: StepStatsBarProps) {
       )}
     >
       {stats.map((stat, idx) => (
-        <React.Fragment key={stat.label}>
+        <Fragment key={stat.label}>
           {idx > 0 && <span className="text-outline-variant/40">•</span>}
           <span>
             {stat.label}:{" "}
@@ -50,7 +50,7 @@ export function StepStatsBar({ stats, className }: StepStatsBarProps) {
               {stat.value}
             </strong>
           </span>
-        </React.Fragment>
+        </Fragment>
       ))}
     </div>
   );
