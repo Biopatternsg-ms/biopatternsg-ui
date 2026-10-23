@@ -40,6 +40,8 @@ import { Button } from "@/components/atoms/Button";
 import { Breadcrumb } from "@/components/atoms/Breadcrumb";
 import { Badge } from "@/components/atoms/Badge";
 import { Input } from "@/components/atoms/Input";
+import { ManualStepHeader } from "@/components/molecules/ManualStepHeader";
+import { StepStatsBar } from "@/components/molecules/StepStatsBar";
 import { experimentService } from "@/services/experimentService";
 import type { BiologicalObjectItem } from "@/services/models/Experiment";
 import { SuccessModal } from "@/components/molecules/SuccessModal";
@@ -249,108 +251,76 @@ export const SelectClosingObjects = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20">
-      {/* Top Header & Breadcrumb */}
-      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <Breadcrumb
-                items={[
-                  { label: "Experiments", href: `/dashboard/experiments/${networkId || ""}` },
-                  {
-                    label: experimentName,
-                    href: `/dashboard/experiments/${networkId || ""}/execution/${experimentId || ""}`,
-                  },
-                  { label: "Select Closing Objects" },
-                ]}
-              />
-              <div className="flex items-center gap-3 mt-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    navigate(
-                      `/dashboard/experiments/${networkId || ""}/execution/${experimentId || ""}`
-                    )
-                  }
-                  className="mr-1 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white font-semibold shadow-xs"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-1 text-slate-600 dark:text-slate-300" />
-                  Back to Execution
-                </Button>
-                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                  <Target className="w-6 h-6" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    Select Closing Objects
-                    {selectedKeys.size > 0 ? (
-                      <Badge variant="success" className="text-xs">
-                        {selectedKeys.size} Selected
-                      </Badge>
-                    ) : (
-                      <Badge variant="pending" className="text-xs">
-                        Any Terminal Entity (0 Selected)
-                      </Badge>
-                    )}
-                  </h1>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Select candidate biological objects where inferred pathways must terminate.
-                  </p>
-                </div>
-              </div>
-            </div>
+    <div className="flex flex-col gap-6 animate-fade-in pb-12">
+      {/* Top Header & Breadcrumb with Reusable Molecule */}
+      <ManualStepHeader
+        networkId={networkId}
+        experimentId={experimentId}
+        experimentName={experimentName}
+        stepTitle="Select Closing Objects"
+        stepDescription="Select candidate biological objects where inferred pathways must terminate."
+        icon={Target}
+        extraBadges={
+          selectedKeys.size > 0 ? (
+            <Badge variant="completed" className="text-[9px] px-2 py-0.5 font-bold uppercase tracking-wider">
+              {selectedKeys.size} Selected
+            </Badge>
+          ) : (
+            <Badge variant="pending" className="text-[9px] px-2 py-0.5 font-bold uppercase tracking-wider">
+              Any Terminal Entity (0 Selected)
+            </Badge>
+          )
+        }
+        actions={
+          <>
+            <Button
+              variant="ghost"
+              size="md"
+              onClick={() =>
+                navigate(
+                  `/dashboard/experiments/${networkId || ""}/execution/${experimentId || ""}`
+                )
+              }
+              className="gap-2 hover:bg-surface-container-high text-on-surface-variant font-medium text-xs rounded-xl border border-outline-variant/20"
+              title="Cancel and return to Pipeline Sequence Execution view"
+            >
+              <X className="w-4 h-4" />
+              Cancel
+            </Button>
 
-            {/* Top Quick Actions */}
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/50 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600">
-                <Layers className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Candidates:</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">
-                  {candidates.length}
-                </span>
-                <span className="text-slate-400">•</span>
-                <span>Selected:</span>
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                  {selectedKeys.size}
-                </span>
-              </div>
-
-              {hasChanges && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleResetToInitial}
-                  className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 font-semibold shadow-xs"
-                  title="Discard unsaved selection changes"
-                >
-                  <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-slate-500 dark:text-slate-400" />
-                  Discard Changes
-                </Button>
-              )}
-
+            {hasChanges && (
               <Button
-                variant="primary"
-                size="sm"
-                onClick={() => setIsConfirmModalOpen(true)}
-                disabled={isSubmitting || candidates.length === 0}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
+                variant="ghost"
+                size="md"
+                onClick={handleResetToInitial}
+                className="gap-2 font-bold text-xs border border-outline-variant/30 hover:bg-surface-container-high text-on-surface rounded-xl"
+                title="Discard unsaved selection changes"
               >
-                {isSubmitting ? (
-                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
-                ) : (
-                  <Sparkles className="w-4 h-4 mr-1.5" />
-                )}
-                Save & Run Inferences
+                <RotateCcw className="w-4 h-4" />
+                Discard Changes
               </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+            )}
+
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => setIsConfirmModalOpen(true)}
+              disabled={isSubmitting || candidates.length === 0}
+              className="gap-2 shadow-primary-glow font-bold"
+            >
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
+              Save & Run Inferences
+            </Button>
+          </>
+        }
+      />
 
       {/* Main Content Area */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+      <div className="space-y-6">
         {/* Error Banner */}
         {errorMessage && (
           <div className="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 flex items-center justify-between animate-in fade-in">

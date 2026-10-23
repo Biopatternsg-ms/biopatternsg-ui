@@ -20,7 +20,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
   Search,
   CheckCircle2,
   X,
@@ -29,18 +28,20 @@ import {
   RotateCcw,
   SlidersHorizontal,
   Dna,
-  Save,
-  Layers,
   Check,
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
+  Edit2,
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
 import { Button } from "@/components/atoms/Button";
-import { Breadcrumb } from "@/components/atoms/Breadcrumb";
 import { Badge } from "@/components/atoms/Badge";
 import { Input } from "@/components/atoms/Input";
+import { SynonymChip } from "@/components/atoms/SynonymChip";
+import { RolePillBadge } from "@/components/atoms/RolePillBadge";
+import { ManualStepHeader } from "@/components/molecules/ManualStepHeader";
+import { StepStatsBar } from "@/components/molecules/StepStatsBar";
 import { experimentService } from "@/services/experimentService";
 import type {
   BiologicalObjectItem,
@@ -51,6 +52,7 @@ import {
   CATEGORY_STYLES,
   CATEGORIES_LIST,
 } from "@/config/biologicalCategories";
+import { cn } from "@/lib/utils";
 
 interface EditableBiologicalObject extends BiologicalObjectItem {
   id: string;
@@ -355,151 +357,111 @@ export const UpdateBiologicalObjects = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20">
-      {/* Top Header & Breadcrumb */}
-      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <Breadcrumb
-                items={[
-                  { label: "Experiments", href: `/dashboard/experiments/${networkId || ""}` },
-                  {
-                    label: experimentName,
-                    href: `/dashboard/experiments/${networkId || ""}/execution/${experimentId || ""}`,
-                  },
-                  { label: "Update Biological Objects" },
-                ]}
-              />
-              <div className="flex items-center gap-3 mt-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    navigate(
-                      `/dashboard/experiments/${networkId || ""}/execution/${experimentId || ""}`
-                    )
-                  }
-                  className="mr-1 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white font-semibold shadow-xs"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-1 text-slate-600 dark:text-slate-300" />
-                  Back to Execution
-                </Button>
-                <div className="p-2 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400">
-                  <Dna className="w-6 h-6" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    Update Biological Objects
-                    {modifiedCount > 0 && (
-                      <Badge variant="pending" className="text-xs">
-                        {modifiedCount} Modified
-                      </Badge>
-                    )}
-                  </h1>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Review and curate biological roles and biotypes resulting from the restriction criteria.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick stats & Actions */}
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700/50 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600">
-                <Layers className="w-3.5 h-3.5 text-teal-500" />
-                <span>Restriction:</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">
-                  {formatRestrictionLabel(restrictionLevel)}
-                </span>
-                <span className="text-slate-400">•</span>
-                <span>Entities:</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">
-                  {objects.length}
-                </span>
-                <span className="text-slate-400">•</span>
-                <span>Active Roles:</span>
-                <span className="font-semibold text-teal-600 dark:text-teal-400">
-                  {totalAssignedRoles}
-                </span>
-              </div>
-
-              {modifiedCount > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleResetAll}
-                  className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 font-semibold shadow-xs"
-                  title="Discard unsaved local changes"
-                >
-                  <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-slate-500 dark:text-slate-400" />
-                  Discard Changes
-                </Button>
-              )}
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsResetConfirmModalOpen(true)}
-                disabled={isSubmitting || isResetting || objects.length === 0}
-                className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 font-semibold shadow-xs"
-                title="Reset all biological roles to original state derived from Biotypes and MeSH"
-              >
-                {isResetting ? (
-                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                ) : (
-                  <RotateCcw className="w-3.5 h-3.5 mr-1.5 text-slate-500 dark:text-slate-400" />
-                )}
-                Reset Roles
-              </Button>
-
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => setIsConfirmModalOpen(true)}
-                disabled={isSubmitting || isResetting || objects.length === 0}
-                className="bg-teal-600 hover:bg-teal-700 text-white shadow-xs"
-              >
-                {isSubmitting ? (
-                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4 mr-1.5" />
-                )}
-                Confirm & Save Roles
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Area */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        {/* Error Banner */}
-        {errorMessage && (
-          <div className="mb-4 p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 flex items-center justify-between animate-in fade-in">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0" />
-              <div className="text-xs">
-                <span className="font-semibold block">Failed to save biological roles</span>
-                <span>{errorMessage}</span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setErrorMessage(null)}
-              className="text-rose-500 hover:text-rose-700 dark:hover:text-rose-200 p-1"
+    <div className="flex flex-col gap-6 animate-fade-in pb-12">
+      {/* Top Header & Breadcrumb with Reusable Molecule */}
+      <ManualStepHeader
+        networkId={networkId}
+        experimentId={experimentId}
+        experimentName={experimentName}
+        stepTitle="Update Biological Objects"
+        stepDescription="Review and curate biological roles and biotypes resulting from the restriction criteria before completing this step."
+        icon={Dna}
+        extraBadges={
+          modifiedCount > 0 ? (
+            <Badge variant="pending" className="text-[9px] px-2 py-0.5 font-bold uppercase tracking-wider">
+              {modifiedCount} Modified
+            </Badge>
+          ) : undefined
+        }
+        actions={
+          <>
+            <Button
+              variant="ghost"
+              size="md"
+              onClick={() =>
+                navigate(
+                  `/dashboard/experiments/${networkId || ""}/execution/${experimentId || ""}`
+                )
+              }
+              className="gap-2 hover:bg-surface-container-high text-on-surface-variant font-medium text-xs rounded-xl border border-outline-variant/20"
+              title="Cancel and return to Pipeline Sequence Execution view"
             >
               <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+              Cancel
+            </Button>
 
-        {/* Toolbar: Search and Filter Pills */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-xs mb-6 space-y-4">
-          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-            {/* Search Input */}
+            {modifiedCount > 0 && (
+              <Button
+                variant="ghost"
+                size="md"
+                onClick={handleResetAll}
+                className="gap-2 font-bold text-xs border border-outline-variant/30 hover:bg-surface-container-high text-on-surface rounded-xl"
+                title="Discard unsaved local changes"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Discard Changes
+              </Button>
+            )}
+
+            <Button
+              variant="ghost"
+              size="md"
+              onClick={() => setIsResetConfirmModalOpen(true)}
+              disabled={isSubmitting || isResetting || objects.length === 0}
+              className="gap-2 font-bold text-xs border border-outline-variant/30 hover:bg-surface-container-high text-on-surface rounded-xl"
+              title="Reset all biological roles to original state derived from Biotypes and MeSH"
+            >
+              {isResetting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <RotateCcw className="w-4 h-4" />
+              )}
+              Reset Roles
+            </Button>
+
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => setIsConfirmModalOpen(true)}
+              disabled={isSubmitting || isResetting || objects.length === 0}
+              className="gap-2 shadow-primary-glow font-bold"
+            >
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4" />
+              )}
+              Confirm & Save Roles
+            </Button>
+          </>
+        }
+      />
+
+      {/* Error Banner */}
+      {errorMessage && (
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center justify-between animate-fade-in shadow-xs">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0" />
+            <p className="text-xs font-medium">{errorMessage}</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setErrorMessage(null)}
+            className="text-rose-700 hover:bg-rose-100 p-1 rounded-lg"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
+
+      {/* Main Table Glass Panel */}
+      <div className="glass-panel p-6 rounded-3xl border border-outline-variant/15 shadow-md flex flex-col gap-6">
+        {/* Search & Actions Bar */}
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
+          <div className="flex items-center gap-3 flex-1 max-w-lg">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/60" />
               <Input
                 placeholder="Search by symbol, synonyms, or role..."
                 value={searchTerm}
@@ -507,7 +469,7 @@ export const UpdateBiologicalObjects = () => {
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="pl-9 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+                className="pl-9 text-xs"
               />
               {searchTerm && (
                 <button
@@ -516,108 +478,141 @@ export const UpdateBiologicalObjects = () => {
                     setSearchTerm("");
                     setCurrentPage(1);
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 hover:text-on-surface transition-colors"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
 
-            {/* Filter Modified Toggle */}
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => {
-                  setFilterModifiedOnly(!filterModifiedOnly);
-                  setCurrentPage(1);
-                }}
-                className={`inline-flex items-center gap-2 h-9 px-3 rounded-lg text-xs font-semibold border transition-all duration-200 shadow-xs cursor-pointer ${
-                  filterModifiedOnly
-                    ? "bg-amber-500 text-white border-amber-600 ring-2 ring-amber-400/40 shadow-sm"
-                    : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white"
-                }`}
-                title={filterModifiedOnly ? "Showing modified only. Click to show all." : "Filter to view only modified entities"}
-              >
-                <SlidersHorizontal className={`w-3.5 h-3.5 ${filterModifiedOnly ? "text-white" : "text-slate-500 dark:text-slate-400"}`} />
-                <span>Modified Only</span>
+            <Button
+              variant={filterModifiedOnly ? "primary" : "ghost"}
+              size="sm"
+              onClick={() => {
+                setFilterModifiedOnly(!filterModifiedOnly);
+                setCurrentPage(1);
+              }}
+              className={cn(
+                "gap-1.5 text-xs font-bold shrink-0 border border-outline-variant/20 rounded-xl",
+                filterModifiedOnly
+                  ? "shadow-primary-glow font-bold"
+                  : "text-on-surface-variant hover:bg-surface-container-high"
+              )}
+              title={filterModifiedOnly ? "Showing modified only. Click to show all." : "Filter to view only modified entities"}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <span>Modified Only</span>
+              {modifiedCount > 0 && (
                 <span
-                  className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold ${
+                  className={cn(
+                    "text-[10px] px-1.5 py-0.2 rounded-full font-bold",
                     filterModifiedOnly
-                      ? "bg-amber-700 text-white"
-                      : modifiedCount > 0
-                      ? "bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700"
-                      : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
-                  }`}
+                      ? "bg-white/20 text-white"
+                      : "bg-amber-100 text-amber-700"
+                  )}
                 >
                   {modifiedCount}
                 </span>
-              </button>
-            </div>
+              )}
+            </Button>
           </div>
 
-          {/* Category Filter Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
-            <span className="text-slate-400 font-medium whitespace-nowrap mr-1">Filter by Role:</span>
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedCategory("ALL");
-                setCurrentPage(1);
-              }}
-              className={`px-2.5 py-1 rounded-full font-medium transition-colors whitespace-nowrap ${
-                selectedCategory === "ALL"
-                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300"
-              }`}
-            >
-              All ({objects.length})
-            </button>
-            {CATEGORIES_LIST.map((cat) => {
-              const count = objects.filter((o) => o.roles.includes(cat.key)).length;
-              const isSelected = selectedCategory === cat.key;
-              const style = CATEGORY_STYLES[cat.key];
+          {/* Stats summary bar */}
+          <StepStatsBar
+            stats={[
+              { label: "Entities", value: objects.length },
+              {
+                label: "Restriction",
+                value: formatRestrictionLabel(restrictionLevel),
+                valueColor: "text-primary font-bold",
+              },
+              {
+                label: "Active Roles",
+                value: totalAssignedRoles,
+                valueColor: "text-emerald-600",
+              },
+              {
+                label: "Modified",
+                value: modifiedCount,
+                valueColor: modifiedCount > 0 ? "text-amber-600" : "text-on-surface-variant",
+              },
+            ]}
+          />
+        </div>
 
-              return (
-                <button
-                  key={cat.key}
-                  type="button"
-                  onClick={() => {
-                    setSelectedCategory(isSelected ? "ALL" : cat.key);
-                    setCurrentPage(1);
-                  }}
-                  className={`px-2.5 py-1 rounded-full font-medium transition-colors whitespace-nowrap border flex items-center gap-1.5 ${
+        {/* Filter by Role Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+          <span className="text-on-surface-variant/70 font-semibold whitespace-nowrap mr-1">
+            Filter by Role:
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedCategory("ALL");
+              setCurrentPage(1);
+            }}
+            className={cn(
+              "px-3 py-1 rounded-full font-medium transition-all duration-200 whitespace-nowrap text-xs",
+              selectedCategory === "ALL"
+                ? "bg-primary text-on-primary font-bold shadow-xs"
+                : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high border border-outline-variant/15"
+            )}
+          >
+            All ({objects.length})
+          </button>
+          {CATEGORIES_LIST.map((cat) => {
+            const count = objects.filter((o) => o.roles.includes(cat.key)).length;
+            const isSelected = selectedCategory === cat.key;
+            const style = CATEGORY_STYLES[cat.key];
+
+            return (
+              <button
+                key={cat.key}
+                type="button"
+                onClick={() => {
+                  setSelectedCategory(isSelected ? "ALL" : cat.key);
+                  setCurrentPage(1);
+                }}
+                className={cn(
+                  "px-3 py-1 rounded-full font-medium transition-all duration-200 whitespace-nowrap text-xs border flex items-center gap-1.5",
+                  isSelected
+                    ? "bg-primary/10 text-primary border-primary font-bold ring-1 ring-primary shadow-xs"
+                    : "bg-surface-container-low text-on-surface-variant border-outline-variant/15 hover:bg-surface-container-high"
+                )}
+              >
+                <span>{cat.label}</span>
+                <span
+                  className={cn(
+                    "text-[10px] px-1.5 py-0.2 rounded-full font-bold",
                     isSelected
-                      ? `${style?.bg || "bg-teal-500/10"} ${style?.text || "text-teal-600"} border-teal-500 font-semibold ring-1 ring-teal-500`
-                      : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700"
-                  }`}
+                      ? "bg-primary text-on-primary"
+                      : "bg-surface-container-high text-on-surface-variant"
+                  )}
                 >
-                  <span>{cat.label}</span>
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Content Section */}
         {loading ? (
           <div className="py-20 flex flex-col items-center justify-center">
             <LoadingSpinner size="lg" />
-            <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
+            <p className="mt-4 text-xs text-on-surface-variant font-medium">
               Loading biological objects from pipeline inferences...
             </p>
           </div>
         ) : filteredObjects.length === 0 ? (
-          <div className="bg-white dark:bg-slate-800 rounded-xl p-12 text-center border border-slate-200 dark:border-slate-700 shadow-xs">
-            <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-400 flex items-center justify-center mx-auto mb-3">
+          <div className="bg-surface-card rounded-2xl p-12 text-center border border-outline-variant/15 shadow-xs">
+            <div className="w-12 h-12 rounded-full bg-surface-container-low text-on-surface-variant flex items-center justify-center mx-auto mb-3">
               <Search className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-semibold text-slate-900 dark:text-white">
+            <h3 className="text-base font-bold text-on-surface">
               No biological objects found
             </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+            <p className="text-xs text-on-surface-variant mt-1 max-w-sm mx-auto">
               No entities match the current search query or role filter. Try resetting your filters.
             </p>
             <div className="mt-4">
@@ -629,42 +624,42 @@ export const UpdateBiologicalObjects = () => {
                   setSelectedCategory("ALL");
                   setFilterModifiedOnly(false);
                 }}
-                className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 font-semibold shadow-xs"
+                className="gap-2 hover:bg-surface-container-high text-on-surface-variant font-medium text-xs rounded-lg border border-outline-variant/20"
               >
                 Reset Filters
               </Button>
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between text-xs text-on-surface-variant font-medium px-1">
               <span>
-                Showing <strong className="text-slate-700 dark:text-slate-200">
+                Showing <strong className="text-on-surface">
                   {filteredObjects.length === 0 ? 0 : (safeCurrentPage - 1) * pageSize + 1}
                   -
                   {Math.min(safeCurrentPage * pageSize, filteredObjects.length)}
                 </strong> of{" "}
-                <strong className="text-slate-700 dark:text-slate-200">{filteredObjects.length}</strong> biological entities
+                <strong className="text-on-surface">{filteredObjects.length}</strong> biological entities
                 {filteredObjects.length !== objects.length && (
-                  <span className="text-slate-400"> (filtered from {objects.length} total)</span>
+                  <span className="text-on-surface-variant/70"> (filtered from {objects.length} total)</span>
                 )}
               </span>
             </div>
 
             {/* Table View */}
-            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xs">
+            <div className="overflow-x-auto rounded-2xl border border-outline-variant/15 bg-surface-card shadow-xs">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/60 text-[11px] uppercase font-semibold tracking-wider text-slate-500 dark:text-slate-400">
-                    <th className="py-3 px-4 min-w-[170px]">Entity / Symbol</th>
-                    <th className="py-3 px-4 min-w-[180px]">Synonyms / IDs</th>
-                    <th className="py-3 px-4 min-w-[130px]">Biotypes</th>
-                    <th className="py-3 px-4 min-w-[140px]">MeSH Roles</th>
-                    <th className="py-3 px-4 min-w-[320px]">Confirmed Roles</th>
-                    <th className="py-3 px-4 text-right min-w-[110px]">Actions</th>
+                  <tr className="border-b border-outline-variant/15 bg-surface-container-low text-[11px] font-label uppercase font-bold tracking-wider text-on-surface-variant">
+                    <th className="py-3.5 px-4 min-w-[170px]">Entity / Symbol</th>
+                    <th className="py-3.5 px-4 min-w-[180px]">Synonyms / IDs</th>
+                    <th className="py-3.5 px-4 min-w-[130px]">Biotypes</th>
+                    <th className="py-3.5 px-4 min-w-[140px]">MeSH Roles</th>
+                    <th className="py-3.5 px-4 min-w-[320px]">Confirmed Roles</th>
+                    <th className="py-3.5 px-4 text-right min-w-[110px]">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-xs">
+                <tbody className="divide-y divide-outline-variant/10 text-xs">
                   {paginatedObjects.map((item) => {
                     const entitySymbol = item.symbol || item.name;
                     const synonymsList = item.synonyms || item.alternativeIds || [];
@@ -678,23 +673,22 @@ export const UpdateBiologicalObjects = () => {
                     return (
                       <tr
                         key={item.id}
-                        className={`transition-colors align-top ${
-                          item.isModified
-                            ? "bg-amber-50/40 dark:bg-amber-950/20 hover:bg-amber-50/70 dark:hover:bg-amber-950/30"
-                            : "hover:bg-slate-50/70 dark:hover:bg-slate-700/30"
-                        }`}
+                        className={cn(
+                          "transition-colors align-top hover:bg-surface-container-low/60",
+                          item.isModified && "bg-amber-500/5 hover:bg-amber-500/10"
+                        )}
                       >
                         {/* Entity / Symbol */}
-                        <td className="py-3.5 px-4">
+                        <td className="py-4 px-4">
                           <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-bold text-slate-900 dark:text-white text-sm">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-headline font-bold text-on-surface text-[14px] tracking-tight">
                                 {entitySymbol}
                               </span>
                               {item.isModified && (
                                 <Badge
-                                  variant="pending"
-                                  className="text-[9px] px-1.5 py-0 uppercase tracking-wider font-semibold"
+                                  variant="inProgress"
+                                  className="text-[9px] px-2 py-0.5 font-bold uppercase tracking-wider"
                                 >
                                   Modified
                                 </Badge>
@@ -702,7 +696,7 @@ export const UpdateBiologicalObjects = () => {
                             </div>
                             {item.description && (
                               <p
-                                className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 max-w-xs"
+                                className="text-[11px] text-on-surface-variant/80 line-clamp-2 max-w-xs"
                                 title={item.description}
                               >
                                 {item.description}
@@ -712,21 +706,15 @@ export const UpdateBiologicalObjects = () => {
                         </td>
 
                         {/* Synonyms / Alternative IDs */}
-                        <td className="py-3.5 px-4">
+                        <td className="py-4 px-4">
                           {synonymsList.length > 0 ? (
-                            <div className="flex flex-wrap gap-1 max-w-[220px]">
+                            <div className="flex flex-wrap gap-1.5 max-w-[240px]">
                               {synonymsList.slice(0, 3).map((syn, synIdx) => (
-                                <span
-                                  key={synIdx}
-                                  className="text-[11px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-600/60 truncate max-w-[170px]"
-                                  title={syn}
-                                >
-                                  {syn}
-                                </span>
+                                <SynonymChip key={synIdx} synonym={syn} />
                               ))}
                               {synonymsList.length > 3 && (
                                 <span
-                                  className="text-[10px] px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700/40 text-slate-500 dark:text-slate-400 cursor-help"
+                                  className="inline-flex items-center bg-primary/5 text-primary border border-primary/20 px-2 py-1 rounded-lg text-[10px] font-mono font-semibold cursor-help"
                                   title={synonymsList.slice(3).join(", ")}
                                 >
                                   +{synonymsList.length - 3} more
@@ -734,80 +722,62 @@ export const UpdateBiologicalObjects = () => {
                               )}
                             </div>
                           ) : (
-                            <span className="text-slate-400 dark:text-slate-500 italic text-[11px]">-</span>
+                            <span className="text-[13px] text-on-surface-variant/40">-</span>
                           )}
                         </td>
 
                         {/* Biotypes */}
-                        <td className="py-3.5 px-4">
+                        <td className="py-4 px-4">
                           {item.biotypes && item.biotypes.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
+                            <div className="flex flex-wrap gap-1.5">
                               {item.biotypes.map((b, bIdx) => (
                                 <span
                                   key={bIdx}
-                                  className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800"
+                                  className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase bg-primary-fixed text-on-primary-fixed border border-primary/20"
                                 >
                                   {b}
                                 </span>
                               ))}
                             </div>
                           ) : (
-                            <span className="text-slate-400 dark:text-slate-500 italic text-[10px]">None</span>
+                            <span className="text-[13px] text-on-surface-variant/40">-</span>
                           )}
                         </td>
 
                         {/* MeSH Roles */}
-                        <td className="py-3.5 px-4">
+                        <td className="py-4 px-4">
                           {item.meshRoles && item.meshRoles.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
+                            <div className="flex flex-wrap gap-1.5">
                               {item.meshRoles.map((m, mIdx) => (
                                 <span
                                   key={mIdx}
-                                  className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800"
+                                  className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase bg-purple-50 text-purple-700 border border-purple-200"
                                 >
                                   {m}
                                 </span>
                               ))}
                             </div>
                           ) : (
-                            <span className="text-slate-400 dark:text-slate-500 italic text-[10px]">None</span>
+                            <span className="text-[13px] text-on-surface-variant/40">-</span>
                           )}
                         </td>
 
                         {/* Confirmed Roles */}
-                        <td className="py-3.5 px-4">
+                        <td className="py-4 px-4">
                           <div className="space-y-2">
                             <div className="flex flex-wrap gap-1.5 items-center">
                               {item.roles.length === 0 ? (
-                                <span className="text-xs text-amber-600 dark:text-amber-400 italic">
+                                <span className="text-xs text-amber-600 italic">
                                   No roles assigned
                                 </span>
                               ) : (
-                                item.roles.map((role) => {
-                                  const style = CATEGORY_STYLES[role] || {
-                                    label: role,
-                                    bg: "bg-slate-100 dark:bg-slate-700",
-                                    text: "text-slate-700 dark:text-slate-200",
-                                    border: "border-slate-300 dark:border-slate-600",
-                                  };
-
-                                  return (
-                                    <span
-                                      key={role}
-                                      className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-md font-medium border transition-colors ${style.bg} ${style.text} ${style.border}`}
-                                    >
-                                      <span>{style.label || role}</span>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleRemoveRole(item.id, role)}
-                                        title={`Remove ${role}`}
-                                        className="p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors ml-0.5"
-                                      >
-                                        <X className="w-3 h-3" />
-                                      </button>
-                                    </span>
-                                  );
-                                })
+                                item.roles.map((role) => (
+                                  <RolePillBadge
+                                    key={role}
+                                    role={role}
+                                    onRemove={() => handleRemoveRole(item.id, role)}
+                                  />
+                                ))
                               )}
 
                               {!isAddActive && (
@@ -817,7 +787,7 @@ export const UpdateBiologicalObjects = () => {
                                     setActiveAddRoleEntityId(item.id);
                                     setCustomRoleInput("");
                                   }}
-                                  className="inline-flex items-center gap-0.5 text-[11px] px-2 py-0.5 rounded-md border border-dashed border-slate-300 dark:border-slate-600 text-slate-500 hover:text-teal-600 hover:border-teal-400 dark:hover:text-teal-400 dark:hover:border-teal-500 transition-colors"
+                                  className="inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full border border-dashed border-primary/40 text-primary hover:bg-primary/5 transition-colors font-semibold"
                                   title="Add role"
                                 >
                                   <Plus className="w-3 h-3" />
@@ -828,9 +798,9 @@ export const UpdateBiologicalObjects = () => {
 
                             {/* Inline Role Picker when active */}
                             {isAddActive && (
-                              <div className="bg-slate-50 dark:bg-slate-900/80 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 space-y-2 animate-in fade-in duration-150">
+                              <div className="bg-surface-card p-3 rounded-2xl border border-outline-variant/25 shadow-md space-y-2 animate-fade-in max-w-sm">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                                  <span className="text-[11px] font-bold text-on-surface">
                                     Select role to add:
                                   </span>
                                   <button
@@ -839,7 +809,7 @@ export const UpdateBiologicalObjects = () => {
                                       setActiveAddRoleEntityId(null);
                                       setCustomRoleInput("");
                                     }}
-                                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                                    className="text-on-surface-variant/60 hover:text-on-surface"
                                     title="Close"
                                   >
                                     <X className="w-3.5 h-3.5" />
@@ -848,33 +818,29 @@ export const UpdateBiologicalObjects = () => {
 
                                 {/* Standard quick buttons */}
                                 <div className="flex flex-wrap gap-1">
-                                  {availableCategoriesToAdd.length > 0 ? (
-                                    availableCategoriesToAdd.map((cat) => (
+                                  {availableCategoriesToAdd.map((cat) => {
+                                    return (
                                       <button
                                         key={cat.key}
                                         type="button"
                                         onClick={() => handleAddRole(item.id, cat.key)}
-                                        className="text-[11px] px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-teal-50 dark:hover:bg-teal-950/40 hover:border-teal-400 dark:hover:border-teal-600 transition-colors"
+                                        className="text-xs px-2.5 py-1 rounded-full font-semibold border transition-all hover:scale-105 bg-surface-container-high text-on-surface hover:border-primary/40 border-outline-variant/20"
                                       >
                                         + {cat.label}
                                       </button>
-                                    ))
-                                  ) : (
-                                    <span className="text-[10px] text-slate-400 italic">
-                                      All standard roles assigned.
-                                    </span>
-                                  )}
+                                    );
+                                  })}
                                 </div>
 
-                                {/* Custom role input */}
-                                <div className="flex items-center gap-1.5 pt-1">
+                                {/* Custom input */}
+                                <div className="flex items-center gap-1.5 pt-1 border-t border-outline-variant/15">
                                   <Input
-                                    placeholder="Or custom role..."
+                                    placeholder="Or type custom role..."
                                     value={customRoleInput}
                                     onChange={(e) => setCustomRoleInput(e.target.value)}
-                                    className="text-xs h-7 bg-white dark:bg-slate-800"
+                                    className="h-7 text-xs flex-1 rounded-lg"
                                     onKeyDown={(e) => {
-                                      if (e.key === "Enter" && customRoleInput.trim()) {
+                                      if (e.key === "Enter") {
                                         e.preventDefault();
                                         handleAddRole(item.id, customRoleInput);
                                       }
@@ -883,7 +849,7 @@ export const UpdateBiologicalObjects = () => {
                                   <Button
                                     variant="primary"
                                     size="sm"
-                                    className="h-7 px-2 text-xs bg-teal-600 hover:bg-teal-700 text-white"
+                                    className="h-7 px-2.5 text-xs shadow-xs font-bold rounded-lg"
                                     disabled={!customRoleInput.trim()}
                                     onClick={() => handleAddRole(item.id, customRoleInput)}
                                   >
@@ -896,21 +862,35 @@ export const UpdateBiologicalObjects = () => {
                         </td>
 
                         {/* Actions Column */}
-                        <td className="py-3.5 px-4 text-right">
-                          <div className="flex items-center justify-end">
-                            {item.isModified ? (
+                        <td className="py-4 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                if (isAddActive) {
+                                  setActiveAddRoleEntityId(null);
+                                } else {
+                                  setActiveAddRoleEntityId(item.id);
+                                  setCustomRoleInput("");
+                                }
+                              }}
+                              className="h-7 px-2.5 gap-1 text-[11px] font-semibold text-primary hover:bg-primary/10 border border-primary/20 rounded-xl"
+                              title="Edit Roles"
+                            >
+                              <Edit2 className="w-3 h-3" /> Edit
+                            </Button>
+
+                            {item.isModified && (
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleResetEntity(item.id)}
                                 title="Revert to original roles"
-                                className="h-7 px-2 text-xs gap-1 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 bg-amber-50/70 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 font-medium"
+                                className="h-7 px-2.5 gap-1 text-[11px] font-semibold text-amber-700 hover:bg-amber-50 border border-amber-300 rounded-xl"
                               >
-                                <RotateCcw className="w-3 h-3" />
-                                <span>Revert</span>
+                                <RotateCcw className="w-3 h-3" /> Revert
                               </Button>
-                            ) : (
-                              <span className="text-slate-300 dark:text-slate-600 text-xs select-none">-</span>
                             )}
                           </div>
                         </td>
@@ -923,13 +903,13 @@ export const UpdateBiologicalObjects = () => {
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 border-t border-slate-200 dark:border-slate-700 text-xs">
-                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-outline-variant/15 text-xs text-on-surface-variant font-medium">
+                <div className="flex items-center gap-2">
                   <span>
-                    Page <strong className="text-slate-700 dark:text-slate-200">{safeCurrentPage}</strong> of{" "}
-                    <strong className="text-slate-700 dark:text-slate-200">{totalPages}</strong>
+                    Page <strong className="text-on-surface">{safeCurrentPage}</strong> of{" "}
+                    <strong className="text-on-surface">{totalPages}</strong>
                   </span>
-                  <span className="text-slate-300 dark:text-slate-600">|</span>
+                  <span className="text-outline-variant/40">•</span>
                   <div className="flex items-center gap-1.5">
                     <span>Per page:</span>
                     <select
@@ -938,7 +918,7 @@ export const UpdateBiologicalObjects = () => {
                         setPageSize(Number(e.target.value));
                         setCurrentPage(1);
                       }}
-                      className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+                      className="bg-surface-card border border-outline-variant/30 rounded-lg px-2 py-1 text-xs text-on-surface focus:outline-none focus:ring-1 focus:ring-primary"
                     >
                       <option value={10}>10</option>
                       <option value={20}>20</option>
@@ -948,13 +928,13 @@ export const UpdateBiologicalObjects = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5">
                   <Button
                     variant="ghost"
                     size="sm"
                     disabled={safeCurrentPage <= 1}
                     onClick={() => setCurrentPage(Math.max(1, safeCurrentPage - 1))}
-                    className="h-8 px-2.5 gap-1 text-xs bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium shadow-xs disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="h-8 px-2.5 gap-1 text-xs rounded-xl border border-outline-variant/20 hover:bg-surface-container-high"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                     Previous
@@ -973,16 +953,17 @@ export const UpdateBiologicalObjects = () => {
                         pageNum = safeCurrentPage - 2 + i;
                       }
 
+                      const isActive = pageNum === safeCurrentPage;
                       return (
                         <button
                           key={pageNum}
-                          type="button"
                           onClick={() => setCurrentPage(pageNum)}
-                          className={`w-8 h-8 rounded-lg font-medium text-xs transition-colors ${
-                            safeCurrentPage === pageNum
-                              ? "bg-teal-600 text-white shadow-xs"
-                              : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60"
-                          }`}
+                          className={cn(
+                            "w-8 h-8 rounded-xl font-medium text-xs transition-colors",
+                            isActive
+                              ? "bg-primary text-on-primary font-bold shadow-xs"
+                              : "hover:bg-surface-container-high text-on-surface-variant"
+                          )}
                         >
                           {pageNum}
                         </button>
@@ -995,7 +976,7 @@ export const UpdateBiologicalObjects = () => {
                     size="sm"
                     disabled={safeCurrentPage >= totalPages}
                     onClick={() => setCurrentPage(Math.min(totalPages, safeCurrentPage + 1))}
-                    className="h-8 px-2.5 gap-1 text-xs bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium shadow-xs disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="h-8 px-2.5 gap-1 text-xs rounded-xl border border-outline-variant/20 hover:bg-surface-container-high"
                   >
                     Next
                     <ChevronRight className="w-3.5 h-3.5" />
@@ -1009,70 +990,70 @@ export const UpdateBiologicalObjects = () => {
 
       {/* Confirmation Modal */}
       {isConfirmModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-lg w-full p-6 border border-slate-200 dark:border-slate-700 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="bg-surface-card rounded-3xl shadow-xl max-w-lg w-full p-6 border border-outline-variant/20 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-full bg-teal-100 text-teal-600 dark:bg-teal-900/40 dark:text-teal-400">
+              <div className="p-3 bg-primary/10 text-primary rounded-2xl shadow-sm">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                <h3 className="text-lg font-headline font-bold text-on-surface">
                   Confirm Biological Roles
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-on-surface-variant">
                   Save curated roles to knowledge base and complete pipeline step
                 </p>
               </div>
             </div>
 
-            <div className="bg-slate-50 dark:bg-slate-900/60 rounded-lg p-3 text-xs text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700 space-y-2">
-              <div className="flex justify-between py-1 border-b border-slate-200 dark:border-slate-700">
+            <div className="bg-surface-container-low rounded-2xl p-4 text-xs text-on-surface-variant border border-outline-variant/15 space-y-2">
+              <div className="flex justify-between py-1 border-b border-outline-variant/15">
                 <span>Total Entities to Update:</span>
-                <strong className="text-slate-900 dark:text-white">{objects.length}</strong>
+                <strong className="text-on-surface">{objects.length}</strong>
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-200 dark:border-slate-700">
+              <div className="flex justify-between py-1 border-b border-outline-variant/15">
                 <span>Entities with Modified Roles:</span>
-                <strong className={modifiedCount > 0 ? "text-amber-600 dark:text-amber-400" : "text-slate-900 dark:text-white"}>
+                <strong className={modifiedCount > 0 ? "text-amber-600" : "text-on-surface"}>
                   {modifiedCount}
                 </strong>
               </div>
               <div className="flex justify-between py-1">
                 <span>Total Active Roles Assigned:</span>
-                <strong className="text-teal-600 dark:text-teal-400">{totalAssignedRoles}</strong>
+                <strong className="text-emerald-600">{totalAssignedRoles}</strong>
               </div>
             </div>
 
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Saving will persist the curated roles list into the <code className="text-teal-600 dark:text-teal-400">roles</code> attribute
-              of MongoDB collection <code className="text-teal-600 dark:text-teal-400">kb_objects</code>, update inference configuration,
+            <p className="text-xs text-on-surface-variant leading-relaxed">
+              Saving will persist the curated roles list into the <code className="text-primary font-mono bg-primary/5 px-1 py-0.5 rounded">roles</code> attribute
+              of MongoDB collection <code className="text-primary font-mono bg-primary/5 px-1 py-0.5 rounded">kb_objects</code>, update inference configuration,
               and mark step <strong>Update Biological Objects</strong> as <strong>COMPLETED</strong>.
             </p>
 
             <div className="flex items-center justify-end gap-3 pt-2">
               <Button
                 variant="ghost"
-                size="sm"
+                size="md"
                 onClick={() => setIsConfirmModalOpen(false)}
                 disabled={isSubmitting}
-                className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium"
+                className="gap-2 hover:bg-surface-container-high text-on-surface-variant font-medium text-xs rounded-xl border border-outline-variant/20"
               >
                 Cancel
               </Button>
               <Button
                 variant="primary"
-                size="sm"
+                size="md"
                 onClick={handleConfirmSave}
                 disabled={isSubmitting}
-                className="bg-teal-600 hover:bg-teal-700 text-white"
+                className="gap-2 shadow-primary-glow font-bold"
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                     Saving...
                   </>
                 ) : (
                   <>
-                    <Check className="w-4 h-4 mr-1.5" />
+                    <Check className="w-4 h-4" />
                     Confirm & Save
                   </>
                 )}
@@ -1084,51 +1065,51 @@ export const UpdateBiologicalObjects = () => {
 
       {/* Reset Confirmation Modal */}
       {isResetConfirmModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-200 dark:border-slate-700 space-y-4">
-            <div className="flex items-center gap-3 text-amber-600 dark:text-amber-400">
-              <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center">
-                <RotateCcw className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="bg-surface-card rounded-3xl max-w-md w-full p-6 shadow-xl border border-outline-variant/20 space-y-4">
+            <div className="flex items-center gap-3 text-amber-600">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center shadow-sm">
+                <RotateCcw className="w-6 h-6 text-amber-600" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                <h3 className="text-base font-headline font-bold text-on-surface">
                   Reset Biological Roles?
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-on-surface-variant">
                   Revert to original Biotypes & MeSH evaluation
                 </p>
               </div>
             </div>
 
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              This action will clear all previously saved roles in the Knowledge Base (<code className="text-amber-600 dark:text-amber-400 font-mono">kb_objects</code>) and Inference configuration, returning all biological objects to their original roles evaluated purely from <strong>Biotypes</strong> and <strong>MeSH terms</strong>.
+            <p className="text-xs text-on-surface-variant leading-relaxed">
+              This action will clear all previously saved roles in the Knowledge Base (<code className="text-amber-600 font-mono bg-amber-500/10 px-1 py-0.5 rounded">kb_objects</code>) and Inference configuration, returning all biological objects to their original roles evaluated purely from <strong>Biotypes</strong> and <strong>MeSH terms</strong>.
             </p>
 
             <div className="flex items-center justify-end gap-3 pt-2">
               <Button
                 variant="ghost"
-                size="sm"
+                size="md"
                 onClick={() => setIsResetConfirmModalOpen(false)}
                 disabled={isResetting}
-                className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 font-medium"
+                className="gap-2 hover:bg-surface-container-high text-on-surface-variant font-medium text-xs rounded-xl border border-outline-variant/20"
               >
                 Cancel
               </Button>
               <Button
                 variant="primary"
-                size="sm"
+                size="md"
                 onClick={handleConfirmReset}
                 disabled={isResetting}
-                className="bg-amber-600 hover:bg-amber-700 text-white"
+                className="gap-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-xs"
               >
                 {isResetting ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin" />
                     Resetting...
                   </>
                 ) : (
                   <>
-                    <RotateCcw className="w-4 h-4 mr-1.5" />
+                    <RotateCcw className="w-4 h-4" />
                     Confirm Reset
                   </>
                 )}

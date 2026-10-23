@@ -38,6 +38,8 @@ const STEP_LABELS: Record<string, string> = {
   CONFIGURE_INFERENCES: "Configure Inferences",
   FIND_ROLES: "Find Biological Roles",
   UPDATE_BIOLOGICAL_OBJECTS: "Update Biological Objects",
+  SELECT_CLOSING_OBJECTS: "Select Closing Objects",
+  INFER_PATHWAYS: "Infer Biological Pathways",
 
   // Lowercase keys
   configuration: "Configuration Setup",
@@ -55,6 +57,8 @@ const STEP_LABELS: Record<string, string> = {
   configure_inferences: "Configure Inferences",
   find_roles: "Find Biological Roles",
   update_biological_objects: "Update Biological Objects",
+  select_closing_objects: "Select Closing Objects",
+  infer_pathways: "Infer Biological Pathways",
 
   // Prefixed step- keys
   "step-configuration": "Configuration Setup",
@@ -71,6 +75,8 @@ const STEP_LABELS: Record<string, string> = {
   "step-configure_inferences": "Configure Inferences",
   "step-find_roles": "Find Biological Roles",
   "step-update_biological_objects": "Update Biological Objects",
+  "step-select_closing_objects": "Select Closing Objects",
+  "step-infer_pathways": "Infer Biological Pathways",
 
   // Legacy mappings
   Configuration: "Configuration Setup",
@@ -81,6 +87,9 @@ const STEP_LABELS: Record<string, string> = {
   Combinations: "Pubmed Combinations Generation",
   "Search PubTator": "Search PubTator Annotations",
   "Build Knowledge Base": "Build Knowledge Base Graph",
+  "Select Closing Objects": "Select Closing Objects",
+  "Infer Biological Pathways": "Infer Biological Pathways",
+  "Infer Pathways": "Infer Biological Pathways",
 };
 
 // Map status to friendly text and Badge variant
@@ -104,7 +113,10 @@ export function getFriendlyStepLabel(step?: string): string {
   const upperStep = cleanStep.toUpperCase();
   if (STEP_LABELS[upperStep]) return STEP_LABELS[upperStep];
 
-  return step;
+  return cleanStep
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 const formatStatusDate = (dateVal?: string | number) => {
