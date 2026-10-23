@@ -283,7 +283,7 @@ export const UpdateBiologicalObjects = () => {
       setSuccessModalData({
         title: "Biological Objects Roles Saved",
         message:
-          "The confirmed biological roles have been successfully synchronized. Pathway inference has been triggered automatically.",
+          "The confirmed biological roles have been successfully synchronized. The next step is to select target closing objects for pathway inference.",
         navigateOnClose: true,
       });
     } catch (err) {

@@ -27,6 +27,7 @@ import ExperimentExecution from "@/modules/dashboard/experiments/ExperimentExecu
 import UpdateAlignedObjects from "@/modules/dashboard/experiments/UpdateAlignedObjects";
 import ConfigureInferences from "@/modules/dashboard/experiments/ConfigureInferences";
 import UpdateBiologicalObjects from "@/modules/dashboard/experiments/UpdateBiologicalObjects";
+import SelectClosingObjects from "@/modules/dashboard/experiments/SelectClosingObjects";
 import CreateNetwork from "@/modules/dashboard/networks/CreateNetwork";
 import { ProtectedRoute } from "@/core/router/ProtectedRoute";
 import { PublicRoute } from "@/core/router/PublicRoute";
@@ -62,6 +63,7 @@ function App() {
             <Route path="/dashboard/experiments/:networkId/aligned-objects/:experimentId" element={<UpdateAlignedObjects />} />
             <Route path="/dashboard/experiments/:networkId/inferences-config/:experimentId" element={<ConfigureInferences />} />
             <Route path="/dashboard/experiments/:networkId/biological-objects/:experimentId" element={<UpdateBiologicalObjects />} />
+            <Route path="/dashboard/experiments/:networkId/closing-objects/:experimentId" element={<SelectClosingObjects />} />
             <Route path="/dashboard/experiments/:networkId?" element={<Experiments />} />
 
             {/* Rutas de administración */}

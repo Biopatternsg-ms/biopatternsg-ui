@@ -32,6 +32,7 @@ import {
   PUBMED_KB_EVENTS_BY_RESTRICTION_ENDPOINT,
   PUBMED_GENERATE_KB_ENDPOINT,
   INFERENCES_BIOLOGICAL_OBJECTS_ENDPOINT,
+  closingObjectsEndpoint,
   PATHWAYS_RUN_ENDPOINT,
   pathwaysGraphEndpoint,
   pathwaysListEndpoint,
@@ -473,6 +474,82 @@ export const experimentService = {
           }
         }
 
+        // 5. Ensure "Select Closing Objects" manual step is present right after "Update Biological Objects"
+        const hasSelectClosingObjects = steps.some(
+          (s: PipelineStepExecution) =>
+            s.id === "step-select_closing_objects" ||
+            s.id === "SELECT_CLOSING_OBJECTS" ||
+            s.name === "Select Closing Objects" ||
+            (s as { step?: string }).step === "select_closing_objects"
+        );
+
+        if (!hasSelectClosingObjects) {
+          const updateBioIdx = steps.findIndex(
+            (s: PipelineStepExecution) =>
+              s.id === "step-update_biological_objects" ||
+              s.id === "UPDATE_BIOLOGICAL_OBJECTS" ||
+              s.name === "Update Biological Objects" ||
+              (s as { step?: string }).step === "update_biological_objects"
+          );
+
+          const selectClosingStep: PipelineStepExecution = {
+            id: "step-select_closing_objects",
+            name: "Select Closing Objects",
+            status: "PENDING",
+            duration: "Manual",
+            outputText: "Manual Action Required",
+            description: "Select target closing biological objects to restrict pathway inferences, or leave empty for all.",
+            iconName: "Target",
+            isManual: true,
+            metrics: {
+              status: "Awaiting Selection",
+            },
+          };
+
+          if (updateBioIdx !== -1) {
+            steps.splice(updateBioIdx + 1, 0, selectClosingStep);
+          } else {
+            steps.push(selectClosingStep);
+          }
+        }
+
+        // 6. Ensure "Infer Biological Pathways" step is present right after "Select Closing Objects"
+        const hasInferPathways = steps.some(
+          (s: PipelineStepExecution) =>
+            s.id === "step-infer_pathways" ||
+            s.id === "INFER_PATHWAYS" ||
+            s.name === "Infer Biological Pathways" ||
+            (s as { step?: string }).step === "infer_pathways"
+        );
+
+        if (!hasInferPathways) {
+          const selectClosingIdx = steps.findIndex(
+            (s: PipelineStepExecution) =>
+              s.id === "step-select_closing_objects" ||
+              s.id === "SELECT_CLOSING_OBJECTS" ||
+              s.name === "Select Closing Objects" ||
+              (s as { step?: string }).step === "select_closing_objects"
+          );
+
+          const inferStep: PipelineStepExecution = {
+            id: "step-infer_pathways",
+            name: "Infer Biological Pathways",
+            status: "PENDING",
+            outputText: "Pending inference execution",
+            description: "Executes in-memory Prolog rules to infer valid biological causal chains and pathways.",
+            iconName: "Activity",
+            metrics: {
+              status: "Pending",
+            },
+          };
+
+          if (selectClosingIdx !== -1) {
+            steps.splice(selectClosingIdx + 1, 0, inferStep);
+          } else {
+            steps.push(inferStep);
+          }
+        }
+
         return {
           ...data,
           steps,
@@ -673,6 +750,43 @@ export const experimentService = {
   async resetBiologicalObjectsRoles(pipelineId: string): Promise<Response> {
     return authFetch(`${INFERENCES_BIOLOGICAL_OBJECTS_ENDPOINT}/${pipelineId}/roles`, {
       method: "DELETE",
+    });
+  },
+
+  /**
+   * Retrieves selected closing objects for a pipeline.
+   * GET /inferences/closing-objects/{pipelineId}
+   */
+  async getClosingObjects(pipelineId: string): Promise<string[]> {
+    try {
+      const response = await authFetch(closingObjectsEndpoint(pipelineId));
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {
+      console.warn("Failed to fetch closing objects from backend, using fallback empty list", err);
+    }
+    return [];
+  },
+
+  /**
+   * Saves closing objects and automatically triggers pathway inference.
+   * POST /inferences/closing-objects/{pipelineId}
+   */
+  async saveClosingObjects(
+    pipelineId: string,
+    closingObjects: string[],
+    summarizeKb?: boolean,
+    maxDepth?: number
+  ): Promise<Response> {
+    return authFetch(closingObjectsEndpoint(pipelineId), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        closingObjects,
+        summarizeKb,
+        maxDepth,
+      }),
     });
   },
 
@@ -900,6 +1014,31 @@ export function getMockExecutionData(experimentId: string, experimentName = "Pro
         metrics: [
           { label: "TOTAL OBJECTS", value: "7" },
           { label: "STATUS", value: "Awaiting Role Confirmation" }
+        ]
+      },
+      {
+        id: "step-select_closing_objects",
+        name: "Select Closing Objects",
+        status: "PENDING",
+        duration: "Manual",
+        outputText: "Manual Action Required",
+        description: "Select target closing biological objects to restrict pathway inferences, or leave empty for all.",
+        iconName: "Target",
+        isManual: true,
+        metrics: [
+          { label: "CANDIDATE OBJECTS", value: "7" },
+          { label: "SELECTED CLOSING OBJECTS", value: "0" },
+          { label: "STATUS", value: "Awaiting Selection" }
+        ]
+      },
+      {
+        id: "step-infer_pathways",
+        name: "Infer Biological Pathways",
+        status: "PENDING",
+        description: "Executes in-memory Prolog rules to infer valid biological causal chains and pathways.",
+        iconName: "Activity",
+        metrics: [
+          { label: "STATUS", value: "Pending" }
         ]
       },
       {

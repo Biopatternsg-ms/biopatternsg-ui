@@ -38,6 +38,7 @@ import {
   Edit3,
   Lock,
   Dna,
+  Target,
   type LucideIcon
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
@@ -56,6 +57,7 @@ const stepIcons: Record<string, LucideIcon> = {
   Activity: Activity,
   FileText: FileText,
   Dna: Dna,
+  Target: Target,
 };
 
 function StepIcon({ name, className }: { name: string; className?: string }) {
@@ -119,6 +121,23 @@ const MANUAL_STEP_CONFIG: Record<string, ManualStepDefinition> = {
     routeSegment: "biological-objects",
     buttonLabel: "Update Biological Objects",
     buttonIcon: Dna,
+  },
+
+  // Select Closing Objects
+  "step-select_closing_objects": {
+    routeSegment: "closing-objects",
+    buttonLabel: "Select Closing Objects",
+    buttonIcon: Target,
+  },
+  "SELECT_CLOSING_OBJECTS": {
+    routeSegment: "closing-objects",
+    buttonLabel: "Select Closing Objects",
+    buttonIcon: Target,
+  },
+  "Select Closing Objects": {
+    routeSegment: "closing-objects",
+    buttonLabel: "Select Closing Objects",
+    buttonIcon: Target,
   },
 };
 
@@ -199,6 +218,10 @@ const METRIC_LABELS: Record<string, string> = {
   executionTimeMs: "INFERENCE TIME (MS)",
   inferenceStatus: "INFERENCE STATUS",
   statusMessage: "STATUS",
+  candidateClosingObjects: "CANDIDATE CLOSING OBJECTS",
+  selectedClosingObjects: "SELECTED CLOSING OBJECTS",
+  closingObjectsCount: "CLOSING OBJECTS COUNT",
+  closingObjects: "CLOSING OBJECTS",
 };
 
 function formatMetricValue(value: string): string {
