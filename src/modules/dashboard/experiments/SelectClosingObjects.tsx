@@ -244,9 +244,13 @@ export const SelectClosingObjects = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-8">
-        <LoadingSpinner />
-      </div>
+      <LoadingSpinner
+        backdrop
+        size="lg"
+        variant="primary"
+        label="Loading closing objects..."
+        sublabel="Fetching candidate terminal entities and pipeline data"
+      />
     );
   }
 

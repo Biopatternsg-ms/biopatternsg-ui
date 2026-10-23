@@ -356,6 +356,18 @@ export const UpdateBiologicalObjects = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <LoadingSpinner
+        backdrop
+        size="lg"
+        variant="primary"
+        label="Loading biological objects..."
+        sublabel="Fetching pipeline inferences and biological entities"
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6 animate-fade-in pb-12">
       {/* Top Header & Breadcrumb with Reusable Molecule */}
@@ -597,14 +609,7 @@ export const UpdateBiologicalObjects = () => {
         </div>
 
         {/* Content Section */}
-        {loading ? (
-          <div className="py-20 flex flex-col items-center justify-center">
-            <LoadingSpinner size="lg" />
-            <p className="mt-4 text-xs text-on-surface-variant font-medium">
-              Loading biological objects from pipeline inferences...
-            </p>
-          </div>
-        ) : filteredObjects.length === 0 ? (
+        {filteredObjects.length === 0 ? (
           <div className="bg-surface-card rounded-2xl p-12 text-center border border-outline-variant/15 shadow-xs">
             <div className="w-12 h-12 rounded-full bg-surface-container-low text-on-surface-variant flex items-center justify-center mx-auto mb-3">
               <Search className="w-6 h-6" />
