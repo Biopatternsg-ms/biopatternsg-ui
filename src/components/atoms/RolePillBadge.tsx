@@ -28,7 +28,19 @@ const ROLE_COLOR_MAP: Record<string, string> = {
   ENZYME: "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100/70",
   TRANSCRIPTION_FACTOR: "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100/70",
   ADAPTOR_PROTEIN: "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100/70",
+  DISEASE: "bg-red-50 text-red-700 border-red-200 hover:bg-red-100/70",
 };
+
+function formatRoleLabel(role: string): string {
+  const normalizedKey = role.trim().toUpperCase();
+  if (CATEGORY_STYLES[normalizedKey]?.label) {
+    return CATEGORY_STYLES[normalizedKey].label;
+  }
+  return role
+    .split(/[_\s]+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
 
 export interface RolePillBadgeProps {
   role: string;
@@ -38,7 +50,7 @@ export interface RolePillBadgeProps {
 
 export function RolePillBadge({ role, onRemove, className }: RolePillBadgeProps) {
   const normalizedKey = role.trim().toUpperCase();
-  const label = CATEGORY_STYLES[normalizedKey]?.label || role;
+  const label = formatRoleLabel(role);
   const colorClass = ROLE_COLOR_MAP[normalizedKey] || "bg-slate-50 text-slate-700 border-slate-200";
 
   return (

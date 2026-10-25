@@ -61,6 +61,12 @@ export const CATEGORY_STYLES: Record<string, CategoryStyle> = {
     text: "text-rose-600 dark:text-rose-400",
     border: "border-rose-500/20",
   },
+  DISEASE: {
+    label: "Disease",
+    bg: "bg-red-500/10",
+    text: "text-red-600 dark:text-red-400",
+    border: "border-red-500/20",
+  },
 };
 
 export const CATEGORIES_LIST = [
@@ -70,6 +76,7 @@ export const CATEGORIES_LIST = [
   { key: "LIGAND", label: "Ligand" },
   { key: "TRANSCRIPTION_FACTOR", label: "Transcription Factor" },
   { key: "ADAPTOR_PROTEIN", label: "Adaptor Protein" },
+  { key: "DISEASE", label: "Disease" },
 ] as const;
 
 export const CATEGORY_KEYS = [
@@ -79,4 +86,5 @@ export const CATEGORY_KEYS = [
   "LIGAND",
   "TRANSCRIPTION_FACTOR",
   "ADAPTOR_PROTEIN",
+  "DISEASE",
 ] as const;

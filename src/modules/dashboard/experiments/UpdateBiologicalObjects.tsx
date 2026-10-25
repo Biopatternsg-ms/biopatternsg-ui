@@ -190,14 +190,14 @@ export const UpdateBiologicalObjects = () => {
     setObjects((prev) =>
       prev.map((obj) => {
         if (obj.id !== entityId) return obj;
-        if (obj.roles.includes(normalizedRole)) return obj;
+        if (obj.roles.some((r) => r.toUpperCase() === normalizedRole)) return obj;
 
         const updatedRoles = [...obj.roles, normalizedRole];
         const initial = initialObjects.find((io) => (io.symbol || io.name) === (obj.symbol || obj.name));
         const initialRoles = initial ? initial.roles || [] : [];
         const isModified =
           updatedRoles.length !== initialRoles.length ||
-          updatedRoles.some((r) => !initialRoles.includes(r));
+          updatedRoles.some((r) => !initialRoles.some((ir) => ir.toUpperCase() === r.toUpperCase()));
 
         return {
           ...obj,
@@ -217,12 +217,14 @@ export const UpdateBiologicalObjects = () => {
       prev.map((obj) => {
         if (obj.id !== entityId) return obj;
 
-        const updatedRoles = obj.roles.filter((r) => r !== roleToRemove);
+        const updatedRoles = obj.roles.filter(
+          (r) => r.toUpperCase() !== roleToRemove.trim().toUpperCase()
+        );
         const initial = initialObjects.find((io) => (io.symbol || io.name) === (obj.symbol || obj.name));
         const initialRoles = initial ? initial.roles || [] : [];
         const isModified =
           updatedRoles.length !== initialRoles.length ||
-          updatedRoles.some((r) => !initialRoles.includes(r));
+          updatedRoles.some((r) => !initialRoles.some((ir) => ir.toUpperCase() === r.toUpperCase()));
 
         return {
           ...obj,
@@ -320,7 +322,9 @@ export const UpdateBiologicalObjects = () => {
       if (selectedCategory === "NO_ROLES") {
         if (item.roles.length > 0) return false;
       } else if (selectedCategory !== "ALL") {
-        const matchesCategory = item.roles.includes(selectedCategory);
+        const matchesCategory = item.roles.some(
+          (r) => r.toUpperCase() === selectedCategory.toUpperCase()
+        );
         if (!matchesCategory) return false;
       }
 
@@ -629,7 +633,9 @@ export const UpdateBiologicalObjects = () => {
             </span>
           </button>
           {CATEGORIES_LIST.map((cat) => {
-            const count = objects.filter((o) => o.roles.includes(cat.key)).length;
+            const count = objects.filter((o) =>
+              o.roles.some((r) => r.toUpperCase() === cat.key.toUpperCase())
+            ).length;
             const isSelected = selectedCategory === cat.key;
 
             return (
@@ -727,7 +733,7 @@ export const UpdateBiologicalObjects = () => {
 
                     // Categories not yet added to this entity
                     const availableCategoriesToAdd = CATEGORIES_LIST.filter(
-                      (c) => !item.roles.includes(c.key)
+                      (c) => !item.roles.some((r) => r.toUpperCase() === c.key.toUpperCase())
                     );
 
                     return (
