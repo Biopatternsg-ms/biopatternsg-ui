@@ -117,19 +117,29 @@ export const UpdateBiologicalObjects = () => {
         const items = bioObjectsData.value;
         // Prioritize entities with no roles at the start
         const sortedItems = [...items].sort((a, b) => {
-          const aNoRoles = (!a.roles || a.roles.length === 0) ? 1 : 0;
-          const bNoRoles = (!b.roles || b.roles.length === 0) ? 1 : 0;
+          const aRoles = a.roles || [];
+          const bRoles = b.roles || [];
+          const aNoRoles = aRoles.length === 0 ? 1 : 0;
+          const bNoRoles = bRoles.length === 0 ? 1 : 0;
           if (aNoRoles !== bNoRoles) {
             return bNoRoles - aNoRoles;
           }
           return (a.symbol || a.name || "").localeCompare(b.symbol || b.name || "");
         });
 
-        setInitialObjects(sortedItems);
+        const normalizedItems = sortedItems.map((item, idx) => ({
+          ...item,
+          roles: Array.isArray(item.roles) ? [...item.roles] : [],
+          biotypes: Array.isArray(item.biotypes) ? [...item.biotypes] : [],
+          meshRoles: Array.isArray(item.meshRoles) ? [...item.meshRoles] : [],
+          synonyms: Array.isArray(item.synonyms) ? [...item.synonyms] : item.alternativeIds || [],
+          id: `${item.symbol || item.name}-${idx}`,
+        }));
+
+        setInitialObjects(normalizedItems);
         setObjects(
-          sortedItems.map((item, idx) => ({
+          normalizedItems.map((item) => ({
             ...item,
-            id: `${item.symbol || item.name}-${idx}`,
             isModified: false,
           }))
         );
@@ -190,11 +200,12 @@ export const UpdateBiologicalObjects = () => {
     setObjects((prev) =>
       prev.map((obj) => {
         if (obj.id !== entityId) return obj;
-        if (obj.roles.some((r) => r.toUpperCase() === normalizedRole)) return obj;
+        const currentRoles = Array.isArray(obj.roles) ? obj.roles : [];
+        if (currentRoles.some((r) => r.toUpperCase() === normalizedRole)) return obj;
 
-        const updatedRoles = [...obj.roles, normalizedRole];
+        const updatedRoles = [...currentRoles, normalizedRole];
         const initial = initialObjects.find((io) => (io.symbol || io.name) === (obj.symbol || obj.name));
-        const initialRoles = initial ? initial.roles || [] : [];
+        const initialRoles = initial && Array.isArray(initial.roles) ? initial.roles : [];
         const isModified =
           updatedRoles.length !== initialRoles.length ||
           updatedRoles.some((r) => !initialRoles.some((ir) => ir.toUpperCase() === r.toUpperCase()));
@@ -217,11 +228,12 @@ export const UpdateBiologicalObjects = () => {
       prev.map((obj) => {
         if (obj.id !== entityId) return obj;
 
-        const updatedRoles = obj.roles.filter(
+        const currentRoles = Array.isArray(obj.roles) ? obj.roles : [];
+        const updatedRoles = currentRoles.filter(
           (r) => r.toUpperCase() !== roleToRemove.trim().toUpperCase()
         );
         const initial = initialObjects.find((io) => (io.symbol || io.name) === (obj.symbol || obj.name));
-        const initialRoles = initial ? initial.roles || [] : [];
+        const initialRoles = initial && Array.isArray(initial.roles) ? initial.roles : [];
         const isModified =
           updatedRoles.length !== initialRoles.length ||
           updatedRoles.some((r) => !initialRoles.some((ir) => ir.toUpperCase() === r.toUpperCase()));
@@ -245,7 +257,7 @@ export const UpdateBiologicalObjects = () => {
 
         return {
           ...obj,
-          roles: [...initial.roles],
+          roles: Array.isArray(initial.roles) ? [...initial.roles] : [],
           isModified: false,
         };
       })
@@ -255,9 +267,9 @@ export const UpdateBiologicalObjects = () => {
   // Handler to reset all entities back to initial
   const handleResetAll = () => {
     setObjects(
-      initialObjects.map((item, idx) => ({
+      initialObjects.map((item) => ({
         ...item,
-        id: `${item.symbol || item.name}-${idx}`,
+        roles: Array.isArray(item.roles) ? [...item.roles] : [],
         isModified: false,
       }))
     );
@@ -310,9 +322,9 @@ export const UpdateBiologicalObjects = () => {
     }
   };
 
-  // Filtered list (prioritizing entities with no roles at the beginning)
+  // Filtered list (preserving stable ordering so modified entities do not jump around)
   const filteredObjects = useMemo(() => {
-    const filtered = objects.filter((item) => {
+    return objects.filter((item) => {
       // Modified only filter
       if (filterModifiedOnly && !item.isModified) {
         return false;
@@ -320,9 +332,13 @@ export const UpdateBiologicalObjects = () => {
 
       // Category filter (support NO_ROLES or specific role key)
       if (selectedCategory === "NO_ROLES") {
-        if (item.roles.length > 0) return false;
+        const hasNoRoles = (!item.roles || item.roles.length === 0);
+        const wasInitiallyNoRoles =
+          item.isModified &&
+          !initialObjects.find((io) => (io.symbol || io.name) === (item.symbol || item.name))?.roles?.length;
+        if (!hasNoRoles && !wasInitiallyNoRoles) return false;
       } else if (selectedCategory !== "ALL") {
-        const matchesCategory = item.roles.some(
+        const matchesCategory = (item.roles || []).some(
           (r) => r.toUpperCase() === selectedCategory.toUpperCase()
         );
         if (!matchesCategory) return false;
@@ -336,23 +352,13 @@ export const UpdateBiologicalObjects = () => {
         const synonymMatch = (item.synonyms || item.alternativeIds || []).some((s) =>
           s.toLowerCase().includes(term)
         );
-        const rolesMatch = item.roles.some((r) => r.toLowerCase().includes(term));
+        const rolesMatch = (item.roles || []).some((r) => r.toLowerCase().includes(term));
         return symbolMatch || descMatch || synonymMatch || rolesMatch;
       }
 
       return true;
     });
-
-    // Always sort entities with no roles first, followed by alphabetical order
-    return [...filtered].sort((a, b) => {
-      const aNoRoles = a.roles.length === 0 ? 1 : 0;
-      const bNoRoles = b.roles.length === 0 ? 1 : 0;
-      if (aNoRoles !== bNoRoles) {
-        return bNoRoles - aNoRoles;
-      }
-      return (a.symbol || a.name || "").localeCompare(b.symbol || b.name || "");
-    });
-  }, [objects, filterModifiedOnly, selectedCategory, searchTerm]);
+  }, [objects, initialObjects, filterModifiedOnly, selectedCategory, searchTerm]);
 
   const totalPages = Math.max(1, Math.ceil(filteredObjects.length / pageSize));
   const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
@@ -362,10 +368,10 @@ export const UpdateBiologicalObjects = () => {
   }, [filteredObjects, safeCurrentPage, pageSize]);
 
   const modifiedCount = useMemo(() => objects.filter((o) => o.isModified).length, [objects]);
-  const noRolesCount = useMemo(() => objects.filter((o) => o.roles.length === 0).length, [objects]);
+  const noRolesCount = useMemo(() => objects.filter((o) => (!o.roles || o.roles.length === 0)).length, [objects]);
 
   const totalAssignedRoles = useMemo(
-    () => objects.reduce((sum, o) => sum + o.roles.length, 0),
+    () => objects.reduce((sum, o) => sum + (o.roles || []).length, 0),
     [objects]
   );
 
@@ -838,12 +844,12 @@ export const UpdateBiologicalObjects = () => {
                         <td className="py-4 px-4">
                           <div className="space-y-2">
                             <div className="flex flex-wrap gap-1.5 items-center">
-                              {item.roles.length === 0 ? (
+                              {(!item.roles || item.roles.length === 0) ? (
                                 <span className="text-xs text-amber-600 italic">
                                   No roles assigned
                                 </span>
                               ) : (
-                                item.roles.map((role) => (
+                                (item.roles || []).map((role) => (
                                   <RolePillBadge
                                     key={role}
                                     role={role}
