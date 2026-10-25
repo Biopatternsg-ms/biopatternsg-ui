@@ -141,11 +141,8 @@ export default function ConfigureInferences() {
         console.warn("Could not delete prior pathways (might not exist yet):", pathwayErr);
       }
 
-      // Reset subsequent pipeline steps to PENDING in config-and-control
+      // Reset subsequent pipeline steps after Find Biological Roles to PENDING in config-and-control
       try {
-        await experimentService.updatePipelineStep(pipeId, "FIND_ROLES", "PENDING", {
-          statusMessage: "Awaiting execution with updated restriction level",
-        });
         await experimentService.updatePipelineStep(pipeId, "UPDATE_BIOLOGICAL_OBJECTS", "PENDING", {
           statusMessage: "Awaiting role confirmation",
         });

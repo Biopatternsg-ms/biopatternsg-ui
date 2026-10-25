@@ -115,9 +115,19 @@ export const UpdateBiologicalObjects = () => {
 
       if (bioObjectsData.status === "fulfilled" && bioObjectsData.value) {
         const items = bioObjectsData.value;
-        setInitialObjects(items);
+        // Prioritize entities with no roles at the start
+        const sortedItems = [...items].sort((a, b) => {
+          const aNoRoles = (!a.roles || a.roles.length === 0) ? 1 : 0;
+          const bNoRoles = (!b.roles || b.roles.length === 0) ? 1 : 0;
+          if (aNoRoles !== bNoRoles) {
+            return bNoRoles - aNoRoles;
+          }
+          return (a.symbol || a.name || "").localeCompare(b.symbol || b.name || "");
+        });
+
+        setInitialObjects(sortedItems);
         setObjects(
-          items.map((item, idx) => ({
+          sortedItems.map((item, idx) => ({
             ...item,
             id: `${item.symbol || item.name}-${idx}`,
             isModified: false,
@@ -298,16 +308,18 @@ export const UpdateBiologicalObjects = () => {
     }
   };
 
-  // Filtered list
+  // Filtered list (prioritizing entities with no roles at the beginning)
   const filteredObjects = useMemo(() => {
-    return objects.filter((item) => {
+    const filtered = objects.filter((item) => {
       // Modified only filter
       if (filterModifiedOnly && !item.isModified) {
         return false;
       }
 
-      // Category filter
-      if (selectedCategory !== "ALL") {
+      // Category filter (support NO_ROLES or specific role key)
+      if (selectedCategory === "NO_ROLES") {
+        if (item.roles.length > 0) return false;
+      } else if (selectedCategory !== "ALL") {
         const matchesCategory = item.roles.includes(selectedCategory);
         if (!matchesCategory) return false;
       }
@@ -326,6 +338,16 @@ export const UpdateBiologicalObjects = () => {
 
       return true;
     });
+
+    // Always sort entities with no roles first, followed by alphabetical order
+    return [...filtered].sort((a, b) => {
+      const aNoRoles = a.roles.length === 0 ? 1 : 0;
+      const bNoRoles = b.roles.length === 0 ? 1 : 0;
+      if (aNoRoles !== bNoRoles) {
+        return bNoRoles - aNoRoles;
+      }
+      return (a.symbol || a.name || "").localeCompare(b.symbol || b.name || "");
+    });
   }, [objects, filterModifiedOnly, selectedCategory, searchTerm]);
 
   const totalPages = Math.max(1, Math.ceil(filteredObjects.length / pageSize));
@@ -336,6 +358,7 @@ export const UpdateBiologicalObjects = () => {
   }, [filteredObjects, safeCurrentPage, pageSize]);
 
   const modifiedCount = useMemo(() => objects.filter((o) => o.isModified).length, [objects]);
+  const noRolesCount = useMemo(() => objects.filter((o) => o.roles.length === 0).length, [objects]);
 
   const totalAssignedRoles = useMemo(
     () => objects.reduce((sum, o) => sum + o.roles.length, 0),
@@ -543,6 +566,11 @@ export const UpdateBiologicalObjects = () => {
                 valueColor: "text-emerald-600",
               },
               {
+                label: "No Roles",
+                value: noRolesCount,
+                valueColor: noRolesCount > 0 ? "text-amber-600 font-bold" : "text-on-surface-variant",
+              },
+              {
                 label: "Modified",
                 value: modifiedCount,
                 valueColor: modifiedCount > 0 ? "text-amber-600" : "text-on-surface-variant",
@@ -570,6 +598,35 @@ export const UpdateBiologicalObjects = () => {
             )}
           >
             All ({objects.length})
+          </button>
+
+          {/* No Roles Pill */}
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedCategory(selectedCategory === "NO_ROLES" ? "ALL" : "NO_ROLES");
+              setCurrentPage(1);
+            }}
+            className={cn(
+              "px-3 py-1 rounded-full font-medium transition-all duration-200 whitespace-nowrap text-xs border flex items-center gap-1.5",
+              selectedCategory === "NO_ROLES"
+                ? "bg-amber-600 text-white border-amber-600 font-bold ring-1 ring-amber-600 shadow-xs"
+                : "bg-surface-container-low text-on-surface-variant border-outline-variant/15 hover:bg-surface-container-high"
+            )}
+          >
+            <span>No Roles</span>
+            <span
+              className={cn(
+                "text-[10px] px-1.5 py-0.2 rounded-full font-bold",
+                selectedCategory === "NO_ROLES"
+                  ? "bg-white/25 text-white"
+                  : noRolesCount > 0
+                  ? "bg-amber-100 text-amber-800"
+                  : "bg-surface-container-high text-on-surface-variant"
+              )}
+            >
+              {noRolesCount}
+            </span>
           </button>
           {CATEGORIES_LIST.map((cat) => {
             const count = objects.filter((o) => o.roles.includes(cat.key)).length;
