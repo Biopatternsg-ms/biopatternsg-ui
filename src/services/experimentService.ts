@@ -321,10 +321,41 @@ export const experimentService = {
       const response = await authFetch(`${PIPELINES_ENDPOINT}/${experimentId}/execution`);
       if (response.ok) {
         const data = await response.json();
-        const steps = (data.steps || []).map((s: PipelineStepExecution) => ({
-          ...s,
-          id: s.id || (s as { step?: string }).step || s.name,
-        }));
+        const isStepManualCheck = (s: PipelineStepExecution) => {
+          if (s.isManual) return true;
+          const id = String(s.id || "").toLowerCase();
+          const name = String(s.name || "").toLowerCase();
+          const stepKey = String((s as { step?: string }).step || "").toLowerCase();
+          return (
+            id.includes("update_aligned") ||
+            id.includes("configure_inferences") ||
+            id.includes("update_biological") ||
+            id.includes("update_object_roles") ||
+            id.includes("select_closing") ||
+            name.includes("update aligned") ||
+            name.includes("configure inferences") ||
+            name.includes("update biological") ||
+            name.includes("update object roles") ||
+            name.includes("select closing") ||
+            stepKey.includes("update_aligned") ||
+            stepKey.includes("configure_inferences") ||
+            stepKey.includes("update_biological") ||
+            stepKey.includes("update_object_roles") ||
+            stepKey.includes("select_closing")
+          );
+        };
+
+        const steps = (data.steps || []).map((s: PipelineStepExecution) => {
+          const id = s.id || (s as { step?: string }).step || s.name;
+          const isManual = isStepManualCheck({ ...s, id });
+          return {
+            ...s,
+            id,
+            isManual: isManual ? true : s.isManual,
+            duration: isManual ? "—" : s.duration,
+            outputText: isManual && s.status === "COMPLETED" ? "Completed" : s.outputText,
+          };
+        });
 
         // 1. Ensure "Update Aligned Objects" manual step is present
         const hasUpdateAligned = steps.some(

@@ -39,6 +39,7 @@ import {
   Lock,
   Dna,
   Target,
+  User,
   type LucideIcon
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
@@ -156,8 +157,63 @@ const MANUAL_STEP_CONFIG: Record<string, ManualStepDefinition> = {
   },
 };
 
+export function isManualStep(step: PipelineStepExecution): boolean {
+  if (step.isManual) return true;
+  if (getManualStepConfig(step) !== null) return true;
+  const id = String(step.id || "").toLowerCase();
+  const name = String(step.name || "").toLowerCase();
+  const stepKey = String((step as { step?: string }).step || "").toLowerCase();
+
+  return (
+    id.includes("update_aligned") ||
+    id.includes("configure_inferences") ||
+    id.includes("update_biological") ||
+    id.includes("update_object_roles") ||
+    id.includes("select_closing") ||
+    name.includes("update aligned") ||
+    name.includes("configure inferences") ||
+    name.includes("update biological") ||
+    name.includes("update object roles") ||
+    name.includes("select closing") ||
+    stepKey.includes("update_aligned") ||
+    stepKey.includes("configure_inferences") ||
+    stepKey.includes("update_biological") ||
+    stepKey.includes("update_object_roles") ||
+    stepKey.includes("select_closing")
+  );
+}
+
 function getManualStepConfig(step: PipelineStepExecution): ManualStepDefinition | null {
-  return MANUAL_STEP_CONFIG[step.id] || MANUAL_STEP_CONFIG[step.name] || null;
+  if (MANUAL_STEP_CONFIG[step.id]) return MANUAL_STEP_CONFIG[step.id];
+  if (MANUAL_STEP_CONFIG[step.name]) return MANUAL_STEP_CONFIG[step.name];
+  const stepKey = (step as { step?: string }).step;
+  if (stepKey && MANUAL_STEP_CONFIG[stepKey]) return MANUAL_STEP_CONFIG[stepKey];
+
+  const id = String(step.id || "").toLowerCase();
+  const name = String(step.name || "").toLowerCase();
+  const key = String(stepKey || "").toLowerCase();
+
+  if (id.includes("update_aligned") || name.includes("update aligned") || key.includes("update_aligned")) {
+    return MANUAL_STEP_CONFIG["step-update_aligned_objects"];
+  }
+  if (id.includes("configure_inferences") || name.includes("configure inferences") || key.includes("configure_inferences")) {
+    return MANUAL_STEP_CONFIG["step-configure_inferences"];
+  }
+  if (
+    id.includes("update_biological") ||
+    id.includes("update_object_roles") ||
+    name.includes("update biological") ||
+    name.includes("update object roles") ||
+    key.includes("update_biological") ||
+    key.includes("update_object_roles")
+  ) {
+    return MANUAL_STEP_CONFIG["step-update_biological_objects"];
+  }
+  if (id.includes("select_closing") || name.includes("select closing") || key.includes("select_closing")) {
+    return MANUAL_STEP_CONFIG["step-select_closing_objects"];
+  }
+
+  return null;
 }
 
 function getManualStepRoute(step: PipelineStepExecution, networkId?: string, experimentId?: string): string | null {
@@ -293,13 +349,27 @@ function parseRawMetrics(rawMetrics?: RawMetricInput): ParsedMetricItem[] {
     });
 }
 
-// Helper to parse "hh:mm:ss" to total seconds
+// Helper to parse "hh:mm:ss", "Xh Ym Zs", "Xm Ys", or "Xs" to total seconds
 function parseTimeToSeconds(timeStr?: string): number {
-  if (!timeStr) return 0;
+  if (!timeStr || timeStr === "--:--" || timeStr === "—" || timeStr === "-" || timeStr === "Manual") return 0;
+
+  // Handle formats like "1349m 45s", "10s", "1h 20m 5s"
+  if (timeStr.includes("s") || timeStr.includes("m") || timeStr.includes("h")) {
+    let total = 0;
+    const hMatch = timeStr.match(/(\d+)\s*h/i);
+    const mMatch = timeStr.match(/(\d+)\s*m/i);
+    const sMatch = timeStr.match(/(\d+)\s*s/i);
+    if (hMatch) total += parseInt(hMatch[1], 10) * 3600;
+    if (mMatch) total += parseInt(mMatch[1], 10) * 60;
+    if (sMatch) total += parseInt(sMatch[1], 10);
+    return total;
+  }
+
+  // Handle "hh:mm:ss" or "mm:ss"
   const parts = timeStr.split(":").map(Number);
-  if (parts.length === 3) {
+  if (parts.length === 3 && !parts.some(isNaN)) {
     return parts[0] * 3600 + parts[1] * 60 + parts[2];
-  } else if (parts.length === 2) {
+  } else if (parts.length === 2 && !parts.some(isNaN)) {
     return parts[0] * 60 + parts[1];
   }
   return 0;
@@ -498,7 +568,11 @@ const ExperimentExecutionView = () => {
           const defaultStg = activeStg || computedStages[0];
           setSelectedStageId(defaultStg?.id || "INIT");
 
-          setTotalSeconds(parseTimeToSeconds(executionData.totalExecutionTime));
+          const automatedSecs = (executionData.steps || []).reduce((acc, step) => {
+            if (isManualStep(step)) return acc;
+            return acc + parseTimeToSeconds(step.duration);
+          }, 0);
+          setTotalSeconds(automatedSecs > 0 ? automatedSecs : parseTimeToSeconds(executionData.totalExecutionTime));
           setPhaseSeconds(parseTimeToSeconds(executionData.currentPhaseDuration));
           setLoading(false);
         }
@@ -533,7 +607,11 @@ const ExperimentExecutionView = () => {
         const executionData = await experimentService.getExperimentExecution(experimentId);
         if (!ignore) {
           setData(executionData);
-          setTotalSeconds(parseTimeToSeconds(executionData.totalExecutionTime));
+          const automatedSecs = (executionData.steps || []).reduce((acc, step) => {
+            if (isManualStep(step)) return acc;
+            return acc + parseTimeToSeconds(step.duration);
+          }, 0);
+          setTotalSeconds(automatedSecs > 0 ? automatedSecs : parseTimeToSeconds(executionData.totalExecutionTime));
           setPhaseSeconds(parseTimeToSeconds(executionData.currentPhaseDuration));
         }
       } catch (err) {
@@ -654,11 +732,18 @@ const ExperimentExecutionView = () => {
   const selectedStageDuration = selectedStage
     ? (() => {
         const totalSecs = selectedStage.steps.reduce((acc, step) => {
+          if (isManualStep(step)) return acc;
           return acc + parseTimeToSeconds(step.duration);
         }, 0);
         return totalSecs > 0 ? formatSecondsToMs(totalSecs) : undefined;
       })()
     : undefined;
+
+  const automatedStepsTotalSecs = (data.steps || []).reduce((acc, step) => {
+    if (isManualStep(step)) return acc;
+    return acc + parseTimeToSeconds(step.duration);
+  }, 0);
+  const automatedTotalTimeFormatted = formatSecondsToHms(automatedStepsTotalSecs);
 
   return (
     <div className="flex flex-col gap-6">
@@ -739,7 +824,11 @@ const ExperimentExecutionView = () => {
                 <Clock className="w-3.5 h-3.5 text-primary" />
                 <span className="text-on-surface-variant font-medium">Total Duration:</span>
                 <span className="font-mono font-bold text-on-surface text-xs">
-                  {data.status === "ACTIVE" ? displayTotalTime : (data.totalExecutionTime || displayTotalTime)}
+                  {data.status === "ACTIVE"
+                    ? displayTotalTime
+                    : automatedStepsTotalSecs > 0
+                    ? automatedTotalTimeFormatted
+                    : (data.totalExecutionTime || displayTotalTime)}
                 </span>
               </div>
             </div>
@@ -817,7 +906,7 @@ const ExperimentExecutionView = () => {
                         {stage.steps.map((step) => {
                           const firstActiveStep = data.steps.find((s) => s.status === "ACTIVE" && !isStepActionDisabled(s, data));
                           const manualRoute = getManualStepRoute(step, networkId || data.networkId, experimentId);
-                          const isManualStep = step.isManual || !!manualRoute;
+                          const isStepManual = isManualStep(step);
                           const stepDisabled = isStepActionDisabled(step, data);
                           const isStepCompleted = step.status === "COMPLETED";
                           const isFirstActive = firstActiveStep
@@ -838,8 +927,8 @@ const ExperimentExecutionView = () => {
                                   <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                                 ) : stepDisabled ? (
                                   <Lock className="w-3.5 h-3.5 text-outline-variant/60 shrink-0" />
-                                ) : isManualStep ? (
-                                  <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                ) : isStepManual ? (
+                                  <User className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                                 ) : isStepActive ? (
                                   <Loader2 className="w-3.5 h-3.5 text-amber-500 animate-spin shrink-0" />
                                 ) : isStepFailed ? (
@@ -865,6 +954,15 @@ const ExperimentExecutionView = () => {
                                 >
                                   {step.name}
                                 </span>
+                                {isStepManual && (
+                                  <span
+                                    title="Manual Step"
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0"
+                                  >
+                                    <User className="w-2.5 h-2.5" />
+                                    Manual
+                                  </span>
+                                )}
                               </div>
                               <div className="flex items-center gap-1.5 shrink-0">
                                 {manualRoute && !isStepCompleted ? (
@@ -896,6 +994,8 @@ const ExperimentExecutionView = () => {
                                       <span className="text-amber-500 font-bold">Running</span>
                                     ) : stepDisabled ? (
                                       "--:--"
+                                    ) : isStepManual ? (
+                                      "—"
                                     ) : (
                                       step.duration || "--:--"
                                     )}
@@ -999,8 +1099,8 @@ const ExperimentExecutionView = () => {
                     step.name === "Find Biological Roles" ||
                     step.id === "FIND_ROLES" ||
                     (step as { step?: string }).step === "find_roles";
-                  const isManualStep = step.isManual || !!manualRoute;
-                  return stepMetrics.length > 0 || isManualStep || isRolesStep;
+                  const isStepManual = isManualStep(step);
+                  return stepMetrics.length > 0 || isStepManual || isRolesStep;
                 });
 
                 if (visibleSteps.length === 0) return null;
@@ -1021,7 +1121,7 @@ const ExperimentExecutionView = () => {
                           step.name === "Find Biological Roles" ||
                           step.id === "FIND_ROLES" ||
                           (step as { step?: string }).step === "find_roles";
-                        const isManualStep = step.isManual || !!manualRoute || isRolesStep;
+                        const isStepManual = isManualStep(step);
                         const stepDisabled = isStepActionDisabled(step, data);
                         const isStepCompleted = step.status === "COMPLETED";
                         const isFirstActive = firstActiveStep
@@ -1034,7 +1134,7 @@ const ExperimentExecutionView = () => {
                           <div
                             key={sIdx}
                             className={`flex flex-col bg-surface-card p-4 rounded-xl border shadow-sm gap-3 ${
-                              isManualStep ? "border-primary/30 ring-1 ring-primary/10" : "border-outline-variant/15"
+                              isStepManual || isRolesStep ? "border-primary/30 ring-1 ring-primary/10" : "border-outline-variant/15"
                             }`}
                           >
                             <div className="flex items-start gap-3">
@@ -1046,9 +1146,9 @@ const ExperimentExecutionView = () => {
                                 <div className="w-5 h-5 rounded-full bg-surface-container-high text-on-surface-variant/60 flex items-center justify-center shrink-0 mt-0.5">
                                   <Lock className="w-3 h-3" />
                                 </div>
-                              ) : isManualStep ? (
+                              ) : isStepManual ? (
                                 <div className="w-5 h-5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-300/60 flex items-center justify-center shrink-0 mt-0.5">
-                                  <Clock className="w-3 h-3 font-bold" />
+                                  <User className="w-3 h-3 font-bold" />
                                 </div>
                               ) : isStepActive ? (
                                 <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 animate-pulse mt-0.5">
@@ -1063,16 +1163,27 @@ const ExperimentExecutionView = () => {
                               )}
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between gap-2">
-                                  <span
-                                    className={`text-xs font-bold truncate ${
-                                      step.status === "PENDING" || stepDisabled ? "text-on-surface-variant/40" : "text-on-surface"
-                                    }`}
-                                  >
-                                    {step.name}
-                                  </span>
-                                  {isStepCompleted && step.duration && (
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <span
+                                      className={`text-xs font-bold truncate ${
+                                        step.status === "PENDING" || stepDisabled ? "text-on-surface-variant/40" : "text-on-surface"
+                                      }`}
+                                    >
+                                      {step.name}
+                                    </span>
+                                    {isStepManual && (
+                                      <span
+                                        title="Manual Step"
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0"
+                                      >
+                                        <User className="w-2.5 h-2.5" />
+                                        Manual
+                                      </span>
+                                    )}
+                                  </div>
+                                  {isStepCompleted && (
                                     <span className="text-[10px] text-on-surface-variant/60 font-medium whitespace-nowrap">
-                                      {step.duration}
+                                      {isStepManual ? "—" : (step.duration || "--:--")}
                                     </span>
                                   )}
                                 </div>
