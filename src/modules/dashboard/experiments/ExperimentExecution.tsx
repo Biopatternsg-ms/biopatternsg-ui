@@ -39,7 +39,7 @@ import {
   Lock,
   Dna,
   Target,
-  User,
+  Hand,
   type LucideIcon
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
@@ -928,7 +928,7 @@ const ExperimentExecutionView = () => {
                                 ) : stepDisabled ? (
                                   <Lock className="w-3.5 h-3.5 text-outline-variant/60 shrink-0" />
                                 ) : isStepManual ? (
-                                  <User className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                  <Hand className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                                 ) : isStepActive ? (
                                   <Loader2 className="w-3.5 h-3.5 text-amber-500 animate-spin shrink-0" />
                                 ) : isStepFailed ? (
@@ -956,38 +956,37 @@ const ExperimentExecutionView = () => {
                                 </span>
                                 {isStepManual && (
                                   <span
-                                    title="Manual Step"
-                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0"
+                                    title="Manual action"
+                                    className="inline-flex items-center text-primary/80 shrink-0"
                                   >
-                                    <User className="w-2.5 h-2.5" />
-                                    Manual
+                                    <Hand className="w-3 h-3" />
                                   </span>
                                 )}
                               </div>
                               <div className="flex items-center gap-1.5 shrink-0">
                                 {manualRoute && !isStepCompleted ? (
-                                  <button
-                                    onClick={(e) => {
-                                      if (canNavigate) {
-                                        e.stopPropagation();
-                                        navigate(manualRoute);
-                                      }
-                                    }}
-                                    disabled={stepDisabled}
-                                    title={
-                                      stepDisabled
-                                        ? "Requires previous steps to be completed"
-                                        : `Open and edit ${step.name}`
-                                    }
-                                    className={`flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[10px] transition-all shrink-0 ${
-                                      stepDisabled
-                                        ? "bg-surface-container-high text-on-surface-variant/40 cursor-not-allowed"
-                                        : "bg-primary/10 hover:bg-primary/20 text-primary cursor-pointer"
-                                    }`}
-                                  >
-                                    {stepDisabled ? <Lock className="w-3 h-3" /> : <Edit3 className="w-3 h-3" />}
-                                    <span>{stepDisabled ? "Locked" : "Edit"}</span>
-                                  </button>
+                                  stepDisabled ? (
+                                    <div
+                                      title="Requires previous steps to be completed"
+                                      className="p-1 text-on-surface-variant/40 shrink-0 flex items-center justify-center"
+                                    >
+                                      <Lock className="w-3.5 h-3.5" />
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={(e) => {
+                                        if (canNavigate) {
+                                          e.stopPropagation();
+                                          navigate(manualRoute);
+                                        }
+                                      }}
+                                      title={`Open and edit ${step.name}`}
+                                      className="flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[10px] transition-all shrink-0 bg-primary/10 hover:bg-primary/20 text-primary cursor-pointer"
+                                    >
+                                      <Edit3 className="w-3 h-3" />
+                                      <span>Edit</span>
+                                    </button>
+                                  )
                                 ) : (
                                   <span className="text-[10px] text-on-surface-variant/60 font-medium whitespace-nowrap">
                                     {isStepActive ? (
@@ -1147,7 +1146,7 @@ const ExperimentExecutionView = () => {
                                 </div>
                               ) : isStepManual ? (
                                 <div className="w-5 h-5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-300/60 flex items-center justify-center shrink-0 mt-0.5">
-                                  <User className="w-3 h-3 font-bold" />
+                                  <Hand className="w-3 h-3 font-bold" />
                                 </div>
                               ) : isStepActive ? (
                                 <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 animate-pulse mt-0.5">
@@ -1172,10 +1171,10 @@ const ExperimentExecutionView = () => {
                                     </span>
                                     {isStepManual && (
                                       <span
-                                        title="Manual Step"
+                                        title="Manual action"
                                         className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0"
                                       >
-                                        <User className="w-2.5 h-2.5" />
+                                        <Hand className="w-2.5 h-2.5" />
                                         Manual
                                       </span>
                                     )}
