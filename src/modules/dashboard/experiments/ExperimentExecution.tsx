@@ -1093,7 +1093,6 @@ const ExperimentExecutionView = () => {
               {selectedStage.steps && selectedStage.steps.length > 0 && (() => {
                 const visibleSteps = selectedStage.steps.filter((step) => {
                   const stepMetrics = parseRawMetrics(step.metrics);
-                  const manualRoute = getManualStepRoute(step, networkId || data.networkId, experimentId);
                   const isRolesStep =
                     step.id === "step-find_roles" ||
                     step.name === "Find Biological Roles" ||

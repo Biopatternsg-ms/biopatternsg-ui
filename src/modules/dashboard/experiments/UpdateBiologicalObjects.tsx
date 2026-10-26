@@ -64,7 +64,7 @@ export const UpdateBiologicalObjects = () => {
 
   const [loading, setLoading] = useState(true);
   const [experimentName, setExperimentName] = useState<string>("Experiment Execution");
-  const [initialObjects, setInitialObjects] = useState<BiologicalObjectItem[]>([]);
+  const [initialObjects, setInitialObjects] = useState<EditableBiologicalObject[]>([]);
   const [objects, setObjects] = useState<EditableBiologicalObject[]>([]);
   const [restrictionLevel, setRestrictionLevel] = useState<RestrictionLevel>("VERY_RESTRICTED");
 
@@ -136,13 +136,12 @@ export const UpdateBiologicalObjects = () => {
           id: `${item.symbol || item.name}-${idx}`,
         }));
 
-        setInitialObjects(normalizedItems);
-        setObjects(
-          normalizedItems.map((item) => ({
-            ...item,
-            isModified: false,
-          }))
-        );
+        const initialNormalized: EditableBiologicalObject[] = normalizedItems.map((item) => ({
+          ...item,
+          isModified: false,
+        }));
+        setInitialObjects(initialNormalized);
+        setObjects(initialNormalized);
       }
     } catch (err) {
       console.error("Error loading biological objects:", err);
