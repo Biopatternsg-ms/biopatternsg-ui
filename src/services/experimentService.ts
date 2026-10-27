@@ -182,9 +182,9 @@ export const experimentService = {
   },
 
   /**
-   * Saves the inference configuration (pipelineId, restrictionLevel) in the inferences microservice.
+   * Saves the inference configuration (pipelineId, restrictionLevel, summarizeKb, maxDepth) in the inferences microservice.
    * POST /inferences
-   * Body: { pipelineId, restrictionLevel }
+   * Body: { pipelineId, restrictionLevel, summarizeKb, maxDepth }
    */
   async saveInferenceConfig(
     pipelineId: string,
@@ -195,6 +195,8 @@ export const experimentService = {
       body: JSON.stringify({
         pipelineId,
         restrictionLevel: inferenceConfig.restrictionLevel,
+        summarizeKb: inferenceConfig.summarizeKb ?? true,
+        maxDepth: inferenceConfig.maxDepth ?? 5,
       }),
     });
   },
@@ -220,6 +222,8 @@ export const experimentService = {
       id: `inf-${pipelineId}`,
       pipelineId,
       restrictionLevel: "VERY_RESTRICTED",
+      summarizeKb: true,
+      maxDepth: 5,
       roles: {
         CYP7A1: ["PROTEIN", "ENZYME"],
         FXR: ["PROTEIN", "RECEPTOR", "TRANSCRIPTION_FACTOR"],

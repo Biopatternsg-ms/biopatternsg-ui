@@ -127,6 +127,8 @@ export type RestrictionLevel = "RESTRICTED" | "VERY_RESTRICTED" | "UNRESTRICTED"
 
 export interface InferenceConfig {
   restrictionLevel: RestrictionLevel;
+  summarizeKb?: boolean;
+  maxDepth?: number;
   startObjects?: string[];
   endObjects?: string[];
 }
@@ -135,6 +137,8 @@ export interface InferenceResponse {
   id?: string;
   pipelineId: string;
   restrictionLevel: RestrictionLevel;
+  summarizeKb?: boolean;
+  maxDepth?: number;
   roles?: Record<string, string[]>;
 }
 
@@ -148,5 +152,3 @@ export interface BiologicalObjectItem {
   alternativeIds?: string[];
   description?: string;
 }
-
-

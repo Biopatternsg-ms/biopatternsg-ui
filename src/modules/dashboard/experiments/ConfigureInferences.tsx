@@ -33,11 +33,14 @@ import {
   Sparkles,
   Lock,
   Edit3,
+  Layers,
+  GitBranch,
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
 import { Button } from "@/components/atoms/Button";
 import { Breadcrumb } from "@/components/atoms/Breadcrumb";
 import { Badge } from "@/components/atoms/Badge";
+import { Input } from "@/components/atoms/Input";
 import { experimentService } from "@/services/experimentService";
 import type {
   ExperimentExecution,
@@ -55,6 +58,8 @@ export default function ConfigureInferences() {
 
   // Configuration Form State
   const [restrictionLevel, setRestrictionLevel] = useState<RestrictionLevel>("RESTRICTED");
+  const [summarizeKb, setSummarizeKb] = useState<boolean>(true);
+  const [maxDepth, setMaxDepth] = useState<number>(5);
 
   // Modals and Submission State
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,11 +84,31 @@ export default function ConfigureInferences() {
           if (execData) {
             setExperimentData(execData);
           }
+          const stepMetrics = execData?.steps?.find((s) => s.id === "step-configure_inferences")?.metrics as
+            | Record<string, string>
+            | undefined;
+
           const level =
             savedInference?.restrictionLevel ||
-            ((execData?.steps?.find((s) => s.id === "step-configure_inferences")?.metrics as Record<string, string> | undefined)?.restrictionLevel as RestrictionLevel | undefined);
+            (stepMetrics?.restrictionLevel as RestrictionLevel | undefined) ||
+            (stepMetrics?.["Restriction Level"] as RestrictionLevel | undefined);
           if (level && ["RESTRICTED", "VERY_RESTRICTED", "UNRESTRICTED"].includes(level)) {
             setRestrictionLevel(level);
+          }
+
+          if (typeof savedInference?.summarizeKb === "boolean") {
+            setSummarizeKb(savedInference.summarizeKb);
+          } else if (stepMetrics?.["Summarize KB"] !== undefined) {
+            setSummarizeKb(stepMetrics["Summarize KB"] === "true");
+          }
+
+          if (typeof savedInference?.maxDepth === "number" && savedInference.maxDepth > 0) {
+            setMaxDepth(savedInference.maxDepth);
+          } else if (stepMetrics?.["Max Depth"]) {
+            const parsedDepth = Number(stepMetrics["Max Depth"]);
+            if (!Number.isNaN(parsedDepth) && parsedDepth > 0) {
+              setMaxDepth(parsedDepth);
+            }
           }
         }
       } catch (err) {
@@ -132,6 +157,8 @@ export default function ConfigureInferences() {
       // Save Inference Configuration (inferences service updates the pipeline step)
       await experimentService.saveInferenceConfig(pipeId, {
         restrictionLevel,
+        summarizeKb,
+        maxDepth,
       });
 
       // Delete prior pathways to prevent stale results
@@ -159,7 +186,7 @@ export default function ConfigureInferences() {
       setIsSubmitting(false);
       setSuccessModalData({
         title: "Inferences Configured Successfully",
-        message: `Inference restriction strategy set to ${restrictionLevel.replace("_", " ")}. Subsequent steps have been reset to run with the new criteria.`,
+        message: `Restriction level set to ${restrictionLevel.replace("_", " ")} (Summarize KB: ${summarizeKb ? "Yes" : "No"}, Max Depth: ${maxDepth}). Subsequent steps have been reset to run with the new criteria.`,
       });
     } catch (err) {
       console.error("Error saving inference configuration:", err);
@@ -243,7 +270,7 @@ export default function ConfigureInferences() {
               </Badge>
             </div>
             <p className="text-on-surface-variant font-body text-xs max-w-2xl mt-1 leading-relaxed">
-              Select the biological restriction strategy to configure rules for the upcoming inference launch.
+              Select the biological restriction strategy and pathway search parameters for the upcoming inference launch.
             </p>
           </div>
         </div>
@@ -424,6 +451,96 @@ export default function ConfigureInferences() {
         </div>
       </div>
 
+      {/* Step 2: Pathway Inference Engine Parameters (summarizeKb & effectiveMaxDepth) */}
+      <div className="glass-panel p-6 rounded-3xl border border-outline-variant/15 shadow-md flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <GitBranch className="w-4 h-4 text-primary" />
+            <h2 className="font-headline text-base font-bold text-on-surface">
+              Pathway Search & Knowledge Base Parameters
+            </h2>
+          </div>
+          <span className="text-xs text-on-surface-variant font-medium">
+            Summarize KB: <strong className="text-primary">{summarizeKb ? "Enabled" : "Disabled"}</strong> | Max Depth: <strong className="text-primary">{maxDepth}</strong>
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Parameter 1: Summarize Knowledge Base */}
+          <div
+            onClick={() => setSummarizeKb((prev) => !prev)}
+            className={`cursor-pointer p-5 rounded-2xl border transition-all flex items-start justify-between gap-4 ${
+              summarizeKb
+                ? "bg-primary/10 border-primary shadow-sm ring-1 ring-primary/20"
+                : "bg-surface-card border-outline-variant/20 hover:border-primary/40"
+            }`}
+          >
+            <div className="flex items-start gap-3.5">
+              <div className="p-2.5 bg-primary/10 text-primary rounded-xl shrink-0">
+                <Layers className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-headline font-bold text-sm text-on-surface">
+                    Summarize Knowledge Base
+                  </h3>
+                  <Badge variant="completed" className="text-[9px] font-bold">
+                    DEFAULT: ON
+                  </Badge>
+                </div>
+                <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                  Normalize and deduplicate equivalent biological relations (e.g. <em>stimulate</em>, <em>activate</em> &rarr; <em>positive_correlation</em>) before SWI-Prolog evaluation to reduce redundant pathways.
+                </p>
+              </div>
+            </div>
+            <input
+              type="checkbox"
+              checked={summarizeKb}
+              onChange={(e) => {
+                e.stopPropagation();
+                setSummarizeKb(e.target.checked);
+              }}
+              className="w-5 h-5 mt-1 rounded text-primary focus:ring-primary border-outline-variant cursor-pointer shrink-0"
+            />
+          </div>
+
+          {/* Parameter 2: Effective Maximum Depth */}
+          <div className="p-5 rounded-2xl border bg-surface-card border-outline-variant/20 flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="p-2.5 bg-primary/10 text-primary rounded-xl shrink-0">
+                <GitBranch className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-headline font-bold text-sm text-on-surface">
+                    Effective Maximum Depth
+                  </h3>
+                  <Badge variant="completed" className="text-[9px] font-bold">
+                    DEFAULT: 5
+                  </Badge>
+                </div>
+                <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                  Maximum number of intermediate causal transitions allowed during recursive DFS pathway chaining (1 to 20). Lower values prevent combinatorial explosion on large networks.
+                </p>
+              </div>
+            </div>
+            <div className="w-24 shrink-0">
+              <Input
+                type="number"
+                min={1}
+                max={20}
+                value={maxDepth}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setMaxDepth(Number.isNaN(val) ? 5 : Math.max(1, Math.min(20, val)));
+                }}
+                className="text-right font-mono font-bold text-sm"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Confirmation Modal */}
       {isConfirmCompleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
@@ -446,6 +563,14 @@ export default function ConfigureInferences() {
               <div className="flex justify-between">
                 <span className="text-on-surface-variant">Selected Restriction Level:</span>
                 <strong className="text-primary font-mono">{restrictionLevel.replace("_", " ")}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-on-surface-variant">Summarize Knowledge Base:</span>
+                <strong className="text-primary font-mono">{summarizeKb ? "Enabled (Yes)" : "Disabled (No)"}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-on-surface-variant">Effective Maximum Depth:</span>
+                <strong className="text-primary font-mono">{maxDepth}</strong>
               </div>
             </div>
 

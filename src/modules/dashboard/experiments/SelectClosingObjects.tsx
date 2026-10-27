@@ -30,8 +30,6 @@ import {
   AlertTriangle,
   Info,
   Sparkles,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
 import { Button } from "@/components/atoms/Button";
@@ -60,10 +58,9 @@ export const SelectClosingObjects = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
 
-  // Advanced inference parameters
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  // Inference parameters loaded from Configure Inferences
   const [summarizeKb, setSummarizeKb] = useState(true);
-  const [maxDepth, setMaxDepth] = useState(10);
+  const [maxDepth, setMaxDepth] = useState(5);
 
   // Submission & Modals
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,16 +75,24 @@ export const SelectClosingObjects = () => {
     let ignore = false;
     async function loadInitialData(id: string) {
       try {
-        const [execData, bioObjects, savedClosing] = await Promise.all([
+        const [execData, bioObjects, savedClosing, savedInference] = await Promise.all([
           experimentService.getExperimentExecution(id),
           experimentService.getBiologicalObjects(id),
           experimentService.getClosingObjects(id),
+          experimentService.getInferenceByPipelineId(id),
         ]);
 
         if (ignore) return;
 
         if (execData?.experimentName) {
           setExperimentName(execData.experimentName);
+        }
+
+        if (typeof savedInference?.summarizeKb === "boolean") {
+          setSummarizeKb(savedInference.summarizeKb);
+        }
+        if (typeof savedInference?.maxDepth === "number" && savedInference.maxDepth > 0) {
+          setMaxDepth(savedInference.maxDepth);
         }
 
         const validCandidates = Array.isArray(bioObjects) ? bioObjects : [];
@@ -609,67 +614,6 @@ export const SelectClosingObjects = () => {
             })}
           </div>
         )}
-
-        {/* Collapsible Advanced Parameters */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden">
-          <button
-            type="button"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
-          >
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
-              <SlidersHorizontal className="w-4 h-4 text-slate-500" />
-              Advanced Inference Parameters
-            </div>
-            {showAdvanced ? (
-              <ChevronUp className="w-4 h-4 text-slate-400" />
-            ) : (
-              <ChevronDown className="w-4 h-4 text-slate-400" />
-            )}
-          </button>
-
-          {showAdvanced && (
-            <div className="p-4 pt-2 border-t border-slate-200 dark:border-slate-700 space-y-4 text-xs">
-              <div className="flex items-center justify-between gap-4 py-2 border-b border-slate-100 dark:border-slate-700/50">
-                <div>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200 block">
-                    Summarize Knowledge Base
-                  </span>
-                  <span className="text-slate-500 dark:text-slate-400 text-[11px]">
-                    Aggregate duplicate and reciprocal biological relations before Prolog evaluation.
-                  </span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={summarizeKb}
-                  onChange={(e) => setSummarizeKb(e.target.checked)}
-                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 dark:bg-slate-900 border-slate-300 dark:border-slate-600"
-                />
-              </div>
-
-              <div className="flex items-center justify-between gap-4 py-2">
-                <div>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200 block">
-                    Maximum Pathway Depth
-                  </span>
-                  <span className="text-slate-500 dark:text-slate-400 text-[11px]">
-                    Maximum number of causal transitions allowed per inferred pathway (default: 10).
-                  </span>
-                </div>
-                <div className="w-24">
-                  <Input
-                    type="number"
-                    min={1}
-                    max={50}
-                    value={maxDepth}
-                    onChange={(e) => setMaxDepth(Math.max(1, Math.min(50, Number(e.target.value) || 10)))}
-                    className="text-right text-xs"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
 
         {/* Bottom Action Footer */}
         <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
