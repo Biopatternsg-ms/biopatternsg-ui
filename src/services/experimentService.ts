@@ -197,6 +197,8 @@ export const experimentService = {
         restrictionLevel: inferenceConfig.restrictionLevel,
         summarizeKb: inferenceConfig.summarizeKb ?? true,
         maxDepth: inferenceConfig.maxDepth ?? 5,
+        startFirstRoles: inferenceConfig.startFirstRoles ?? ["LIGAND"],
+        startSecondRoles: inferenceConfig.startSecondRoles ?? ["PROTEIN"],
       }),
     });
   },

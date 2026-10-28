@@ -39,7 +39,7 @@ import {
   Lock,
   Dna,
   Target,
-  Hand,
+  Settings,
   type LucideIcon
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
@@ -928,7 +928,7 @@ const ExperimentExecutionView = () => {
                                 ) : stepDisabled ? (
                                   <Lock className="w-3.5 h-3.5 text-outline-variant/60 shrink-0" />
                                 ) : isStepManual ? (
-                                  <Hand className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                  <Settings className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                                 ) : isStepActive ? (
                                   <Loader2 className="w-3.5 h-3.5 text-amber-500 animate-spin shrink-0" />
                                 ) : isStepFailed ? (
@@ -959,7 +959,7 @@ const ExperimentExecutionView = () => {
                                     title="Manual action"
                                     className="inline-flex items-center text-primary/80 shrink-0"
                                   >
-                                    <Hand className="w-3 h-3" />
+                                    <Settings className="w-3 h-3" />
                                   </span>
                                 )}
                               </div>
@@ -1146,7 +1146,7 @@ const ExperimentExecutionView = () => {
                                 </div>
                               ) : isStepManual ? (
                                 <div className="w-5 h-5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-300/60 flex items-center justify-center shrink-0 mt-0.5">
-                                  <Hand className="w-3 h-3 font-bold" />
+                                  <Settings className="w-3 h-3" />
                                 </div>
                               ) : isStepActive ? (
                                 <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 animate-pulse mt-0.5">
@@ -1174,7 +1174,7 @@ const ExperimentExecutionView = () => {
                                         title="Manual action"
                                         className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0"
                                       >
-                                        <Hand className="w-2.5 h-2.5" />
+                                        <Settings className="w-2.5 h-2.5" />
                                         Manual
                                       </span>
                                     )}

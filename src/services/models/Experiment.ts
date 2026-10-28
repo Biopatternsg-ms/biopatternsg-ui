@@ -129,6 +129,8 @@ export interface InferenceConfig {
   restrictionLevel: RestrictionLevel;
   summarizeKb?: boolean;
   maxDepth?: number;
+  startFirstRoles?: string[];
+  startSecondRoles?: string[];
   startObjects?: string[];
   endObjects?: string[];
 }
@@ -139,6 +141,8 @@ export interface InferenceResponse {
   restrictionLevel: RestrictionLevel;
   summarizeKb?: boolean;
   maxDepth?: number;
+  startFirstRoles?: string[];
+  startSecondRoles?: string[];
   roles?: Record<string, string[]>;
 }
 
