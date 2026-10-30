@@ -570,7 +570,7 @@ export const SelectClosingObjects = () => {
         </div>
 
         {/* Filter by Category Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-on-surface-variant/70 font-semibold whitespace-nowrap mr-1 flex items-center gap-1">
             <SlidersHorizontal className="w-3.5 h-3.5" />
             Filter by Role:

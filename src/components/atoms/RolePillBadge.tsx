@@ -23,12 +23,14 @@ import { CATEGORY_STYLES } from "@/config/biologicalCategories";
 
 const ROLE_COLOR_MAP: Record<string, string> = {
   PROTEIN: "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100/70",
+  GENE: "bg-cyan-50 text-cyan-700 border-cyan-200 hover:bg-cyan-100/70",
   LIGAND: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100/70",
   RECEPTOR: "bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-100/70",
   ENZYME: "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100/70",
   TRANSCRIPTION_FACTOR: "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100/70",
   ADAPTOR_PROTEIN: "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100/70",
   DISEASE: "bg-red-50 text-red-700 border-red-200 hover:bg-red-100/70",
+  VARIANT: "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100/70",
 };
 
 function formatRoleLabel(role: string): string {

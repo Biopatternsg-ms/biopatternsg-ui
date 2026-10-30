@@ -31,6 +31,12 @@ export const CATEGORY_STYLES: Record<string, CategoryStyle> = {
     text: "text-blue-600 dark:text-blue-400",
     border: "border-blue-500/20",
   },
+  GENE: {
+    label: "Gene",
+    bg: "bg-cyan-500/10",
+    text: "text-cyan-600 dark:text-cyan-400",
+    border: "border-cyan-500/20",
+  },
   ENZYME: {
     label: "Enzyme",
     bg: "bg-purple-500/10",
@@ -67,24 +73,34 @@ export const CATEGORY_STYLES: Record<string, CategoryStyle> = {
     text: "text-red-600 dark:text-red-400",
     border: "border-red-500/20",
   },
+  VARIANT: {
+    label: "Variant",
+    bg: "bg-indigo-500/10",
+    text: "text-indigo-600 dark:text-indigo-400",
+    border: "border-indigo-500/20",
+  },
 };
 
 export const CATEGORIES_LIST = [
   { key: "PROTEIN", label: "Protein" },
+  { key: "GENE", label: "Gene" },
   { key: "ENZYME", label: "Enzyme" },
   { key: "RECEPTOR", label: "Receptor" },
   { key: "LIGAND", label: "Ligand" },
   { key: "TRANSCRIPTION_FACTOR", label: "Transcription Factor" },
   { key: "ADAPTOR_PROTEIN", label: "Adaptor Protein" },
   { key: "DISEASE", label: "Disease" },
+  { key: "VARIANT", label: "Variant" },
 ] as const;
 
 export const CATEGORY_KEYS = [
   "PROTEIN",
+  "GENE",
   "ENZYME",
   "RECEPTOR",
   "LIGAND",
   "TRANSCRIPTION_FACTOR",
   "ADAPTOR_PROTEIN",
   "DISEASE",
+  "VARIANT",
 ] as const;

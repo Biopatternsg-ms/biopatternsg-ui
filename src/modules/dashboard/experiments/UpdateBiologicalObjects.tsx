@@ -580,7 +580,7 @@ export const UpdateBiologicalObjects = () => {
         </div>
 
         {/* Filter by Role Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-on-surface-variant/70 font-semibold whitespace-nowrap mr-1">
             Filter by Role:
           </span>
