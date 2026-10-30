@@ -34,6 +34,8 @@ import {
   Edit3,
   Layers,
   GitBranch,
+  Target,
+  Workflow,
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
 import { Button } from "@/components/atoms/Button";
@@ -58,10 +60,14 @@ export default function ConfigureInferences() {
 
   // Configuration Form State
   const [restrictionLevel, setRestrictionLevel] = useState<RestrictionLevel>("RESTRICTED");
-  const [summarizeKb, setSummarizeKb] = useState<boolean>(true);
-  const [maxDepth, setMaxDepth] = useState<number>(5);
+  const summarizeKb = true;
+  const [maxDepth, setMaxDepth] = useState<number>(10);
   const [startFirstRoles, setStartFirstRoles] = useState<string[]>(["LIGAND"]);
   const [startSecondRoles, setStartSecondRoles] = useState<string[]>(["PROTEIN"]);
+  const [intermediateFirstRoles, setIntermediateFirstRoles] = useState<string[]>(["PROTEIN"]);
+  const [intermediateSecondRoles, setIntermediateSecondRoles] = useState<string[]>(["PROTEIN"]);
+  const [endFirstRoles, setEndFirstRoles] = useState<string[]>(["PROTEIN"]);
+  const [endSecondRoles, setEndSecondRoles] = useState<string[]>(["PROTEIN"]);
 
   const toggleRole = (
     roleKey: string,
@@ -119,19 +125,17 @@ export default function ConfigureInferences() {
             setRestrictionLevel("RESTRICTED");
           }
 
-          if (typeof savedInference?.summarizeKb === "boolean") {
-            setSummarizeKb(savedInference.summarizeKb);
-          } else if (stepMetrics?.["Summarize KB"] !== undefined) {
-            setSummarizeKb(stepMetrics["Summarize KB"] === "true");
-          }
-
           if (typeof savedInference?.maxDepth === "number" && savedInference.maxDepth > 0) {
-            setMaxDepth(savedInference.maxDepth);
+            setMaxDepth(Math.max(1, Math.min(20, savedInference.maxDepth)));
           } else if (stepMetrics?.["Max Depth"]) {
             const parsedDepth = Number(stepMetrics["Max Depth"]);
             if (!Number.isNaN(parsedDepth) && parsedDepth > 0) {
-              setMaxDepth(parsedDepth);
+              setMaxDepth(Math.max(1, Math.min(20, parsedDepth)));
+            } else {
+              setMaxDepth(10);
             }
+          } else {
+            setMaxDepth(10);
           }
 
           if (Array.isArray(savedInference?.startFirstRoles) && savedInference.startFirstRoles.length > 0) {
@@ -152,6 +156,46 @@ export default function ConfigureInferences() {
               .map((s) => s.trim().toUpperCase())
               .filter(Boolean);
             if (parsedSecond.length > 0) setStartSecondRoles(parsedSecond);
+          }
+
+          if (Array.isArray(savedInference?.intermediateFirstRoles) && savedInference.intermediateFirstRoles.length > 0) {
+            setIntermediateFirstRoles(savedInference.intermediateFirstRoles.map((r) => r.toUpperCase()));
+          } else if (stepMetrics?.["Intermediate First Roles"]) {
+            const parsed = stepMetrics["Intermediate First Roles"]
+              .split(",")
+              .map((s) => s.trim().toUpperCase())
+              .filter(Boolean);
+            if (parsed.length > 0) setIntermediateFirstRoles(parsed);
+          }
+
+          if (Array.isArray(savedInference?.intermediateSecondRoles) && savedInference.intermediateSecondRoles.length > 0) {
+            setIntermediateSecondRoles(savedInference.intermediateSecondRoles.map((r) => r.toUpperCase()));
+          } else if (stepMetrics?.["Intermediate Second Roles"]) {
+            const parsed = stepMetrics["Intermediate Second Roles"]
+              .split(",")
+              .map((s) => s.trim().toUpperCase())
+              .filter(Boolean);
+            if (parsed.length > 0) setIntermediateSecondRoles(parsed);
+          }
+
+          if (Array.isArray(savedInference?.endFirstRoles) && savedInference.endFirstRoles.length > 0) {
+            setEndFirstRoles(savedInference.endFirstRoles.map((r) => r.toUpperCase()));
+          } else if (stepMetrics?.["End First Roles"]) {
+            const parsed = stepMetrics["End First Roles"]
+              .split(",")
+              .map((s) => s.trim().toUpperCase())
+              .filter(Boolean);
+            if (parsed.length > 0) setEndFirstRoles(parsed);
+          }
+
+          if (Array.isArray(savedInference?.endSecondRoles) && savedInference.endSecondRoles.length > 0) {
+            setEndSecondRoles(savedInference.endSecondRoles.map((r) => r.toUpperCase()));
+          } else if (stepMetrics?.["End Second Roles"]) {
+            const parsed = stepMetrics["End Second Roles"]
+              .split(",")
+              .map((s) => s.trim().toUpperCase())
+              .filter(Boolean);
+            if (parsed.length > 0) setEndSecondRoles(parsed);
           }
         }
       } catch (err) {
@@ -204,6 +248,10 @@ export default function ConfigureInferences() {
         maxDepth,
         startFirstRoles,
         startSecondRoles,
+        intermediateFirstRoles,
+        intermediateSecondRoles,
+        endFirstRoles,
+        endSecondRoles,
       });
 
       // Delete prior pathways to prevent stale results
@@ -477,20 +525,13 @@ export default function ConfigureInferences() {
             </h2>
           </div>
           <span className="text-xs text-on-surface-variant font-medium">
-            Summarize KB: <strong className="text-primary">{summarizeKb ? "Enabled" : "Disabled"}</strong> | Max Depth: <strong className="text-primary">{maxDepth}</strong>
+            Summarize KB: <strong className="text-primary">Always Enabled</strong> | Max Depth: <strong className="text-primary">{maxDepth}</strong>
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Parameter 1: Summarize Knowledge Base */}
-          <div
-            onClick={() => setSummarizeKb((prev) => !prev)}
-            className={`cursor-pointer p-5 rounded-2xl border transition-all flex items-start justify-between gap-4 ${
-              summarizeKb
-                ? "bg-primary/10 border-primary shadow-sm ring-1 ring-primary/20"
-                : "bg-surface-card border-outline-variant/20 hover:border-primary/40"
-            }`}
-          >
+          <div className="p-5 rounded-2xl border bg-primary/10 border-primary/30 shadow-xs flex items-start justify-between gap-4 cursor-default select-none">
             <div className="flex items-start gap-3.5">
               <div className="p-2.5 bg-primary/10 text-primary rounded-xl shrink-0">
                 <Layers className="w-5 h-5" />
@@ -501,7 +542,7 @@ export default function ConfigureInferences() {
                     Summarize Knowledge Base
                   </h3>
                   <Badge variant="completed" className="text-[9px] font-bold">
-                    DEFAULT: ON
+                    ALWAYS ON
                   </Badge>
                 </div>
                 <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
@@ -511,12 +552,11 @@ export default function ConfigureInferences() {
             </div>
             <input
               type="checkbox"
-              checked={summarizeKb}
-              onChange={(e) => {
-                e.stopPropagation();
-                setSummarizeKb(e.target.checked);
-              }}
-              className="w-5 h-5 mt-1 rounded text-primary focus:ring-primary border-outline-variant cursor-pointer shrink-0"
+              checked={true}
+              disabled
+              readOnly
+              className="w-5 h-5 mt-1 rounded text-primary border-outline-variant cursor-not-allowed opacity-80 shrink-0 accent-primary"
+              title="Summarize Knowledge Base is permanently enabled"
             />
           </div>
 
@@ -532,7 +572,7 @@ export default function ConfigureInferences() {
                     Effective Maximum Depth
                   </h3>
                   <Badge variant="completed" className="text-[9px] font-bold">
-                    DEFAULT: 5
+                    DEFAULT: 10
                   </Badge>
                 </div>
                 <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
@@ -548,14 +588,31 @@ export default function ConfigureInferences() {
                 value={maxDepth}
                 onChange={(e) => {
                   const val = Number(e.target.value);
-                  setMaxDepth(Number.isNaN(val) ? 5 : Math.max(1, Math.min(20, val)));
+                  setMaxDepth(Number.isNaN(val) ? 10 : Math.max(1, Math.min(20, val)));
                 }}
                 className="text-right font-mono font-bold text-sm"
               />
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Parameter 3: Start Event - First Element (A) Allowed Roles */}
+      {/* Step 3: Pathway Start Rule Roles (inicio_rule) */}
+      <div className="glass-panel p-6 rounded-3xl border border-outline-variant/15 shadow-md flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Activity className="w-4 h-4 text-primary" />
+            <h2 className="font-headline text-base font-bold text-on-surface">
+              Start Rule Biological Roles
+            </h2>
+          </div>
+          <span className="text-xs text-on-surface-variant font-medium">
+            Prolog Rule: <code className="text-primary font-mono font-bold">inicio_rule(A, E, B)</code>
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Parameter 1: Start Event - First Element (A) Allowed Roles */}
           <div className="p-5 rounded-2xl border bg-surface-card border-outline-variant/20 flex flex-col justify-between gap-3.5">
             <div className="flex items-start justify-between gap-2">
               <div>
@@ -598,7 +655,7 @@ export default function ConfigureInferences() {
             </div>
           </div>
 
-          {/* Parameter 4: Start Event - Second Element (B) Allowed Roles */}
+          {/* Parameter 2: Start Event - Second Element (B) Allowed Roles */}
           <div className="p-5 rounded-2xl border bg-surface-card border-outline-variant/20 flex flex-col justify-between gap-3.5">
             <div className="flex items-start justify-between gap-2">
               <div>
@@ -643,6 +700,212 @@ export default function ConfigureInferences() {
         </div>
       </div>
 
+      {/* Step 4: Pathway Intermediate Rule Roles (intermedios_rule) */}
+      <div className="glass-panel p-6 rounded-3xl border border-outline-variant/15 shadow-md flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Workflow className="w-4 h-4 text-primary" />
+            <h2 className="font-headline text-base font-bold text-on-surface">
+              Intermediate Rule Biological Roles
+            </h2>
+          </div>
+          <span className="text-xs text-on-surface-variant font-medium">
+            Prolog Rule: <code className="text-primary font-mono font-bold">intermedios_rule(A, E, B)</code>
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Parameter 1: Intermediate Event - First Element (A) Allowed Roles */}
+          <div className="p-5 rounded-2xl border bg-surface-card border-outline-variant/20 flex flex-col justify-between gap-3.5">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-headline font-bold text-sm text-on-surface">
+                    Intermediate Rule — First Element (A) Roles
+                  </h3>
+                  <Badge variant="completed" className="text-[9px] font-bold">
+                    DEFAULT: PROTEIN
+                  </Badge>
+                </div>
+                <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                  Select biological roles allowed as the source molecule <code>A</code> in <code>intermedios_rule(A, E, B)</code>.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {CATEGORIES_LIST.map((cat) => {
+                const isSelected = intermediateFirstRoles.includes(cat.key);
+                const style = CATEGORY_STYLES[cat.key];
+                return (
+                  <button
+                    key={`mid-first-${cat.key}`}
+                    type="button"
+                    onClick={() => toggleRole(cat.key, setIntermediateFirstRoles)}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                      isSelected
+                        ? `${style.bg} ${style.text} ${style.border} ring-1 ring-current/25 shadow-2xs`
+                        : "bg-surface-container-low text-on-surface-variant/60 border-outline-variant/15 hover:border-outline-variant/40"
+                    }`}
+                  >
+                    {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
+                    {cat.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="px-3 py-1.5 rounded-lg bg-surface-container-low border border-outline-variant/15 font-mono text-[11px] text-primary truncate">
+              {formatPrologPreview(intermediateFirstRoles, "A")}
+            </div>
+          </div>
+
+          {/* Parameter 2: Intermediate Event - Second Element (B) Allowed Roles */}
+          <div className="p-5 rounded-2xl border bg-surface-card border-outline-variant/20 flex flex-col justify-between gap-3.5">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-headline font-bold text-sm text-on-surface">
+                    Intermediate Rule — Second Element (B) Roles
+                  </h3>
+                  <Badge variant="completed" className="text-[9px] font-bold">
+                    DEFAULT: PROTEIN
+                  </Badge>
+                </div>
+                <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                  Select biological roles allowed as the target molecule <code>B</code> in <code>intermedios_rule(A, E, B)</code>.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {CATEGORIES_LIST.map((cat) => {
+                const isSelected = intermediateSecondRoles.includes(cat.key);
+                const style = CATEGORY_STYLES[cat.key];
+                return (
+                  <button
+                    key={`mid-second-${cat.key}`}
+                    type="button"
+                    onClick={() => toggleRole(cat.key, setIntermediateSecondRoles)}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                      isSelected
+                        ? `${style.bg} ${style.text} ${style.border} ring-1 ring-current/25 shadow-2xs`
+                        : "bg-surface-container-low text-on-surface-variant/60 border-outline-variant/15 hover:border-outline-variant/40"
+                    }`}
+                  >
+                    {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
+                    {cat.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="px-3 py-1.5 rounded-lg bg-surface-container-low border border-outline-variant/15 font-mono text-[11px] text-primary truncate">
+              {formatPrologPreview(intermediateSecondRoles, "B")}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Step 5: Pathway End Rule Roles (final_rule) */}
+      <div className="glass-panel p-6 rounded-3xl border border-outline-variant/15 shadow-md flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Target className="w-4 h-4 text-primary" />
+            <h2 className="font-headline text-base font-bold text-on-surface">
+              End Rule Biological Roles
+            </h2>
+          </div>
+          <span className="text-xs text-on-surface-variant font-medium">
+            Prolog Rule: <code className="text-primary font-mono font-bold">final_rule(A, E, B)</code>
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Parameter 1: End Event - First Element (A) Allowed Roles */}
+          <div className="p-5 rounded-2xl border bg-surface-card border-outline-variant/20 flex flex-col justify-between gap-3.5">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-headline font-bold text-sm text-on-surface">
+                    End Rule — First Element (A) Roles
+                  </h3>
+                  <Badge variant="completed" className="text-[9px] font-bold">
+                    DEFAULT: PROTEIN
+                  </Badge>
+                </div>
+                <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                  Select biological roles allowed as the source molecule <code>A</code> in <code>final_rule(A, E, B)</code>.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {CATEGORIES_LIST.map((cat) => {
+                const isSelected = endFirstRoles.includes(cat.key);
+                const style = CATEGORY_STYLES[cat.key];
+                return (
+                  <button
+                    key={`end-first-${cat.key}`}
+                    type="button"
+                    onClick={() => toggleRole(cat.key, setEndFirstRoles)}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                      isSelected
+                        ? `${style.bg} ${style.text} ${style.border} ring-1 ring-current/25 shadow-2xs`
+                        : "bg-surface-container-low text-on-surface-variant/60 border-outline-variant/15 hover:border-outline-variant/40"
+                    }`}
+                  >
+                    {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
+                    {cat.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="px-3 py-1.5 rounded-lg bg-surface-container-low border border-outline-variant/15 font-mono text-[11px] text-primary truncate">
+              {formatPrologPreview(endFirstRoles, "A")}
+            </div>
+          </div>
+
+          {/* Parameter 2: End Event - Second Element (B) Allowed Roles */}
+          <div className="p-5 rounded-2xl border bg-surface-card border-outline-variant/20 flex flex-col justify-between gap-3.5">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-headline font-bold text-sm text-on-surface">
+                    End Rule — Second Element (B) Roles
+                  </h3>
+                  <Badge variant="completed" className="text-[9px] font-bold">
+                    DEFAULT: PROTEIN
+                  </Badge>
+                </div>
+                <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                  Select biological roles allowed as the terminal molecule <code>B</code> in <code>final_rule(A, E, B)</code>.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {CATEGORIES_LIST.map((cat) => {
+                const isSelected = endSecondRoles.includes(cat.key);
+                const style = CATEGORY_STYLES[cat.key];
+                return (
+                  <button
+                    key={`end-second-${cat.key}`}
+                    type="button"
+                    onClick={() => toggleRole(cat.key, setEndSecondRoles)}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                      isSelected
+                        ? `${style.bg} ${style.text} ${style.border} ring-1 ring-current/25 shadow-2xs`
+                        : "bg-surface-container-low text-on-surface-variant/60 border-outline-variant/15 hover:border-outline-variant/40"
+                    }`}
+                  >
+                    {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
+                    {cat.label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="px-3 py-1.5 rounded-lg bg-surface-container-low border border-outline-variant/15 font-mono text-[11px] text-primary truncate">
+              {formatPrologPreview(endSecondRoles, "B")}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Confirmation Modal */}
       {isConfirmCompleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
@@ -675,12 +938,16 @@ export default function ConfigureInferences() {
                 <strong className="text-primary font-mono">{maxDepth}</strong>
               </div>
               <div className="flex justify-between gap-2">
-                <span className="text-on-surface-variant shrink-0">Start Element A Roles:</span>
-                <strong className="text-primary font-mono text-right">{startFirstRoles.join(", ")}</strong>
+                <span className="text-on-surface-variant shrink-0">Start Roles (A &rarr; B):</span>
+                <strong className="text-primary font-mono text-right">{startFirstRoles.join(", ")} &rarr; {startSecondRoles.join(", ")}</strong>
               </div>
               <div className="flex justify-between gap-2">
-                <span className="text-on-surface-variant shrink-0">Start Element B Roles:</span>
-                <strong className="text-primary font-mono text-right">{startSecondRoles.join(", ")}</strong>
+                <span className="text-on-surface-variant shrink-0">Intermediate Roles (A &rarr; B):</span>
+                <strong className="text-primary font-mono text-right">{intermediateFirstRoles.join(", ")} &rarr; {intermediateSecondRoles.join(", ")}</strong>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-on-surface-variant shrink-0">End Roles (A &rarr; B):</span>
+                <strong className="text-primary font-mono text-right">{endFirstRoles.join(", ")} &rarr; {endSecondRoles.join(", ")}</strong>
               </div>
             </div>
 

@@ -73,7 +73,7 @@ export const SelectClosingObjects = () => {
 
   // Inference parameters loaded from Configure Inferences
   const [summarizeKb, setSummarizeKb] = useState(true);
-  const [maxDepth, setMaxDepth] = useState(5);
+  const [maxDepth, setMaxDepth] = useState(10);
 
   // Submission & Modals
   const [isSubmitting, setIsSubmitting] = useState(false);

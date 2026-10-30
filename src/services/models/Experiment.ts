@@ -131,6 +131,10 @@ export interface InferenceConfig {
   maxDepth?: number;
   startFirstRoles?: string[];
   startSecondRoles?: string[];
+  intermediateFirstRoles?: string[];
+  intermediateSecondRoles?: string[];
+  endFirstRoles?: string[];
+  endSecondRoles?: string[];
   startObjects?: string[];
   endObjects?: string[];
 }
@@ -143,6 +147,10 @@ export interface InferenceResponse {
   maxDepth?: number;
   startFirstRoles?: string[];
   startSecondRoles?: string[];
+  intermediateFirstRoles?: string[];
+  intermediateSecondRoles?: string[];
+  endFirstRoles?: string[];
+  endSecondRoles?: string[];
   roles?: Record<string, string[]>;
 }
 
