@@ -20,6 +20,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Landing from "@/modules/public/Landing";
 //import Register from "@/modules/public/Register";
 import RecoveryPassword from "@/modules/public/RecoveryPassword";
+import ResultsGraph from "@/modules/public/ResultsGraph";
 import Network from "@/modules/dashboard/networks/Network";
 import Experiments from "@/modules/dashboard/experiments/Experiments";
 import CreateExperiment from "@/modules/dashboard/experiments/CreateExperiment";
@@ -47,10 +48,12 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/results-graph" element={<ResultsGraph />} />
         <Route element={<PublicRoute />}>
           <Route path="/" element={<Landing />} />
           {/* <Route path="/register" element={<Register />} /> */}
           <Route path="/recovery-password" element={<RecoveryPassword />} />
+
         </Route>
 
         <Route element={<ProtectedRoute />}>

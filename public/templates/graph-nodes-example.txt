@@ -1,0 +1,31 @@
+name;type
+Epinephrine;Small Molecule
+ADRB2;Protein
+Gs_alpha;Protein
+Adenylyl_Cyclase;Protein
+cAMP;Second Messenger
+PRKACA;Protein
+CREB1;Protein
+CBP;Protein
+CRE_Element;Gene
+c-Fos_mRNA;RNA
+FOS;Protein
+miR-155;RNA
+Gq_alpha;Protein
+PLCB1;Protein
+PIP2;Lipid
+IP3;Second Messenger
+DAG;Lipid
+ITPR1;Protein
+Calcium_Ion;Small Molecule
+PRKCA;Protein
+CALM1;Protein
+CAMK2A;Protein
+NFKB1;Protein
+RELA;Protein
+NF-kappa-B_Complex;Protein Complex
+NFKBIA;Protein
+EIF4E;Protein
+EIF4G1;Protein
+eIF4F_Complex;Protein Complex
+Cyclin_D1_mRNA;RNA
