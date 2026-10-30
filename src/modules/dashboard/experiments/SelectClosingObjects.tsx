@@ -346,7 +346,7 @@ export const SelectClosingObjects = () => {
               Selection Required (0 / {MAX_CLOSING_OBJECTS})
             </Badge>
           ) : selectedKeys.size > MAX_CLOSING_OBJECTS ? (
-            <Badge variant="error" className="text-[9px] px-2 py-0.5 font-bold uppercase tracking-wider">
+            <Badge variant="failed" className="text-[9px] px-2 py-0.5 font-bold uppercase tracking-wider">
               Limit Exceeded ({selectedKeys.size} / {MAX_CLOSING_OBJECTS})
             </Badge>
           ) : (
