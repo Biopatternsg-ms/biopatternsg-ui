@@ -27,7 +27,6 @@ import {
   Loader2,
   Shield,
   ShieldAlert,
-  Globe,
   SlidersHorizontal,
   Check,
   Sparkles,
@@ -114,8 +113,10 @@ export default function ConfigureInferences() {
             savedInference?.restrictionLevel ||
             (stepMetrics?.restrictionLevel as RestrictionLevel | undefined) ||
             (stepMetrics?.["Restriction Level"] as RestrictionLevel | undefined);
-          if (level && ["RESTRICTED", "VERY_RESTRICTED", "UNRESTRICTED"].includes(level)) {
+          if (level && ["RESTRICTED", "VERY_RESTRICTED"].includes(level)) {
             setRestrictionLevel(level);
+          } else {
+            setRestrictionLevel("RESTRICTED");
           }
 
           if (typeof savedInference?.summarizeKb === "boolean") {
@@ -400,8 +401,37 @@ export default function ConfigureInferences() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* 1. Restricted (Default) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* 1. Very Restricted */}
+          <div
+            onClick={() => setRestrictionLevel("VERY_RESTRICTED")}
+            className={`cursor-pointer p-5 rounded-2xl border transition-all flex flex-col justify-between gap-3 relative ${
+              restrictionLevel === "VERY_RESTRICTED"
+                ? "bg-primary/10 border-primary shadow-sm ring-2 ring-primary/20"
+                : "bg-surface-card border-outline-variant/20 hover:border-primary/40 hover:bg-surface-container-low"
+            }`}
+          >
+            <div className="flex items-start justify-between">
+              <div className="p-2.5 bg-amber-500/10 text-amber-600 rounded-xl">
+                <ShieldAlert className="w-5 h-5" />
+              </div>
+              {restrictionLevel === "VERY_RESTRICTED" && (
+                <div className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center">
+                  <Check className="w-3 h-3 font-bold" />
+                </div>
+              )}
+            </div>
+            <div>
+              <h3 className="font-headline font-bold text-sm text-on-surface">
+                Very Restricted
+              </h3>
+              <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
+                Adds <strong>only the aligned objects</strong>.
+              </p>
+            </div>
+          </div>
+
+          {/* 2. Restricted (Default) */}
           <div
             onClick={() => setRestrictionLevel("RESTRICTED")}
             className={`cursor-pointer p-5 rounded-2xl border transition-all flex flex-col justify-between gap-3 relative ${
@@ -431,64 +461,6 @@ export default function ConfigureInferences() {
               </h3>
               <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
                 Adds the <strong>aligned objects</strong> and the <strong>objects paired with them</strong> in biological events.
-              </p>
-            </div>
-          </div>
-
-          {/* 2. Very Restricted */}
-          <div
-            onClick={() => setRestrictionLevel("VERY_RESTRICTED")}
-            className={`cursor-pointer p-5 rounded-2xl border transition-all flex flex-col justify-between gap-3 relative ${
-              restrictionLevel === "VERY_RESTRICTED"
-                ? "bg-primary/10 border-primary shadow-sm ring-2 ring-primary/20"
-                : "bg-surface-card border-outline-variant/20 hover:border-primary/40 hover:bg-surface-container-low"
-            }`}
-          >
-            <div className="flex items-start justify-between">
-              <div className="p-2.5 bg-amber-500/10 text-amber-600 rounded-xl">
-                <ShieldAlert className="w-5 h-5" />
-              </div>
-              {restrictionLevel === "VERY_RESTRICTED" && (
-                <div className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center">
-                  <Check className="w-3 h-3 font-bold" />
-                </div>
-              )}
-            </div>
-            <div>
-              <h3 className="font-headline font-bold text-sm text-on-surface">
-                Very Restricted
-              </h3>
-              <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-                Adds <strong>only the aligned objects</strong>.
-              </p>
-            </div>
-          </div>
-
-          {/* 3. Unrestricted */}
-          <div
-            onClick={() => setRestrictionLevel("UNRESTRICTED")}
-            className={`cursor-pointer p-5 rounded-2xl border transition-all flex flex-col justify-between gap-3 relative ${
-              restrictionLevel === "UNRESTRICTED"
-                ? "bg-primary/10 border-primary shadow-sm ring-2 ring-primary/20"
-                : "bg-surface-card border-outline-variant/20 hover:border-primary/40 hover:bg-surface-container-low"
-            }`}
-          >
-            <div className="flex items-start justify-between">
-              <div className="p-2.5 bg-blue-500/10 text-blue-600 rounded-xl">
-                <Globe className="w-5 h-5" />
-              </div>
-              {restrictionLevel === "UNRESTRICTED" && (
-                <div className="w-5 h-5 rounded-full bg-primary text-white flex items-center justify-center">
-                  <Check className="w-3 h-3 font-bold" />
-                </div>
-              )}
-            </div>
-            <div>
-              <h3 className="font-headline font-bold text-sm text-on-surface">
-                Unrestricted
-              </h3>
-              <p className="text-xs text-on-surface-variant mt-1 leading-relaxed">
-                Adds <strong>all objects</strong> that appear in biological events.
               </p>
             </div>
           </div>
