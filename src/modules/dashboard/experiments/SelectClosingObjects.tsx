@@ -49,6 +49,9 @@ import { ErrorModal } from "@/components/molecules/ErrorModal";
 import { CATEGORIES_LIST } from "@/config/biologicalCategories";
 import { cn } from "@/lib/utils";
 
+const MIN_CLOSING_OBJECTS = 1;
+const MAX_CLOSING_OBJECTS = 20;
+
 export const SelectClosingObjects = () => {
   const { networkId, experimentId } = useParams<{ networkId: string; experimentId: string }>();
   const navigate = useNavigate();
@@ -202,6 +205,11 @@ export const SelectClosingObjects = () => {
     return false;
   }, [selectedKeys, initialSelectedKeys]);
 
+  // Selection limits validation
+  const isSelectionValid =
+    selectedKeys.size >= MIN_CLOSING_OBJECTS && selectedKeys.size <= MAX_CLOSING_OBJECTS;
+  const isMaxReached = selectedKeys.size >= MAX_CLOSING_OBJECTS;
+
   // Selection handlers
   const handleToggle = (key: string) => {
     setSelectedKeys((prev) => {
@@ -209,6 +217,9 @@ export const SelectClosingObjects = () => {
       if (next.has(key)) {
         next.delete(key);
       } else {
+        if (next.size >= MAX_CLOSING_OBJECTS) {
+          return prev;
+        }
         next.add(key);
       }
       return next;
@@ -225,7 +236,13 @@ export const SelectClosingObjects = () => {
       if (isAllCurrentPageSelected) {
         paginatedCandidates.forEach((obj) => next.delete(getCandidateKey(obj)));
       } else {
-        paginatedCandidates.forEach((obj) => next.add(getCandidateKey(obj)));
+        for (const obj of paginatedCandidates) {
+          const key = getCandidateKey(obj);
+          if (!next.has(key)) {
+            if (next.size >= MAX_CLOSING_OBJECTS) break;
+            next.add(key);
+          }
+        }
       }
       return next;
     });
@@ -234,9 +251,10 @@ export const SelectClosingObjects = () => {
   const handleSelectAllFiltered = () => {
     setSelectedKeys((prev) => {
       const next = new Set(prev);
-      filteredCandidates.forEach((obj) => {
+      for (const obj of filteredCandidates) {
+        if (next.size >= MAX_CLOSING_OBJECTS) break;
         next.add(getCandidateKey(obj));
-      });
+      }
       return next;
     });
   };
@@ -252,6 +270,15 @@ export const SelectClosingObjects = () => {
   // Submit closing objects & trigger inference
   const handleConfirmSaveAndRun = async () => {
     if (!experimentId) return;
+    if (selectedKeys.size < MIN_CLOSING_OBJECTS) {
+      setErrorMessage(`You must select at least ${MIN_CLOSING_OBJECTS} closing object.`);
+      return;
+    }
+    if (selectedKeys.size > MAX_CLOSING_OBJECTS) {
+      setErrorMessage(`You cannot select more than ${MAX_CLOSING_OBJECTS} closing objects.`);
+      return;
+    }
+
     setIsConfirmModalOpen(false);
     setIsSubmitting(true);
     setErrorMessage(null);
@@ -273,10 +300,7 @@ export const SelectClosingObjects = () => {
       setIsSubmitting(false);
       setSuccessModalData({
         title: "Pathway Inferences Triggered",
-        message:
-          closingList.length > 0
-            ? `Successfully saved ${closingList.length} closing object(s). The SWI-Prolog pathway inference engine has been initiated.`
-            : "Successfully saved empty closing objects selection. Pathway inference has been initiated allowing any valid terminal entity.",
+        message: `Successfully saved ${closingList.length} closing object(s). The SWI-Prolog pathway inference engine has been initiated.`,
       });
     } catch (err) {
       console.error("Error triggering inferences:", err);
@@ -317,13 +341,17 @@ export const SelectClosingObjects = () => {
         stepDescription="Select candidate biological objects where inferred pathways must terminate."
         icon={Target}
         extraBadges={
-          selectedKeys.size > 0 ? (
-            <Badge variant="completed" className="text-[9px] px-2 py-0.5 font-bold uppercase tracking-wider">
-              {selectedKeys.size} Selected
+          selectedKeys.size === 0 ? (
+            <Badge variant="pending" className="text-[9px] px-2 py-0.5 font-bold uppercase tracking-wider text-amber-700 bg-amber-50 border-amber-200">
+              Selection Required (0 / {MAX_CLOSING_OBJECTS})
+            </Badge>
+          ) : selectedKeys.size > MAX_CLOSING_OBJECTS ? (
+            <Badge variant="error" className="text-[9px] px-2 py-0.5 font-bold uppercase tracking-wider">
+              Limit Exceeded ({selectedKeys.size} / {MAX_CLOSING_OBJECTS})
             </Badge>
           ) : (
-            <Badge variant="pending" className="text-[9px] px-2 py-0.5 font-bold uppercase tracking-wider">
-              Any Terminal Entity (0 Selected)
+            <Badge variant="completed" className="text-[9px] px-2 py-0.5 font-bold uppercase tracking-wider">
+              {selectedKeys.size} / {MAX_CLOSING_OBJECTS} Selected
             </Badge>
           )
         }
@@ -361,8 +389,18 @@ export const SelectClosingObjects = () => {
               variant="primary"
               size="md"
               onClick={() => setIsConfirmModalOpen(true)}
-              disabled={isSubmitting || candidates.length === 0}
-              className="gap-2 shadow-primary-glow font-bold"
+              disabled={isSubmitting || candidates.length === 0 || !isSelectionValid}
+              className={cn(
+                "gap-2 font-bold",
+                isSelectionValid ? "shadow-primary-glow" : "opacity-50 cursor-not-allowed"
+              )}
+              title={
+                selectedKeys.size < MIN_CLOSING_OBJECTS
+                  ? `Please select at least ${MIN_CLOSING_OBJECTS} closing object to proceed`
+                  : selectedKeys.size > MAX_CLOSING_OBJECTS
+                  ? `Please select at most ${MAX_CLOSING_OBJECTS} closing objects`
+                  : "Save closing objects and run inferences"
+              }
             >
               {isSubmitting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -400,38 +438,56 @@ export const SelectClosingObjects = () => {
       <div
         className={cn(
           "p-4 rounded-2xl border transition-all flex items-start gap-3 shadow-xs",
-          selectedKeys.size > 0
-            ? "bg-emerald-50/70 border-emerald-200/80 text-emerald-950"
-            : "bg-blue-50/70 border-blue-200/80 text-blue-950"
+          selectedKeys.size === 0
+            ? "bg-amber-50/70 border-amber-200/80 text-amber-950"
+            : selectedKeys.size > MAX_CLOSING_OBJECTS
+            ? "bg-rose-50/70 border-rose-200/80 text-rose-950"
+            : "bg-emerald-50/70 border-emerald-200/80 text-emerald-950"
         )}
       >
         <div
           className={cn(
             "p-2 rounded-xl shrink-0 mt-0.5",
-            selectedKeys.size > 0
-              ? "bg-emerald-500/10 text-emerald-600"
-              : "bg-blue-500/10 text-blue-600"
+            selectedKeys.size === 0
+              ? "bg-amber-500/10 text-amber-600"
+              : selectedKeys.size > MAX_CLOSING_OBJECTS
+              ? "bg-rose-500/10 text-rose-600"
+              : "bg-emerald-500/10 text-emerald-600"
           )}
         >
-          {selectedKeys.size > 0 ? (
-            <Target className="w-5 h-5" />
-          ) : (
+          {selectedKeys.size === 0 ? (
             <Info className="w-5 h-5" />
+          ) : selectedKeys.size > MAX_CLOSING_OBJECTS ? (
+            <AlertTriangle className="w-5 h-5" />
+          ) : (
+            <Target className="w-5 h-5" />
           )}
         </div>
         <div className="flex-1 text-xs">
           <div className="flex items-center justify-between mb-1">
             <h3 className="font-bold text-sm">
-              {selectedKeys.size > 0
-                ? `${selectedKeys.size} Target Closing Object${selectedKeys.size > 1 ? "s" : ""} Selected`
-                : "Unrestricted Terminal Entity Selection (0 Selected)"}
+              {selectedKeys.size === 0
+                ? `Selection Required: Choose 1 to ${MAX_CLOSING_OBJECTS} Closing Objects`
+                : selectedKeys.size > MAX_CLOSING_OBJECTS
+                ? `Maximum Limit Exceeded (${selectedKeys.size} / ${MAX_CLOSING_OBJECTS})`
+                : `${selectedKeys.size} Closing Object${selectedKeys.size > 1 ? "s" : ""} Selected (${selectedKeys.size}/${MAX_CLOSING_OBJECTS})`}
             </h3>
             <span className="text-[11px] opacity-75 font-medium">
-              {selectedKeys.size} of {candidates.length} candidate entities selected
+              {selectedKeys.size} of {candidates.length} candidates ({selectedKeys.size}/{MAX_CLOSING_OBJECTS} limit)
             </span>
           </div>
           <p className="leading-relaxed opacity-90">
-            {selectedKeys.size > 0 ? (
+            {selectedKeys.size === 0 ? (
+              <>
+                You must select <strong>at least 1</strong> and <strong>at most {MAX_CLOSING_OBJECTS}</strong> closing objects to run inferences.
+                Inferred biological pathways will strictly terminate at your chosen objects.
+              </>
+            ) : selectedKeys.size > MAX_CLOSING_OBJECTS ? (
+              <>
+                You have selected {selectedKeys.size} objects, which exceeds the limit of {MAX_CLOSING_OBJECTS}.
+                Please deselect {selectedKeys.size - MAX_CLOSING_OBJECTS} entity(ies) to proceed.
+              </>
+            ) : (
               <>
                 Inferred biological pathways will strictly terminate at:{" "}
                 <strong className="font-mono">
@@ -439,12 +495,6 @@ export const SelectClosingObjects = () => {
                   {selectedKeys.size > 8 ? ` and ${selectedKeys.size - 8} more` : ""}
                 </strong>
                 . Entities not selected will not be evaluated as closing target nodes.
-              </>
-            ) : (
-              <>
-                You have not selected any specific closing objects. The inference engine will evaluate
-                pathways allowing <strong>any biologically valid terminal entity</strong> from the
-                evaluated restriction set to close pathways.
               </>
             )}
           </p>
@@ -509,7 +559,7 @@ export const SelectClosingObjects = () => {
                       : "bg-emerald-100 text-emerald-800"
                   )}
                 >
-                  {selectedKeys.size}
+                  {selectedKeys.size} / {MAX_CLOSING_OBJECTS}
                 </span>
               )}
             </Button>
@@ -520,12 +570,18 @@ export const SelectClosingObjects = () => {
                 variant="ghost"
                 size="sm"
                 onClick={handleSelectAllFiltered}
-                disabled={filteredCandidates.length === 0}
+                disabled={filteredCandidates.length === 0 || isMaxReached}
                 className="text-xs font-bold border border-outline-variant/20 rounded-xl hover:bg-surface-container-high text-on-surface-variant gap-1 h-9 px-2.5"
-                title="Select all filtered candidates"
+                title={
+                  isMaxReached
+                    ? `Limit of ${MAX_CLOSING_OBJECTS} closing objects reached`
+                    : `Select filtered candidates (up to ${MAX_CLOSING_OBJECTS})`
+                }
               >
                 <Check className="w-3.5 h-3.5 text-emerald-600" />
-                <span>All ({filteredCandidates.length})</span>
+                <span>
+                  Select (max {MAX_CLOSING_OBJECTS})
+                </span>
               </Button>
               <Button
                 variant="ghost"
@@ -547,13 +603,24 @@ export const SelectClosingObjects = () => {
               { label: "Candidates", value: candidates.length },
               {
                 label: "Selected",
-                value: selectedKeys.size,
-                valueColor: selectedKeys.size > 0 ? "text-emerald-600 font-bold" : "text-on-surface-variant",
+                value: `${selectedKeys.size} / ${MAX_CLOSING_OBJECTS}`,
+                valueColor: isSelectionValid
+                  ? "text-emerald-600 font-bold"
+                  : selectedKeys.size === 0
+                  ? "text-amber-600 font-bold"
+                  : "text-rose-600 font-bold",
               },
               {
-                label: "Target Mode",
-                value: selectedKeys.size > 0 ? "Restricted" : "Any Terminal",
-                valueColor: selectedKeys.size > 0 ? "text-primary font-bold" : "text-amber-600 font-bold",
+                label: "Selection Status",
+                value:
+                  selectedKeys.size === 0
+                    ? "Min 1 Required"
+                    : selectedKeys.size > MAX_CLOSING_OBJECTS
+                    ? `Exceeds Max ${MAX_CLOSING_OBJECTS}`
+                    : "Valid Selection",
+                valueColor: isSelectionValid
+                  ? "text-emerald-600 font-bold"
+                  : "text-amber-600 font-bold",
               },
               {
                 label: "Summarize KB",
@@ -704,7 +771,7 @@ export const SelectClosingObjects = () => {
 
               {selectedKeys.size > 0 && (
                 <span className="text-emerald-600 font-semibold">
-                  {selectedKeys.size} selected for terminal closure
+                  {selectedKeys.size} of {MAX_CLOSING_OBJECTS} selected for terminal closure
                 </span>
               )}
             </div>
@@ -718,9 +785,21 @@ export const SelectClosingObjects = () => {
                       <input
                         type="checkbox"
                         checked={isAllCurrentPageSelected}
+                        disabled={!isAllCurrentPageSelected && isMaxReached}
                         onChange={handleToggleCurrentPage}
-                        title={isAllCurrentPageSelected ? "Deselect current page" : "Select current page"}
-                        className="w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary cursor-pointer accent-primary"
+                        title={
+                          isAllCurrentPageSelected
+                            ? "Deselect current page"
+                            : isMaxReached
+                            ? `Maximum limit of ${MAX_CLOSING_OBJECTS} closing objects reached`
+                            : `Select current page (up to ${MAX_CLOSING_OBJECTS})`
+                        }
+                        className={cn(
+                          "w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary accent-primary",
+                          !isAllCurrentPageSelected && isMaxReached
+                            ? "opacity-40 cursor-not-allowed"
+                            : "cursor-pointer"
+                        )}
                       />
                     </th>
                     <th className="py-3.5 px-4 min-w-[170px]">Entity / Symbol</th>
@@ -739,12 +818,17 @@ export const SelectClosingObjects = () => {
                     return (
                       <tr
                         key={`${key}-${idx}`}
-                        onClick={() => handleToggle(key)}
+                        onClick={() => {
+                          if (!isSelected && isMaxReached) return;
+                          handleToggle(key);
+                        }}
                         className={cn(
-                          "transition-colors align-top cursor-pointer select-none",
+                          "transition-colors align-top select-none",
                           isSelected
-                            ? "bg-emerald-500/5 hover:bg-emerald-500/10"
-                            : "hover:bg-surface-container-low/60"
+                            ? "bg-emerald-500/5 hover:bg-emerald-500/10 cursor-pointer"
+                            : isMaxReached
+                            ? "opacity-60 cursor-not-allowed"
+                            : "hover:bg-surface-container-low/60 cursor-pointer"
                         )}
                       >
                         {/* Checkbox column */}
@@ -752,9 +836,18 @@ export const SelectClosingObjects = () => {
                           <input
                             type="checkbox"
                             checked={isSelected}
+                            disabled={!isSelected && isMaxReached}
                             onChange={() => handleToggle(key)}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary cursor-pointer accent-primary mt-1"
+                            title={
+                              !isSelected && isMaxReached
+                                ? `Limit of ${MAX_CLOSING_OBJECTS} closing objects reached`
+                                : undefined
+                            }
+                            className={cn(
+                              "w-4 h-4 rounded border-outline-variant/30 text-primary focus:ring-primary accent-primary mt-1",
+                              !isSelected && isMaxReached ? "opacity-40 cursor-not-allowed" : "cursor-pointer"
+                            )}
                           />
                         </td>
 
@@ -853,6 +946,7 @@ export const SelectClosingObjects = () => {
                                 handleToggle(key);
                               }}
                               className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-bold text-xs bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 hover:bg-emerald-500/20 transition-all cursor-pointer"
+                              title="Click to deselect"
                             >
                               <Check className="w-3.5 h-3.5" />
                               <span>Selected</span>
@@ -860,11 +954,22 @@ export const SelectClosingObjects = () => {
                           ) : (
                             <button
                               type="button"
+                              disabled={isMaxReached}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleToggle(key);
                               }}
-                              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-medium text-xs bg-surface-container-high text-on-surface-variant border border-outline-variant/20 hover:border-primary/40 hover:text-primary transition-all cursor-pointer"
+                              className={cn(
+                                "inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-medium text-xs border transition-all",
+                                isMaxReached
+                                  ? "bg-surface-container-low text-on-surface-variant/40 border-outline-variant/10 cursor-not-allowed"
+                                  : "bg-surface-container-high text-on-surface-variant border-outline-variant/20 hover:border-primary/40 hover:text-primary cursor-pointer"
+                              )}
+                              title={
+                                isMaxReached
+                                  ? `Maximum of ${MAX_CLOSING_OBJECTS} closing objects reached`
+                                  : "Click to select"
+                              }
                             >
                               <Plus className="w-3.5 h-3.5" />
                               <span>Select</span>
@@ -992,8 +1097,8 @@ export const SelectClosingObjects = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-on-surface-variant">Selected Closing Objects:</span>
-                <strong className={selectedKeys.size > 0 ? "text-emerald-600 font-bold" : "text-amber-600 font-bold"}>
-                  {selectedKeys.size > 0 ? `${selectedKeys.size} entity(ies)` : "None (All Terminal Entities)"}
+                <strong className="text-emerald-600 font-bold">
+                  {selectedKeys.size} / {MAX_CLOSING_OBJECTS} entity(ies)
                 </strong>
               </div>
               {selectedKeys.size > 0 && (
