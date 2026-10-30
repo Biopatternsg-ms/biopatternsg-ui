@@ -39,6 +39,7 @@ export interface GraphLinkInput {
   object1: string;
   interaction: string;
   object2: string;
+  pathwayCount?: number;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -72,6 +73,7 @@ export interface GraphLink {
   source: string | GraphNode;
   target: string | GraphNode;
   interaction: string;
+  pathwayCount?: number;
   index?: number;
 }
 
@@ -88,7 +90,7 @@ export interface ForceGraphData {
 /** Fallback color for unknown types. */
 export const DEFAULT_NODE_COLOR = "#94a3b8";
 
-/** Fixed palette of 8 colors assigned dynamically to node types (alphabetical order). */
+/** Fixed palette of 10 colors assigned dynamically to node types (alphabetical order). */
 export const TYPE_COLOR_PALETTE: readonly string[] = [
   "#0066ff",
   "#ff6b35",
@@ -97,13 +99,14 @@ export const TYPE_COLOR_PALETTE: readonly string[] = [
   "#ec4899",
   "#8b5cf6",
   "#06b6d4",
-  "#15363aff",
+  "#ef4444",
+  "#14b8a6",
+  "#6366f1",
 ];
 
 /**
  * Build a dynamic type → color map from the unique `type` values of the given nodes.
  * Types are sorted alphabetically and each one receives the palette color at its index.
- * At most 8 distinct types are expected; any extra type falls back to DEFAULT_NODE_COLOR.
  */
 export function buildTypeColorMap(nodes: ReadonlyArray<{ type: string }>): Record<string, string> {
   const uniqueTypes = Array.from(new Set(nodes.map((n) => n.type))).sort((a, b) =>

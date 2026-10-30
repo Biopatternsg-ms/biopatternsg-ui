@@ -50,23 +50,6 @@ export interface NodeDetailPanelProps {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   TABLE DATA (Lorem ipsum style, 8 rows × 4 columns)
-   ───────────────────────────────────────────────────────────────────────────── */
-
-const TABLE_HEADERS = ["Propiedad", "Valor", "Unidad", "Referencia"];
-
-const TABLE_ROWS = [
-  ["Expresión basal", "12.45", "TPM", "PMID:12345678"],
-  ["Fold change", "3.2x", "—", "PMID:23456789"],
-  ["P-value", "0.0023", "—", "PMID:34567890"],
-  ["Localización", "Citoplasma", "—", "UniProt:Q9Y6K9"],
-  ["Peso molecular", "48.3", "kDa", "UniProt:Q9Y6K9"],
-  ["Interacciones", "14", "count", "STRING:9606"],
-  ["Pathway", "JAK-STAT", "—", "KEGG:hsa04630"],
-  ["Confianza", "0.92", "score", "IntAct:EBI-123"],
-];
-
-/* ─────────────────────────────────────────────────────────────────────────────
    HELPERS
    ───────────────────────────────────────────────────────────────────────────── */
 
@@ -90,11 +73,11 @@ function resolveColor(ref: string | GraphNode, allNodes: GraphNode[]): string {
 /**
  * NodeDetailPanel — Molecule
  *
- * Slide-in panel on the right edge of the viewport:
- *   - 30vw wide, 100vh tall
- *   - Shows the selected node's name and type
+ * Docked side panel alongside the ForceGraphCanvas:
+ *   - Shares the same height as the graph canvas without covering it
+ *   - Shows the selected node's name and biological role
+ *   - Displays topological metrics (outgoing/incoming interactions, pathway occurrences)
  *   - Lists all connections (clickable → highlights both participating nodes)
- *   - Shows a sample 8×4 data table
  */
 const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
   node,
@@ -105,16 +88,23 @@ const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
   onClose,
   isOpen,
 }) => {
+  if (!isOpen) return null;
+
   const typeColor = node.color ?? DEFAULT_NODE_COLOR;
 
+  const outgoingCount = connections.filter((l) => getNodeId(l.source) === node.id).length;
+  const incomingCount = connections.filter((l) => getNodeId(l.target) === node.id).length;
+  const totalPathwayOccurrences = connections.reduce(
+    (sum, l) => sum + (typeof l.pathwayCount === "number" ? l.pathwayCount : 0),
+    0
+  );
+
   return (
-    <div
+    <aside
       className={cn(
-        "fixed top-0 right-0 h-screen z-50 transition-transform duration-300 ease-in-out",
-        "w-[30vw] min-w-[320px] max-w-[500px]",
-        "bg-surface-card border-l border-outline-variant/20 shadow-2xl",
-        "flex flex-col overflow-hidden",
-        isOpen ? "translate-x-0" : "translate-x-full",
+        "w-full lg:w-[360px] shrink-0 h-full",
+        "bg-surface-card rounded-2xl border border-outline-variant/20 shadow-md",
+        "flex flex-col overflow-hidden transition-all duration-200",
       )}
     >
       {/* ── Header ──────────────────────────────────────────────────────────── */}
@@ -145,7 +135,7 @@ const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
         <button
           onClick={onClose}
           className="flex items-center justify-center w-8 h-8 rounded-lg bg-surface-container-high/50 hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer flex-shrink-0"
-          aria-label="Cerrar panel"
+          aria-label="Close panel"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -166,10 +156,45 @@ const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
 
       {/* ── Scrollable body ─────────────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6 custom-scrollbar">
+        {/* ── Node Topological Summary ──────────────────────────────────────── */}
+        <section>
+          <h3 className="text-xs font-label font-bold uppercase tracking-widest text-on-surface-variant mb-3">
+            Node Summary
+          </h3>
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="p-3 rounded-xl bg-surface-container-low/60 border border-outline-variant/15">
+              <span className="block text-[9px] font-label font-bold uppercase tracking-wider text-on-surface-variant/75">
+                Total Degree
+              </span>
+              <span className="mt-1 block text-base font-headline font-bold text-on-surface">
+                {connections.length} edges
+              </span>
+            </div>
+            <div className="p-3 rounded-xl bg-surface-container-low/60 border border-outline-variant/15">
+              <span className="block text-[9px] font-label font-bold uppercase tracking-wider text-on-surface-variant/75">
+                Outgoing / Incoming
+              </span>
+              <span className="mt-1 block text-base font-headline font-bold text-on-surface">
+                {outgoingCount} → / ← {incomingCount}
+              </span>
+            </div>
+            {totalPathwayOccurrences > 0 && (
+              <div className="col-span-2 p-3 rounded-xl bg-primary/5 border border-primary/20">
+                <span className="block text-[9px] font-label font-bold uppercase tracking-wider text-primary">
+                  Pathway Transitions Frequency
+                </span>
+                <span className="mt-1 block text-base font-headline font-bold text-primary">
+                  {totalPathwayOccurrences.toLocaleString()} pathway transitions
+                </span>
+              </div>
+            )}
+          </div>
+        </section>
+
         {/* ── Connections list ───────────────────────────────────────────────── */}
         <section>
           <h3 className="text-xs font-label font-bold uppercase tracking-widest text-on-surface-variant mb-3">
-            Conexiones ({connections.length})
+            Causal Connections ({connections.length})
           </h3>
 
           <ul className="space-y-1.5">
@@ -212,11 +237,20 @@ const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-on-surface truncate">
-                        {otherLabel}
-                      </p>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-semibold text-on-surface truncate">
+                          {otherLabel}
+                        </p>
+                        {typeof link.pathwayCount === "number" && (
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant shrink-0">
+                            {link.pathwayCount.toLocaleString()}x
+                          </span>
+                        )}
+                      </div>
                       <p className="text-[11px] text-on-surface-variant mt-0.5 truncate">
-                        {link.interaction}
+                        {isOutgoing
+                          ? `${node.name} —[${link.interaction}]→ ${otherLabel}`
+                          : `${otherLabel} —[${link.interaction}]→ ${node.name}`}
                       </p>
                     </div>
 
@@ -230,55 +264,15 @@ const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
             })}
           </ul>
         </section>
-
-        {/* ── Data table (8×4 lorem ipsum) ──────────────────────────────────── */}
-        <section>
-          <h3 className="text-xs font-label font-bold uppercase tracking-widest text-on-surface-variant mb-3">
-            Datos Asociados
-          </h3>
-          <div className="overflow-x-auto rounded-xl border border-outline-variant/15">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="bg-surface-container-high/50">
-                  {TABLE_HEADERS.map((h) => (
-                    <th
-                      key={h}
-                      className="px-3 py-2 text-left font-label font-bold uppercase tracking-widest text-[9px] text-on-surface-variant"
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {TABLE_ROWS.map((row, ri) => (
-                  <tr
-                    key={ri}
-                    className="border-t border-outline-variant/10 hover:bg-surface-container-low/40 transition-colors"
-                  >
-                    {row.map((cell, ci) => (
-                      <td
-                        key={ci}
-                        className="px-3 py-2 text-on-surface whitespace-nowrap"
-                      >
-                        {cell}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
       </div>
 
       {/* ── Footer hint ─────────────────────────────────────────────────────── */}
       <div className="px-5 py-3 border-t border-outline-variant/10 text-center">
-        <span className="text-[9px] font-label uppercase tracking-[0.3em] text-on-surface-variant/50">
-          Clic en una conexión para resaltar ambos nodos
+        <span className="text-[9px] font-label uppercase tracking-[0.2em] text-on-surface-variant/60">
+          Click on a connection to highlight both participating nodes
         </span>
       </div>
-    </div>
+    </aside>
   );
 };
 

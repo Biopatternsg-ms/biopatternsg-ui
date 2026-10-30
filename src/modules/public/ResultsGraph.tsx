@@ -100,8 +100,9 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { useState, useMemo } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { Upload } from "lucide-react";
 import { Header } from "@/components/organisms/Header";
 import { Footer } from "@/components/organisms/Footer";
 import { ForceGraphViewer } from "@/components/organisms/forceGraph/ForceGraphViewer";
@@ -113,7 +114,11 @@ import type {
 } from "@/components/organisms/forceGraph/forceGraphTypes";
 import { buildTypeColorMap } from "@/components/organisms/forceGraph/forceGraphTypes";
 import type { GraphBackground } from "@/components/organisms/forceGraph/forceGraphProfiles";
-import { filterLinksByValidNodes } from "@/utils/graphDataParser";
+import {
+  filterLinksByValidNodes,
+  parseGraphNodesTxt,
+  parseGraphLinksTxt,
+} from "@/utils/graphDataParser";
 
 export interface ResultsGraphLocationState {
   title?: string;
@@ -122,9 +127,9 @@ export interface ResultsGraphLocationState {
   links?: GraphLinkInput[];
 }
 
-const DEFAULT_TITLE = "Experiment title";
+const DEFAULT_TITLE = "Biological Pathway Graph";
 const DEFAULT_DESCRIPTION =
-  "Description or relevant information you would like to share about the experiment.";
+  "Interactive network visualization of biological entities and molecular causal relationships.";
 
 /** Background selector options. */
 const BACKGROUND_OPTIONS: { value: GraphBackground; label: string; swatch: string }[] = [
@@ -139,7 +144,6 @@ const BACKGROUND_OPTIONS: { value: GraphBackground; label: string; swatch: strin
 
 const ResultsGraph = () => {
   const location = useLocation();
-  const navigate = useNavigate();
 
   const routeState = (location.state as ResultsGraphLocationState | null) ?? null;
   const title = routeState?.title?.trim() ? routeState.title : DEFAULT_TITLE;
@@ -160,7 +164,36 @@ const ResultsGraph = () => {
       ? filterLinksByValidNodes(routeState.nodes, routeState.links)
       : []
   );
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState<boolean>(!hasInitialData);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState<boolean>(false);
+  const [isLoadingDefault, setIsLoadingDefault] = useState<boolean>(!hasInitialData);
+
+  useEffect(() => {
+    if (!hasInitialData) {
+      setIsLoadingDefault(true);
+      Promise.all([
+        fetch("/templates/graph-nodes-example.txt").then((res) => {
+          if (!res.ok) throw new Error("Failed to load graph-nodes-example.txt");
+          return res.text();
+        }),
+        fetch("/templates/graph-links-example.txt").then((res) => {
+          if (!res.ok) throw new Error("Failed to load graph-links-example.txt");
+          return res.text();
+        }),
+      ])
+        .then(([nodesTxt, linksTxt]) => {
+          const parsedNodes = parseGraphNodesTxt(nodesTxt);
+          const parsedLinks = parseGraphLinksTxt(linksTxt);
+          setArrayNodes(parsedNodes);
+          setArrayLinks(filterLinksByValidNodes(parsedNodes, parsedLinks));
+        })
+        .catch((err) => {
+          console.error("Error loading default graph example:", err);
+        })
+        .finally(() => {
+          setIsLoadingDefault(false);
+        });
+    }
+  }, [hasInitialData]);
 
   const [background, setBackground] = useState<GraphBackground>("black");
   const [selectedNodeName, setSelectedNodeName] = useState<string | null>(null);
@@ -201,7 +234,7 @@ const ResultsGraph = () => {
 
         {/* ── Graph ───────────────────────────────────────────────────────────── */}
         <section className="max-w-screen-2xl mx-auto px-8">
-          {/* ── Controls: Background selector & Node search ─────────────────── */}
+          {/* ── Controls: Background selector, Upload modal & Node search ──── */}
           <div className="flex flex-wrap items-center justify-between gap-3 mb-3 text-xs text-on-surface-variant">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-semibold uppercase tracking-wide mr-1">Background:</span>
@@ -226,19 +259,39 @@ const ResultsGraph = () => {
               ))}
             </div>
 
-            <div className="flex items-center gap-2 w-full sm:w-80">
-              <span className="font-semibold uppercase tracking-wide shrink-0">Node:</span>
-              <NodeSearchSelect
-                nodes={arrayNodes}
-                typeColorMap={typeColorMap}
-                value={selectedNodeName}
-                onChange={setSelectedNodeName}
-                className="flex-1"
-              />
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setIsUploadModalOpen(true)}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-outline-variant/30 hover:border-primary text-on-surface hover:text-primary transition-colors cursor-pointer font-medium"
+                title="Upload custom graph data"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                Upload Data
+              </button>
+
+              <div className="flex items-center gap-2 w-full sm:w-80">
+                <span className="font-semibold uppercase tracking-wide shrink-0">Node:</span>
+                <NodeSearchSelect
+                  nodes={arrayNodes}
+                  typeColorMap={typeColorMap}
+                  value={selectedNodeName}
+                  onChange={setSelectedNodeName}
+                  className="flex-1"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-outline-variant/15 shadow-ambient overflow-hidden">
+          <div className="rounded-2xl border border-outline-variant/15 shadow-ambient overflow-hidden relative">
+            {isLoadingDefault && (
+              <div className="absolute inset-0 bg-background/80 backdrop-blur-xs flex items-center justify-center z-10">
+                <div className="flex flex-col items-center gap-2 text-primary">
+                  <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs font-medium text-on-surface-variant">Loading graph...</span>
+                </div>
+              </div>
+            )}
             <ForceGraphViewer
               nodes={arrayNodes}
               links={arrayLinks}
@@ -262,7 +315,7 @@ const ResultsGraph = () => {
           setSelectedNodeName(null);
           setIsUploadModalOpen(false);
         }}
-        onCancel={() => navigate(-1)}
+        onCancel={() => setIsUploadModalOpen(false)}
       />
     </div>
   );

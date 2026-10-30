@@ -44,38 +44,37 @@ export interface PathwayInferenceResponse {
 }
 
 /**
- * Consolidated Pathway Graph node.
+ * Consolidated Pathway Graph node from pathway_graphs.
  */
 export interface PathwayGraphNode {
-  id: string;
-  label?: string;
+  name: string;
+  role?: string;
   type?: string;
-  frequency?: number;
 }
 
 /**
- * Consolidated Pathway Graph directed edge.
+ * Consolidated Pathway Graph directed edge from pathway_graphs.
  */
 export interface PathwayGraphEdge {
-  id?: string;
-  source: string;
-  target: string;
-  relation?: string;
-  frequency?: number;
+  first: string;
+  relation: string;
+  second: string;
+  object1?: string;
+  interaction?: string;
+  object2?: string;
+  pathwayCount?: number;
 }
 
 /**
- * Consolidated Pathway Graph structure.
+ * Consolidated Pathway Graph structure returned by GET /inferences/pathway-graphs/{pipelineId}.
  */
 export interface PathwayGraph {
   pipelineId: string;
+  user?: string;
+  totalPathways?: number;
+  executionTimeMs?: number;
   nodes: PathwayGraphNode[];
   edges: PathwayGraphEdge[];
-  metrics?: {
-    totalNodes: number;
-    totalEdges: number;
-    totalPathways: number;
-  };
 }
 
 /**

@@ -73,38 +73,8 @@ export interface ForceGraphViewerProps {
    COMPONENT
    ───────────────────────────────────────────────────────────────────────────── */
 
-/**
- * ForceGraphViewer — Organism
- *
- * Orchestrates the full interactive graph experience:
- *   1. Transforms consumer inputs (GraphNodeInput/GraphLinkInput)
- *      into internal types with colors assigned by biological type.
- *   2. Deduplicates nodes by `name`.
- *   3. Manages all interaction state (selected node, highlighted link).
- *   4. Computes connected node/link sets for visual feedback.
- *   5. Resolves the visual profile from the `background` prop.
- *   6. Renders ForceGraphCanvas + NodeDetailPanel.
- *
- * Usage (uncontrolled):
- * ```tsx
- * <ForceGraphViewer
- *   nodes={[{ name: "TP53", type: "Protein" }]}
- *   links={[{ object1: "TP53", interaction: "bind", object2: "MDM2" }]}
- *   background="white"
- * />
- * ```
- *
- * Usage (controlled selection):
- * ```tsx
- * const [selected, setSelected] = useState<string | null>(null);
- * <ForceGraphViewer
- *   nodes={nodes}
- *   links={links}
- *   selectedNodeName={selected}
- *   onSelectedNodeChange={setSelected}
- * />
- * ```
- */
+const PANEL_WIDTH_WITH_GAP = 376; // 360px panel + 16px flex gap
+
 const ForceGraphViewer: React.FC<ForceGraphViewerProps> = ({
   nodes: inputNodes,
   links: inputLinks,
@@ -149,6 +119,7 @@ const ForceGraphViewer: React.FC<ForceGraphViewerProps> = ({
       source: l.object1,
       target: l.object2,
       interaction: l.interaction,
+      pathwayCount: l.pathwayCount,
     }));
 
     return { nodes, links };
@@ -263,29 +234,35 @@ const ForceGraphViewer: React.FC<ForceGraphViewerProps> = ({
     return () => ro.disconnect();
   }, []);
 
-  // Shrink canvas when panel is open
+  // Allocate side-by-side width for the graph canvas when the detail panel is open
   const canvasWidth = selectedNode
-    ? Math.max(containerWidth * 0.7, 400)
+    ? Math.max(containerWidth - PANEL_WIDTH_WITH_GAP, 320)
     : containerWidth;
 
   /* ── Render ─────────────────────────────────────────────────────────────── */
   return (
-    <div ref={containerRef} className="relative w-full" style={{ height }}>
-      {containerWidth > 0 && (
-        <ForceGraphCanvas
-          graphData={graphData}
-          selectedNodeId={selectedNode?.id ?? null}
-          highlightedLinkKey={highlightedLinkKey}
-          connectedNodeIds={connectedNodeIds}
-          connectedLinkKeys={connectedLinkKeys}
-          onNodeClick={handleNodeClick}
-          onLinkClick={handleLinkClick}
-          onBackgroundClick={handleBackgroundClick}
-          width={canvasWidth}
-          height={height}
-          profile={profile}
-        />
-      )}
+    <div
+      ref={containerRef}
+      className="flex flex-col lg:flex-row items-stretch w-full gap-4"
+      style={{ height }}
+    >
+      <div className="flex-1 min-w-0 h-full overflow-hidden">
+        {containerWidth > 0 && (
+          <ForceGraphCanvas
+            graphData={graphData}
+            selectedNodeId={selectedNode?.id ?? null}
+            highlightedLinkKey={highlightedLinkKey}
+            connectedNodeIds={connectedNodeIds}
+            connectedLinkKeys={connectedLinkKeys}
+            onNodeClick={handleNodeClick}
+            onLinkClick={handleLinkClick}
+            onBackgroundClick={handleBackgroundClick}
+            width={canvasWidth}
+            height={height}
+            profile={profile}
+          />
+        )}
+      </div>
 
       {selectedNode && (
         <NodeDetailPanel

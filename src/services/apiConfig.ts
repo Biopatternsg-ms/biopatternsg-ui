@@ -86,7 +86,7 @@ export const closingObjectsEndpoint = (pipelineId: string) =>
 export const PATHWAYS_RUN_PATH = "inferences/pathways/run";
 export const PATHWAYS_RUN_ENDPOINT = `${CONFIG_AND_CONTROL}/${PATHWAYS_RUN_PATH}`;
 export const pathwaysGraphEndpoint = (pipelineId: string) =>
-  `${CONFIG_AND_CONTROL}/inferences/pathways/${pipelineId}/graph`;
+  `${CONFIG_AND_CONTROL}/inferences/pathway-graphs/${pipelineId}`;
 export const pathwaysListEndpoint = (pipelineId: string) =>
   `${CONFIG_AND_CONTROL}/inferences/pathways/${pipelineId}`;
 export const deletePathwaysEndpoint = (pipelineId: string) =>

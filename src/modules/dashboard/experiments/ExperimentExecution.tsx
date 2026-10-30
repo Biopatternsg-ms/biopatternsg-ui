@@ -1097,8 +1097,13 @@ const ExperimentExecutionView = () => {
                     step.name === "Find Biological Roles" ||
                     step.id === "FIND_ROLES" ||
                     (step as { step?: string }).step === "find_roles";
+                  const isInferPathwaysStep =
+                    step.id === "step-infer_pathways" ||
+                    step.name === "Infer Biological Pathways" ||
+                    step.id === "INFER_PATHWAYS" ||
+                    (step as { step?: string }).step === "infer_pathways";
                   const isStepManual = isManualStep(step);
-                  return stepMetrics.length > 0 || isStepManual || isRolesStep;
+                  return stepMetrics.length > 0 || isStepManual || isRolesStep || isInferPathwaysStep;
                 });
 
                 if (visibleSteps.length === 0) return null;
@@ -1119,6 +1124,11 @@ const ExperimentExecutionView = () => {
                           step.name === "Find Biological Roles" ||
                           step.id === "FIND_ROLES" ||
                           (step as { step?: string }).step === "find_roles";
+                        const isInferPathwaysStep =
+                          step.id === "step-infer_pathways" ||
+                          step.name === "Infer Biological Pathways" ||
+                          step.id === "INFER_PATHWAYS" ||
+                          (step as { step?: string }).step === "infer_pathways";
                         const isStepManual = isManualStep(step);
                         const stepDisabled = isStepActionDisabled(step, data);
                         const isStepCompleted = step.status === "COMPLETED";
@@ -1132,7 +1142,9 @@ const ExperimentExecutionView = () => {
                           <div
                             key={sIdx}
                             className={`flex flex-col bg-surface-card p-4 rounded-xl border shadow-sm gap-3 ${
-                              isStepManual || isRolesStep ? "border-primary/30 ring-1 ring-primary/10" : "border-outline-variant/15"
+                              isStepManual || isRolesStep || isInferPathwaysStep
+                                ? "border-primary/30 ring-1 ring-primary/10"
+                                : "border-outline-variant/15"
                             }`}
                           >
                             <div className="flex items-start gap-3">
@@ -1239,6 +1251,32 @@ const ExperimentExecutionView = () => {
                                     className="font-bold text-xs shrink-0 border-primary/30 text-primary hover:bg-primary/10 px-2.5 py-1 h-auto"
                                   >
                                     Summary
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Inspection Actions for automatic step Infer Biological Pathways */}
+                            {isInferPathwaysStep && (
+                              <div className="mt-1 pt-2 border-t border-outline-variant/10 flex items-center justify-between gap-2">
+                                <span className="text-[11px] text-on-surface-variant font-medium">
+                                  {isStepCompleted || stepMetrics.length > 0
+                                    ? "Signaling Network Topology Ready"
+                                    : "Automated SWI-Prolog Inference"}
+                                </span>
+                                <div className="flex items-center shrink-0">
+                                  <Button
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={() =>
+                                      navigate(
+                                        `/dashboard/experiments/${networkId || data.networkId || "default"}/pathway-graph/${experimentId || data.experimentId}`
+                                      )
+                                    }
+                                    className="gap-1.5 font-bold text-xs shrink-0 shadow-primary-glow px-3 py-1.5 h-auto"
+                                  >
+                                    <GitBranch className="w-3.5 h-3.5" />
+                                    View Pathway Graph
                                   </Button>
                                 </div>
                               </div>
