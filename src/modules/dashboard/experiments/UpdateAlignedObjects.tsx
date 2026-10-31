@@ -43,9 +43,11 @@ import {
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
 import { Button } from "@/components/atoms/Button";
-import { Breadcrumb } from "@/components/atoms/Breadcrumb";
 import { Badge } from "@/components/atoms/Badge";
 import { Input } from "@/components/atoms/Input";
+import { SynonymChip } from "@/components/atoms/SynonymChip";
+import { ManualStepHeader } from "@/components/molecules/ManualStepHeader";
+import { StepStatsBar } from "@/components/molecules/StepStatsBar";
 import { experimentService } from "@/services/experimentService";
 import type { ExperimentExecution } from "@/services/models/Experiment";
 import { SuccessModal } from "@/components/molecules/SuccessModal";
@@ -483,110 +485,63 @@ const UpdateAlignedObjects = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Navigation Breadcrumb */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <Breadcrumb
-          items={
-            networkId
-              ? [
-                  { label: "Networks", href: "/dashboard/network" },
-                  { label: "Experiments", href: `/dashboard/experiments/${networkId}` },
-                  {
-                    label: experimentData?.experimentName || "Experiment",
-                    href: `/dashboard/experiments/${networkId}/execution/${experimentId}`,
-                  },
-                  { label: "Update Aligned Objects" },
-                ]
-              : [
-                  { label: "Experiments" },
-                  { label: experimentData?.experimentName || "Experiment" },
-                  { label: "Update Aligned Objects" },
-                ]
-          }
-        />
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() =>
-            navigate(
-              `/dashboard/experiments/${networkId || experimentData?.networkId}/execution/${experimentId}`
-            )
-          }
-          className="gap-2 hover:bg-surface-container-high text-on-surface-variant font-medium text-xs rounded-lg border border-outline-variant/15"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Back to Execution Monitor
-        </Button>
-      </div>
+      {/* Navigation Breadcrumb + Header Section */}
+      <ManualStepHeader
+        networkId={networkId}
+        experimentId={experimentId}
+        experimentName={experimentData?.experimentName}
+        stepTitle="Update Aligned Objects"
+        stepDescription="Review, edit, and confirm biological object alignments and synonym mappings before completing this step."
+        icon={GitBranch}
+        actions={
+          <>
+            <Button
+              variant="ghost"
+              size="md"
+              onClick={() =>
+                navigate(
+                  `/dashboard/experiments/${networkId || experimentData?.networkId}/execution/${experimentId}`
+                )
+              }
+              className="gap-2 hover:bg-surface-container-high text-on-surface-variant font-medium text-xs rounded-xl border border-outline-variant/20"
+              title="Cancel and return to Pipeline Sequence Execution view"
+            >
+              <X className="w-4 h-4" />
+              Cancel
+            </Button>
 
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-surface-card p-6 rounded-3xl border border-outline-variant/15 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="p-3.5 bg-primary/10 text-primary rounded-2xl shrink-0 shadow-sm">
-            <GitBranch className="w-7 h-7" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-headline text-2xl font-black text-on-surface tracking-tighter">
-                Update Aligned Objects
-              </h1>
-              <Badge variant="inProgress" className="text-[9px] px-2 py-0.5 font-bold">
-                Manual Execution Step
-              </Badge>
-            </div>
-            <p className="text-on-surface-variant font-body text-xs max-w-xl mt-1 leading-relaxed">
-              Review, edit, and confirm biological object alignments and synonym mappings before completing this step.
-            </p>
-          </div>
-        </div>
+            <Button
+              variant="ghost"
+              size="md"
+              onClick={() => setIsConfirmRegenerateModalOpen(true)}
+              disabled={isSubmitting}
+              className="gap-2 font-bold text-xs border border-outline-variant/30 hover:bg-surface-container-high text-on-surface rounded-xl"
+            >
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4" />
+              )}
+              Save and Regenerate Aligned Objects
+            </Button>
 
-        <div className="flex items-center gap-3 shrink-0">
-          <Button
-            variant="ghost"
-            size="md"
-            onClick={() =>
-              navigate(
-                `/dashboard/experiments/${networkId || experimentData?.networkId}/execution/${experimentId}`
-              )
-            }
-            className="gap-2 hover:bg-surface-container-high text-on-surface-variant font-medium text-xs rounded-xl border border-outline-variant/20"
-            title="Cancel and return to Pipeline Sequence Execution view"
-          >
-            <X className="w-4 h-4" />
-            Cancel
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="md"
-            onClick={() => setIsConfirmRegenerateModalOpen(true)}
-            disabled={isSubmitting}
-            className="gap-2 font-bold text-xs border border-outline-variant/30 hover:bg-surface-container-high text-on-surface rounded-xl"
-          >
-            {isSubmitting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <RefreshCw className="w-4 h-4" />
-            )}
-            Save and Regenerate Aligned Objects
-          </Button>
-
-          <Button
-            variant="primary"
-            size="md"
-            onClick={() => setIsConfirmCompleteModalOpen(true)}
-            disabled={isSubmitting}
-            className="gap-2 shadow-primary-glow font-bold"
-          >
-            {isSubmitting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <CheckCircle2 className="w-4 h-4" />
-            )}
-            Save and Complete
-          </Button>
-        </div>
-      </div>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => setIsConfirmCompleteModalOpen(true)}
+              disabled={isSubmitting}
+              className="gap-2 shadow-primary-glow font-bold"
+            >
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4" />
+              )}
+              Save and Complete
+            </Button>
+          </>
+        }
+      />
 
       {/* Main Table Glass Panel */}
       <div className="glass-panel p-6 rounded-3xl border border-outline-variant/15 shadow-md flex flex-col gap-6">
@@ -614,17 +569,31 @@ const UpdateAlignedObjects = () => {
             </Button>
           </div>
 
-          <div className="flex items-center gap-3 text-xs text-on-surface-variant font-medium">
-            <span>Total Objects: <strong className="text-on-surface">{objects.length}</strong></span>
-            <span className="text-outline-variant/40">•</span>
-            <span>Aligned: <strong className="text-emerald-600">{objects.filter(o => o.status === "ALIGNED" || o.status === "ALIGNED_AS").length}</strong></span>
-            <span className="text-outline-variant/40">•</span>
-            <span>No Aligned: <strong className="text-rose-500">{objects.filter(o => o.status === "NO_ALIGNED").length}</strong></span>
-            <span className="text-outline-variant/40">•</span>
-            <span>New: <strong className="text-blue-500">{objects.filter(o => o.status === "NEW").length}</strong></span>
-            <span className="text-outline-variant/40">•</span>
-            <span>Modified: <strong className="text-amber-500">{objects.filter(o => o.status === "MODIFIED").length}</strong></span>
-          </div>
+          <StepStatsBar
+            stats={[
+              { label: "Total Objects", value: objects.length },
+              {
+                label: "Aligned",
+                value: objects.filter((o) => o.status === "ALIGNED" || o.status === "ALIGNED_AS").length,
+                valueColor: "text-emerald-600",
+              },
+              {
+                label: "No Aligned",
+                value: objects.filter((o) => o.status === "NO_ALIGNED").length,
+                valueColor: "text-rose-500",
+              },
+              {
+                label: "New",
+                value: objects.filter((o) => o.status === "NEW").length,
+                valueColor: "text-blue-500",
+              },
+              {
+                label: "Modified",
+                value: objects.filter((o) => o.status === "MODIFIED").length,
+                valueColor: "text-amber-500",
+              },
+            ]}
+          />
         </div>
 
         {/* Table View */}
@@ -740,9 +709,10 @@ const UpdateAlignedObjects = () => {
                       {item.synonyms && item.synonyms.length > 0 ? (
                         <div className="flex flex-wrap gap-1.5">
                           {item.synonyms.map((syn) => (
-                            <button
+                            <SynonymChip
                               key={syn}
-                              type="button"
+                              synonym={syn}
+                              showMenuIcon
                               onClick={() =>
                                 setActiveSynonymMenu({
                                   itemId: item.id,
@@ -750,12 +720,7 @@ const UpdateAlignedObjects = () => {
                                   synonym: syn,
                                 })
                               }
-                              className="inline-flex items-center gap-1.5 bg-primary/5 hover:bg-primary/15 text-primary dark:text-primary-light border border-primary/20 hover:border-primary/40 px-2.5 py-1 rounded-lg text-[11px] font-mono font-semibold transition-all hover:scale-102 cursor-pointer group shadow-2xs"
-                              title={`Options for "${syn}" (click to open actions menu)`}
-                            >
-                              <span>{syn}</span>
-                              <SlidersHorizontal className="w-3 h-3 text-primary/70 group-hover:text-primary transition-colors shrink-0" />
-                            </button>
+                            />
                           ))}
                         </div>
                       ) : (

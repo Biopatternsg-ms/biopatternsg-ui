@@ -38,6 +38,8 @@ import {
   Edit3,
   Lock,
   Dna,
+  Target,
+  Settings,
   type LucideIcon
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
@@ -56,6 +58,7 @@ const stepIcons: Record<string, LucideIcon> = {
   Activity: Activity,
   FileText: FileText,
   Dna: Dna,
+  Target: Target,
 };
 
 function StepIcon({ name, className }: { name: string; className?: string }) {
@@ -104,26 +107,113 @@ const MANUAL_STEP_CONFIG: Record<string, ManualStepDefinition> = {
     buttonIcon: Activity,
   },
 
-  // Update Biological Objects
+  // Update Object Roles
   "step-update_biological_objects": {
     routeSegment: "biological-objects",
-    buttonLabel: "Update Biological Objects",
+    buttonLabel: "Update Object Roles",
+    buttonIcon: Dna,
+  },
+  "step-update_object_roles": {
+    routeSegment: "biological-objects",
+    buttonLabel: "Update Object Roles",
     buttonIcon: Dna,
   },
   "UPDATE_BIOLOGICAL_OBJECTS": {
     routeSegment: "biological-objects",
-    buttonLabel: "Update Biological Objects",
+    buttonLabel: "Update Object Roles",
+    buttonIcon: Dna,
+  },
+  "UPDATE_OBJECT_ROLES": {
+    routeSegment: "biological-objects",
+    buttonLabel: "Update Object Roles",
     buttonIcon: Dna,
   },
   "Update Biological Objects": {
     routeSegment: "biological-objects",
-    buttonLabel: "Update Biological Objects",
+    buttonLabel: "Update Object Roles",
     buttonIcon: Dna,
+  },
+  "Update Object Roles": {
+    routeSegment: "biological-objects",
+    buttonLabel: "Update Object Roles",
+    buttonIcon: Dna,
+  },
+
+  // Select Closing Objects
+  "step-select_closing_objects": {
+    routeSegment: "closing-objects",
+    buttonLabel: "Select Closing Objects",
+    buttonIcon: Target,
+  },
+  "SELECT_CLOSING_OBJECTS": {
+    routeSegment: "closing-objects",
+    buttonLabel: "Select Closing Objects",
+    buttonIcon: Target,
+  },
+  "Select Closing Objects": {
+    routeSegment: "closing-objects",
+    buttonLabel: "Select Closing Objects",
+    buttonIcon: Target,
   },
 };
 
+export function isManualStep(step: PipelineStepExecution): boolean {
+  if (step.isManual) return true;
+  if (getManualStepConfig(step) !== null) return true;
+  const id = String(step.id || "").toLowerCase();
+  const name = String(step.name || "").toLowerCase();
+  const stepKey = String((step as { step?: string }).step || "").toLowerCase();
+
+  return (
+    id.includes("update_aligned") ||
+    id.includes("configure_inferences") ||
+    id.includes("update_biological") ||
+    id.includes("update_object_roles") ||
+    id.includes("select_closing") ||
+    name.includes("update aligned") ||
+    name.includes("configure inferences") ||
+    name.includes("update biological") ||
+    name.includes("update object roles") ||
+    name.includes("select closing") ||
+    stepKey.includes("update_aligned") ||
+    stepKey.includes("configure_inferences") ||
+    stepKey.includes("update_biological") ||
+    stepKey.includes("update_object_roles") ||
+    stepKey.includes("select_closing")
+  );
+}
+
 function getManualStepConfig(step: PipelineStepExecution): ManualStepDefinition | null {
-  return MANUAL_STEP_CONFIG[step.id] || MANUAL_STEP_CONFIG[step.name] || null;
+  if (MANUAL_STEP_CONFIG[step.id]) return MANUAL_STEP_CONFIG[step.id];
+  if (MANUAL_STEP_CONFIG[step.name]) return MANUAL_STEP_CONFIG[step.name];
+  const stepKey = (step as { step?: string }).step;
+  if (stepKey && MANUAL_STEP_CONFIG[stepKey]) return MANUAL_STEP_CONFIG[stepKey];
+
+  const id = String(step.id || "").toLowerCase();
+  const name = String(step.name || "").toLowerCase();
+  const key = String(stepKey || "").toLowerCase();
+
+  if (id.includes("update_aligned") || name.includes("update aligned") || key.includes("update_aligned")) {
+    return MANUAL_STEP_CONFIG["step-update_aligned_objects"];
+  }
+  if (id.includes("configure_inferences") || name.includes("configure inferences") || key.includes("configure_inferences")) {
+    return MANUAL_STEP_CONFIG["step-configure_inferences"];
+  }
+  if (
+    id.includes("update_biological") ||
+    id.includes("update_object_roles") ||
+    name.includes("update biological") ||
+    name.includes("update object roles") ||
+    key.includes("update_biological") ||
+    key.includes("update_object_roles")
+  ) {
+    return MANUAL_STEP_CONFIG["step-update_biological_objects"];
+  }
+  if (id.includes("select_closing") || name.includes("select closing") || key.includes("select_closing")) {
+    return MANUAL_STEP_CONFIG["step-select_closing_objects"];
+  }
+
+  return null;
 }
 
 function getManualStepRoute(step: PipelineStepExecution, networkId?: string, experimentId?: string): string | null {
@@ -192,7 +282,17 @@ const METRIC_LABELS: Record<string, string> = {
   meshIdsFound: "MESH IDS FOUND",
   rolesIdentified: "ROLES IDENTIFIED",
   entitiesWithActiveRoles: "ENTITIES WITH ACTIVE ROLES",
+  totalEntitiesEvaluated: "TOTAL ENTITIES EVALUATED",
+  pathwaysCount: "PATHWAYS INFERRED",
+  graphNodesCount: "GRAPH NODES",
+  graphEdgesCount: "GRAPH EDGES",
+  executionTimeMs: "INFERENCE TIME (MS)",
+  inferenceStatus: "INFERENCE STATUS",
   statusMessage: "STATUS",
+  candidateClosingObjects: "CANDIDATE CLOSING OBJECTS",
+  selectedClosingObjects: "SELECTED CLOSING OBJECTS",
+  closingObjectsCount: "CLOSING OBJECTS COUNT",
+  closingObjects: "CLOSING OBJECTS",
 };
 
 function formatMetricValue(value: string): string {
@@ -249,13 +349,27 @@ function parseRawMetrics(rawMetrics?: RawMetricInput): ParsedMetricItem[] {
     });
 }
 
-// Helper to parse "hh:mm:ss" to total seconds
+// Helper to parse "hh:mm:ss", "Xh Ym Zs", "Xm Ys", or "Xs" to total seconds
 function parseTimeToSeconds(timeStr?: string): number {
-  if (!timeStr) return 0;
+  if (!timeStr || timeStr === "--:--" || timeStr === "—" || timeStr === "-" || timeStr === "Manual") return 0;
+
+  // Handle formats like "1349m 45s", "10s", "1h 20m 5s"
+  if (timeStr.includes("s") || timeStr.includes("m") || timeStr.includes("h")) {
+    let total = 0;
+    const hMatch = timeStr.match(/(\d+)\s*h/i);
+    const mMatch = timeStr.match(/(\d+)\s*m/i);
+    const sMatch = timeStr.match(/(\d+)\s*s/i);
+    if (hMatch) total += parseInt(hMatch[1], 10) * 3600;
+    if (mMatch) total += parseInt(mMatch[1], 10) * 60;
+    if (sMatch) total += parseInt(sMatch[1], 10);
+    return total;
+  }
+
+  // Handle "hh:mm:ss" or "mm:ss"
   const parts = timeStr.split(":").map(Number);
-  if (parts.length === 3) {
+  if (parts.length === 3 && !parts.some(isNaN)) {
     return parts[0] * 3600 + parts[1] * 60 + parts[2];
-  } else if (parts.length === 2) {
+  } else if (parts.length === 2 && !parts.some(isNaN)) {
     return parts[0] * 60 + parts[1];
   }
   return 0;
@@ -373,6 +487,22 @@ const STAGE_DEFINITIONS = [
       "FIND_ROLES",
       "Find Biological Roles",
       "find_roles",
+      "step-update_biological_objects",
+      "UPDATE_BIOLOGICAL_OBJECTS",
+      "Update Biological Objects",
+      "update_biological_objects",
+      "step-update_object_roles",
+      "UPDATE_OBJECT_ROLES",
+      "Update Object Roles",
+      "update_object_roles",
+      "step-select_closing_objects",
+      "SELECT_CLOSING_OBJECTS",
+      "Select Closing Objects",
+      "select_closing_objects",
+      "step-infer_pathways",
+      "INFER_PATHWAYS",
+      "Infer Biological Pathways",
+      "infer_pathways",
       "step-6",
     ],
   },
@@ -438,7 +568,11 @@ const ExperimentExecutionView = () => {
           const defaultStg = activeStg || computedStages[0];
           setSelectedStageId(defaultStg?.id || "INIT");
 
-          setTotalSeconds(parseTimeToSeconds(executionData.totalExecutionTime));
+          const automatedSecs = (executionData.steps || []).reduce((acc, step) => {
+            if (isManualStep(step)) return acc;
+            return acc + parseTimeToSeconds(step.duration);
+          }, 0);
+          setTotalSeconds(automatedSecs > 0 ? automatedSecs : parseTimeToSeconds(executionData.totalExecutionTime));
           setPhaseSeconds(parseTimeToSeconds(executionData.currentPhaseDuration));
           setLoading(false);
         }
@@ -473,7 +607,11 @@ const ExperimentExecutionView = () => {
         const executionData = await experimentService.getExperimentExecution(experimentId);
         if (!ignore) {
           setData(executionData);
-          setTotalSeconds(parseTimeToSeconds(executionData.totalExecutionTime));
+          const automatedSecs = (executionData.steps || []).reduce((acc, step) => {
+            if (isManualStep(step)) return acc;
+            return acc + parseTimeToSeconds(step.duration);
+          }, 0);
+          setTotalSeconds(automatedSecs > 0 ? automatedSecs : parseTimeToSeconds(executionData.totalExecutionTime));
           setPhaseSeconds(parseTimeToSeconds(executionData.currentPhaseDuration));
         }
       } catch (err) {
@@ -594,11 +732,18 @@ const ExperimentExecutionView = () => {
   const selectedStageDuration = selectedStage
     ? (() => {
         const totalSecs = selectedStage.steps.reduce((acc, step) => {
+          if (isManualStep(step)) return acc;
           return acc + parseTimeToSeconds(step.duration);
         }, 0);
         return totalSecs > 0 ? formatSecondsToMs(totalSecs) : undefined;
       })()
     : undefined;
+
+  const automatedStepsTotalSecs = (data.steps || []).reduce((acc, step) => {
+    if (isManualStep(step)) return acc;
+    return acc + parseTimeToSeconds(step.duration);
+  }, 0);
+  const automatedTotalTimeFormatted = formatSecondsToHms(automatedStepsTotalSecs);
 
   return (
     <div className="flex flex-col gap-6">
@@ -679,7 +824,11 @@ const ExperimentExecutionView = () => {
                 <Clock className="w-3.5 h-3.5 text-primary" />
                 <span className="text-on-surface-variant font-medium">Total Duration:</span>
                 <span className="font-mono font-bold text-on-surface text-xs">
-                  {data.status === "ACTIVE" ? displayTotalTime : (data.totalExecutionTime || displayTotalTime)}
+                  {data.status === "ACTIVE"
+                    ? displayTotalTime
+                    : automatedStepsTotalSecs > 0
+                    ? automatedTotalTimeFormatted
+                    : (data.totalExecutionTime || displayTotalTime)}
                 </span>
               </div>
             </div>
@@ -757,7 +906,7 @@ const ExperimentExecutionView = () => {
                         {stage.steps.map((step) => {
                           const firstActiveStep = data.steps.find((s) => s.status === "ACTIVE" && !isStepActionDisabled(s, data));
                           const manualRoute = getManualStepRoute(step, networkId || data.networkId, experimentId);
-                          const isManualStep = step.isManual || !!manualRoute;
+                          const isStepManual = isManualStep(step);
                           const stepDisabled = isStepActionDisabled(step, data);
                           const isStepCompleted = step.status === "COMPLETED";
                           const isFirstActive = firstActiveStep
@@ -778,8 +927,8 @@ const ExperimentExecutionView = () => {
                                   <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                                 ) : stepDisabled ? (
                                   <Lock className="w-3.5 h-3.5 text-outline-variant/60 shrink-0" />
-                                ) : isManualStep ? (
-                                  <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                ) : isStepManual ? (
+                                  <Settings className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                                 ) : isStepActive ? (
                                   <Loader2 className="w-3.5 h-3.5 text-amber-500 animate-spin shrink-0" />
                                 ) : isStepFailed ? (
@@ -805,37 +954,47 @@ const ExperimentExecutionView = () => {
                                 >
                                   {step.name}
                                 </span>
+                                {isStepManual && (
+                                  <span
+                                    title="Manual action"
+                                    className="inline-flex items-center text-primary/80 shrink-0"
+                                  >
+                                    <Settings className="w-3 h-3" />
+                                  </span>
+                                )}
                               </div>
                               <div className="flex items-center gap-1.5 shrink-0">
                                 {manualRoute && !isStepCompleted ? (
-                                  <button
-                                    onClick={(e) => {
-                                      if (canNavigate) {
-                                        e.stopPropagation();
-                                        navigate(manualRoute);
-                                      }
-                                    }}
-                                    disabled={stepDisabled}
-                                    title={
-                                      stepDisabled
-                                        ? "Requires previous steps to be completed"
-                                        : `Open and edit ${step.name}`
-                                    }
-                                    className={`flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[10px] transition-all shrink-0 ${
-                                      stepDisabled
-                                        ? "bg-surface-container-high text-on-surface-variant/40 cursor-not-allowed"
-                                        : "bg-primary/10 hover:bg-primary/20 text-primary cursor-pointer"
-                                    }`}
-                                  >
-                                    {stepDisabled ? <Lock className="w-3 h-3" /> : <Edit3 className="w-3 h-3" />}
-                                    <span>{stepDisabled ? "Locked" : "Edit"}</span>
-                                  </button>
+                                  stepDisabled ? (
+                                    <div
+                                      title="Requires previous steps to be completed"
+                                      className="p-1 text-on-surface-variant/40 shrink-0 flex items-center justify-center"
+                                    >
+                                      <Lock className="w-3.5 h-3.5" />
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={(e) => {
+                                        if (canNavigate) {
+                                          e.stopPropagation();
+                                          navigate(manualRoute);
+                                        }
+                                      }}
+                                      title={`Open and edit ${step.name}`}
+                                      className="flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[10px] transition-all shrink-0 bg-primary/10 hover:bg-primary/20 text-primary cursor-pointer"
+                                    >
+                                      <Edit3 className="w-3 h-3" />
+                                      <span>Edit</span>
+                                    </button>
+                                  )
                                 ) : (
                                   <span className="text-[10px] text-on-surface-variant/60 font-medium whitespace-nowrap">
                                     {isStepActive ? (
                                       <span className="text-amber-500 font-bold">Running</span>
                                     ) : stepDisabled ? (
                                       "--:--"
+                                    ) : isStepManual ? (
+                                      "—"
                                     ) : (
                                       step.duration || "--:--"
                                     )}
@@ -933,14 +1092,18 @@ const ExperimentExecutionView = () => {
               {selectedStage.steps && selectedStage.steps.length > 0 && (() => {
                 const visibleSteps = selectedStage.steps.filter((step) => {
                   const stepMetrics = parseRawMetrics(step.metrics);
-                  const manualRoute = getManualStepRoute(step, networkId || data.networkId, experimentId);
                   const isRolesStep =
                     step.id === "step-find_roles" ||
                     step.name === "Find Biological Roles" ||
                     step.id === "FIND_ROLES" ||
                     (step as { step?: string }).step === "find_roles";
-                  const isManualStep = step.isManual || !!manualRoute;
-                  return stepMetrics.length > 0 || isManualStep || isRolesStep;
+                  const isInferPathwaysStep =
+                    step.id === "step-infer_pathways" ||
+                    step.name === "Infer Biological Pathways" ||
+                    step.id === "INFER_PATHWAYS" ||
+                    (step as { step?: string }).step === "infer_pathways";
+                  const isStepManual = isManualStep(step);
+                  return stepMetrics.length > 0 || isStepManual || isRolesStep || isInferPathwaysStep;
                 });
 
                 if (visibleSteps.length === 0) return null;
@@ -961,7 +1124,12 @@ const ExperimentExecutionView = () => {
                           step.name === "Find Biological Roles" ||
                           step.id === "FIND_ROLES" ||
                           (step as { step?: string }).step === "find_roles";
-                        const isManualStep = step.isManual || !!manualRoute || isRolesStep;
+                        const isInferPathwaysStep =
+                          step.id === "step-infer_pathways" ||
+                          step.name === "Infer Biological Pathways" ||
+                          step.id === "INFER_PATHWAYS" ||
+                          (step as { step?: string }).step === "infer_pathways";
+                        const isStepManual = isManualStep(step);
                         const stepDisabled = isStepActionDisabled(step, data);
                         const isStepCompleted = step.status === "COMPLETED";
                         const isFirstActive = firstActiveStep
@@ -974,7 +1142,9 @@ const ExperimentExecutionView = () => {
                           <div
                             key={sIdx}
                             className={`flex flex-col bg-surface-card p-4 rounded-xl border shadow-sm gap-3 ${
-                              isManualStep ? "border-primary/30 ring-1 ring-primary/10" : "border-outline-variant/15"
+                              isStepManual || isRolesStep || isInferPathwaysStep
+                                ? "border-primary/30 ring-1 ring-primary/10"
+                                : "border-outline-variant/15"
                             }`}
                           >
                             <div className="flex items-start gap-3">
@@ -986,9 +1156,9 @@ const ExperimentExecutionView = () => {
                                 <div className="w-5 h-5 rounded-full bg-surface-container-high text-on-surface-variant/60 flex items-center justify-center shrink-0 mt-0.5">
                                   <Lock className="w-3 h-3" />
                                 </div>
-                              ) : isManualStep ? (
+                              ) : isStepManual ? (
                                 <div className="w-5 h-5 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-300/60 flex items-center justify-center shrink-0 mt-0.5">
-                                  <Clock className="w-3 h-3 font-bold" />
+                                  <Settings className="w-3 h-3" />
                                 </div>
                               ) : isStepActive ? (
                                 <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 animate-pulse mt-0.5">
@@ -1003,16 +1173,27 @@ const ExperimentExecutionView = () => {
                               )}
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between gap-2">
-                                  <span
-                                    className={`text-xs font-bold truncate ${
-                                      step.status === "PENDING" || stepDisabled ? "text-on-surface-variant/40" : "text-on-surface"
-                                    }`}
-                                  >
-                                    {step.name}
-                                  </span>
-                                  {isStepCompleted && step.duration && (
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <span
+                                      className={`text-xs font-bold truncate ${
+                                        step.status === "PENDING" || stepDisabled ? "text-on-surface-variant/40" : "text-on-surface"
+                                      }`}
+                                    >
+                                      {step.name}
+                                    </span>
+                                    {isStepManual && (
+                                      <span
+                                        title="Manual action"
+                                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0"
+                                      >
+                                        <Settings className="w-2.5 h-2.5" />
+                                        Manual
+                                      </span>
+                                    )}
+                                  </div>
+                                  {isStepCompleted && (
                                     <span className="text-[10px] text-on-surface-variant/60 font-medium whitespace-nowrap">
-                                      {step.duration}
+                                      {isStepManual ? "—" : (step.duration || "--:--")}
                                     </span>
                                   )}
                                 </div>
@@ -1070,6 +1251,32 @@ const ExperimentExecutionView = () => {
                                     className="font-bold text-xs shrink-0 border-primary/30 text-primary hover:bg-primary/10 px-2.5 py-1 h-auto"
                                   >
                                     Summary
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Inspection Actions for automatic step Infer Biological Pathways */}
+                            {isInferPathwaysStep && (
+                              <div className="mt-1 pt-2 border-t border-outline-variant/10 flex items-center justify-between gap-2">
+                                <span className="text-[11px] text-on-surface-variant font-medium">
+                                  {isStepCompleted || stepMetrics.length > 0
+                                    ? "Signaling Network Topology Ready"
+                                    : "Automated SWI-Prolog Inference"}
+                                </span>
+                                <div className="flex items-center shrink-0">
+                                  <Button
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={() =>
+                                      navigate(
+                                        `/dashboard/experiments/${networkId || data.networkId || "default"}/pathway-graph/${experimentId || data.experimentId}`
+                                      )
+                                    }
+                                    className="gap-1.5 font-bold text-xs shrink-0 shadow-primary-glow px-3 py-1.5 h-auto"
+                                  >
+                                    <GitBranch className="w-3.5 h-3.5" />
+                                    View Pathway Graph
                                   </Button>
                                 </div>
                               </div>

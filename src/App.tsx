@@ -20,6 +20,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Landing from "@/modules/public/Landing";
 //import Register from "@/modules/public/Register";
 import RecoveryPassword from "@/modules/public/RecoveryPassword";
+import ResultsGraph from "@/modules/public/ResultsGraph";
 import Network from "@/modules/dashboard/networks/Network";
 import Experiments from "@/modules/dashboard/experiments/Experiments";
 import CreateExperiment from "@/modules/dashboard/experiments/CreateExperiment";
@@ -27,6 +28,8 @@ import ExperimentExecution from "@/modules/dashboard/experiments/ExperimentExecu
 import UpdateAlignedObjects from "@/modules/dashboard/experiments/UpdateAlignedObjects";
 import ConfigureInferences from "@/modules/dashboard/experiments/ConfigureInferences";
 import UpdateBiologicalObjects from "@/modules/dashboard/experiments/UpdateBiologicalObjects";
+import SelectClosingObjects from "@/modules/dashboard/experiments/SelectClosingObjects";
+import PathwayGraphView from "@/modules/dashboard/experiments/PathwayGraphView";
 import CreateNetwork from "@/modules/dashboard/networks/CreateNetwork";
 import { ProtectedRoute } from "@/core/router/ProtectedRoute";
 import { PublicRoute } from "@/core/router/PublicRoute";
@@ -46,10 +49,12 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/results-graph" element={<ResultsGraph />} />
         <Route element={<PublicRoute />}>
           <Route path="/" element={<Landing />} />
           {/* <Route path="/register" element={<Register />} /> */}
           <Route path="/recovery-password" element={<RecoveryPassword />} />
+
         </Route>
 
         <Route element={<ProtectedRoute />}>
@@ -62,6 +67,8 @@ function App() {
             <Route path="/dashboard/experiments/:networkId/aligned-objects/:experimentId" element={<UpdateAlignedObjects />} />
             <Route path="/dashboard/experiments/:networkId/inferences-config/:experimentId" element={<ConfigureInferences />} />
             <Route path="/dashboard/experiments/:networkId/biological-objects/:experimentId" element={<UpdateBiologicalObjects />} />
+            <Route path="/dashboard/experiments/:networkId/closing-objects/:experimentId" element={<SelectClosingObjects />} />
+            <Route path="/dashboard/experiments/:networkId/pathway-graph/:experimentId" element={<PathwayGraphView />} />
             <Route path="/dashboard/experiments/:networkId?" element={<Experiments />} />
 
             {/* Rutas de administración */}

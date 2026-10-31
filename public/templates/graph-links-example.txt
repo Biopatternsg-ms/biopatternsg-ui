@@ -1,0 +1,63 @@
+object1;interaction;object2
+Epinephrine;agonism / ligand binding;ADRB2
+ADRB2;GDP/GTP exchange activation;Gs_alpha
+Gs_alpha;enzymatic activation;Adenylyl_Cyclase
+Adenylyl_Cyclase;enzymatic synthesis;cAMP
+cAMP;allosteric activation;PRKACA
+PRKACA;regulatory phosphorylation;CREB1
+CREB1;co-activator recruitment;CBP
+CREB1;sequence-specific binding;CRE_Element
+CRE_Element;transcriptional induction;c-Fos_mRNA
+c-Fos_mRNA;translation template;FOS
+miR-155;mRNA degradation / silencing;FOS
+ADRB2;heterotrimeric coupling;Gq_alpha
+Gq_alpha;enzymatic activation;PLCB1
+PLCB1;enzymatic cleavage;PIP2
+PIP2;metabolic precursor;IP3
+PIP2;metabolic precursor;DAG
+IP3;ligand-gated channel opening;ITPR1
+ITPR1;intracellular release;Calcium_Ion
+Calcium_Ion;co-factor activation;PRKCA
+DAG;allosteric membrane recruitment;PRKCA
+Calcium_Ion;stoichiometric binding;CALM1
+CALM1;allosteric activation;CAMK2A
+PRKCA;phosphorylation / activation;NFKBIA
+NFKB1;subunit assembly;NF-kappa-B_Complex
+RELA;subunit assembly;NF-kappa-B_Complex
+NFKBIA;inhibitory complex binding;NF-kappa-B_Complex
+NF-kappa-B_Complex;transcriptional induction;Cyclin_D1_mRNA
+PRKACA;phosphorylation / dissociation;NFKBIA
+EIF4E;multiprotein assembly;eIF4F_Complex
+EIF4G1;scaffold assembly;eIF4F_Complex
+eIF4F_Complex;5-prime cap recognition / translation;Cyclin_D1_mRNA
+PRKACA;desensitization phosphorylation;ADRB2
+PRKCA;desensitization phosphorylation;ADRB2
+CAMK2A;regulatory phosphorylation;CREB1
+CBP;histone acetyltransferase coactivation;RELA
+NF-kappa-B_Complex;transcriptional induction;miR-155
+NF-kappa-B_Complex;transcriptional feedback induction;NFKBIA
+Calcium_Ion;allosteric regulation;Adenylyl_Cyclase
+CAMK2A;regulatory phosphorylation;ITPR1
+PRKACA;inhibitory phosphorylation;PLCB1
+PRKCA;inhibitory phosphorylation;PLCB1
+CALM1;allosteric calcium sensor binding;Adenylyl_Cyclase
+CALM1;functional binding;ITPR1
+PRKACA;regulatory phosphorylation;ITPR1
+FOS;transcriptional activation;Cyclin_D1_mRNA
+FOS;promoter binding;CRE_Element
+FOS;transcriptional repression;ADRB2
+CREB1;transcriptional induction;Cyclin_D1_mRNA
+PRKCA;direct activation;RELA
+CAMK2A;regulatory phosphorylation;NFKBIA
+PRKACA;direct phosphorylation / activation;RELA
+PIP2;membrane anchorage;ADRB2
+PIP2;actin/membrane crosslinking;PLCB1
+eIF4F_Complex;translational initiation;c-Fos_mRNA
+Calcium_Ion;negative feedback inactivation;ITPR1
+NFKB1;direct physical association;CBP
+PRKCA;activation phosphorylation;EIF4G1
+miR-155;translational repression;NFKB1
+miR-155;post-transcriptional repression;CREB1
+Gs_alpha;intrinsic GTPase deactivation;Adenylyl_Cyclase
+Gq_alpha;GTP hydrolysis deactivation;PLCB1
+cAMP;negative cooperativity dissociation;PRKACA

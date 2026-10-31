@@ -1,0 +1,147 @@
+/*
+ * Copyright © 2026 biopatternsg (biopatternsg@gmail.com)
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * Type definitions and constants for the Force-Directed Graph visualization.
+ *
+ * These types are shared across ForceGraphCanvas (atom),
+ * NodeDetailPanel (molecule), and ForceGraphViewer (organism).
+ */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   CONSUMER INPUT TYPES — What the view page provides
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/** A node as provided by the consumer. Only `name` and `type` are required. */
+export interface GraphNodeInput {
+  name: string;
+  type: string;
+}
+
+/** A connection as provided by the consumer. */
+export interface GraphLinkInput {
+  object1: string;
+  interaction: string;
+  object2: string;
+  pathwayCount?: number;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   INTERNAL TYPES — What ForceGraph2D consumes
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Internal node representation consumed by ForceGraph2D.
+ *
+ * `x`, `y`, `vx`, `vy` are injected at runtime by d3-force.
+ */
+export interface GraphNode {
+  id: string;
+  name: string;
+  type: string;
+  color: string;
+  // d3-force runtime
+  x?: number;
+  y?: number;
+  z?: number;
+  vx?: number;
+  vy?: number;
+  vz?: number;
+  fx?: number;
+  fy?: number;
+  fz?: number;
+}
+
+/** Internal link representation consumed by ForceGraph2D. */
+export interface GraphLink {
+  source: string | GraphNode;
+  target: string | GraphNode;
+  interaction: string;
+  pathwayCount?: number;
+  index?: number;
+}
+
+/** The graphData shape expected by ForceGraph2D. */
+export interface ForceGraphData {
+  nodes: GraphNode[];
+  links: GraphLink[];
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   COLOR PALETTE — Biological type → color mapping
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/** Fallback color for unknown types. */
+export const DEFAULT_NODE_COLOR = "#94a3b8";
+
+/** Fixed palette of 10 colors assigned dynamically to node types (alphabetical order). */
+export const TYPE_COLOR_PALETTE: readonly string[] = [
+  "#0066ff",
+  "#ff6b35",
+  "#10b981",
+  "#f59e0b",
+  "#ec4899",
+  "#8b5cf6",
+  "#06b6d4",
+  "#ef4444",
+  "#14b8a6",
+  "#6366f1",
+];
+
+/**
+ * Build a dynamic type → color map from the unique `type` values of the given nodes.
+ * Types are sorted alphabetically and each one receives the palette color at its index.
+ */
+export function buildTypeColorMap(nodes: ReadonlyArray<{ type: string }>): Record<string, string> {
+  const uniqueTypes = Array.from(new Set(nodes.map((n) => n.type))).sort((a, b) =>
+    a.localeCompare(b),
+  );
+  return Object.fromEntries(
+    uniqueTypes.map((type, index) => [type, TYPE_COLOR_PALETTE[index] ?? DEFAULT_NODE_COLOR]),
+  );
+}
+
+/**
+ * Highlight color for selected/active elements.
+ * Kept for compatibility — the effective value is now defined per background
+ * in `forceGraphProfiles.ts` (`node.highlightColor` / `linkColor.highlighted`).
+ */
+export const HIGHLIGHT_COLOR = "#ffffff";
+
+/** Opacity for non-connected elements when a node is selected. */
+export const DIMMED_OPACITY = 0.12;
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   HELPERS
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/** Extract the string ID from a link endpoint (which d3-force mutates to a node object). */
+export function getNodeId(ref: string | GraphNode): string {
+  return typeof ref === "string" ? ref : ref.id;
+}
+
+/** Build a unique key for a link. */
+export function linkKey(link: GraphLink): string {
+  return `${getNodeId(link.source)}__${getNodeId(link.target)}__${link.interaction}`;
+}
+
+/** Resolve node color from type using the given dynamic color map. */
+export function colorForType(type: string, colorMap: Record<string, string>): string {
+  return colorMap[type] ?? DEFAULT_NODE_COLOR;
+}

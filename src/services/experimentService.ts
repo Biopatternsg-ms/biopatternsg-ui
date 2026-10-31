@@ -32,7 +32,21 @@ import {
   PUBMED_KB_EVENTS_BY_RESTRICTION_ENDPOINT,
   PUBMED_GENERATE_KB_ENDPOINT,
   INFERENCES_BIOLOGICAL_OBJECTS_ENDPOINT,
+  closingObjectsEndpoint,
+  PATHWAYS_RUN_ENDPOINT,
+  pathwaysGraphEndpoint,
+  pathwaysListEndpoint,
+  deletePathwaysEndpoint,
 } from "./apiConfig";
+
+import type {
+  PathwayInferenceRequest,
+  PathwayInferenceResponse,
+  PathwayGraph,
+  BiologicalPathway,
+  PathwayQueryParams,
+  PaginatedPathwaysResponse,
+} from "./models/Pathway";
 
 import type {
   Experiment,
@@ -168,9 +182,9 @@ export const experimentService = {
   },
 
   /**
-   * Saves the inference configuration (pipelineId, restrictionLevel) in the inferences microservice.
+   * Saves the inference configuration (pipelineId, restrictionLevel, summarizeKb, maxDepth) in the inferences microservice.
    * POST /inferences
-   * Body: { pipelineId, restrictionLevel }
+   * Body: { pipelineId, restrictionLevel, summarizeKb, maxDepth }
    */
   async saveInferenceConfig(
     pipelineId: string,
@@ -181,6 +195,14 @@ export const experimentService = {
       body: JSON.stringify({
         pipelineId,
         restrictionLevel: inferenceConfig.restrictionLevel,
+        summarizeKb: inferenceConfig.summarizeKb ?? true,
+        maxDepth: inferenceConfig.maxDepth ?? 10,
+        startFirstRoles: inferenceConfig.startFirstRoles ?? ["LIGAND"],
+        startSecondRoles: inferenceConfig.startSecondRoles ?? ["PROTEIN"],
+        intermediateFirstRoles: inferenceConfig.intermediateFirstRoles ?? ["PROTEIN"],
+        intermediateSecondRoles: inferenceConfig.intermediateSecondRoles ?? ["PROTEIN"],
+        endFirstRoles: inferenceConfig.endFirstRoles ?? ["PROTEIN"],
+        endSecondRoles: inferenceConfig.endSecondRoles ?? ["PROTEIN"],
       }),
     });
   },
@@ -206,6 +228,14 @@ export const experimentService = {
       id: `inf-${pipelineId}`,
       pipelineId,
       restrictionLevel: "VERY_RESTRICTED",
+      summarizeKb: true,
+      maxDepth: 10,
+      startFirstRoles: ["LIGAND"],
+      startSecondRoles: ["PROTEIN"],
+      intermediateFirstRoles: ["PROTEIN"],
+      intermediateSecondRoles: ["PROTEIN"],
+      endFirstRoles: ["PROTEIN"],
+      endSecondRoles: ["PROTEIN"],
       roles: {
         CYP7A1: ["PROTEIN", "ENZYME"],
         FXR: ["PROTEIN", "RECEPTOR", "TRANSCRIPTION_FACTOR"],
@@ -307,10 +337,41 @@ export const experimentService = {
       const response = await authFetch(`${PIPELINES_ENDPOINT}/${experimentId}/execution`);
       if (response.ok) {
         const data = await response.json();
-        const steps = (data.steps || []).map((s: PipelineStepExecution) => ({
-          ...s,
-          id: s.id || (s as { step?: string }).step || s.name,
-        }));
+        const isStepManualCheck = (s: PipelineStepExecution) => {
+          if (s.isManual) return true;
+          const id = String(s.id || "").toLowerCase();
+          const name = String(s.name || "").toLowerCase();
+          const stepKey = String((s as { step?: string }).step || "").toLowerCase();
+          return (
+            id.includes("update_aligned") ||
+            id.includes("configure_inferences") ||
+            id.includes("update_biological") ||
+            id.includes("update_object_roles") ||
+            id.includes("select_closing") ||
+            name.includes("update aligned") ||
+            name.includes("configure inferences") ||
+            name.includes("update biological") ||
+            name.includes("update object roles") ||
+            name.includes("select closing") ||
+            stepKey.includes("update_aligned") ||
+            stepKey.includes("configure_inferences") ||
+            stepKey.includes("update_biological") ||
+            stepKey.includes("update_object_roles") ||
+            stepKey.includes("select_closing")
+          );
+        };
+
+        const steps = (data.steps || []).map((s: PipelineStepExecution) => {
+          const id = s.id || (s as { step?: string }).step || s.name;
+          const isManual = isStepManualCheck({ ...s, id });
+          return {
+            ...s,
+            id,
+            isManual: isManual ? true : s.isManual,
+            duration: isManual ? "—" : s.duration,
+            outputText: isManual && s.status === "COMPLETED" ? "Completed" : s.outputText,
+          };
+        });
 
         // 1. Ensure "Update Aligned Objects" manual step is present
         const hasUpdateAligned = steps.some(
@@ -421,13 +482,17 @@ export const experimentService = {
           }
         }
 
-        // 4. Ensure "Update Biological Objects" manual step is present right after "Find Biological Roles"
+        // 4. Ensure "Update Object Roles" manual step is present right after "Find Biological Roles"
         const hasUpdateBiologicalObjects = steps.some(
           (s: PipelineStepExecution) =>
             s.id === "step-update_biological_objects" ||
+            s.id === "step-update_object_roles" ||
             s.id === "UPDATE_BIOLOGICAL_OBJECTS" ||
+            s.id === "UPDATE_OBJECT_ROLES" ||
             s.name === "Update Biological Objects" ||
-            (s as { step?: string }).step === "update_biological_objects"
+            s.name === "Update Object Roles" ||
+            (s as { step?: string }).step === "update_biological_objects" ||
+            (s as { step?: string }).step === "update_object_roles"
         );
 
         if (!hasUpdateBiologicalObjects) {
@@ -441,7 +506,7 @@ export const experimentService = {
 
           const updateBioStep: PipelineStepExecution = {
             id: "step-update_biological_objects",
-            name: "Update Biological Objects",
+            name: "Update Object Roles",
             status: "PENDING",
             duration: "Manual",
             outputText: "Manual Action Required",
@@ -457,6 +522,86 @@ export const experimentService = {
             steps.splice(findRolesIdx + 1, 0, updateBioStep);
           } else {
             steps.push(updateBioStep);
+          }
+        }
+
+        // 5. Ensure "Select Closing Objects" manual step is present right after "Update Object Roles"
+        const hasSelectClosingObjects = steps.some(
+          (s: PipelineStepExecution) =>
+            s.id === "step-select_closing_objects" ||
+            s.id === "SELECT_CLOSING_OBJECTS" ||
+            s.name === "Select Closing Objects" ||
+            (s as { step?: string }).step === "select_closing_objects"
+        );
+
+        if (!hasSelectClosingObjects) {
+          const updateBioIdx = steps.findIndex(
+            (s: PipelineStepExecution) =>
+              s.id === "step-update_biological_objects" ||
+              s.id === "step-update_object_roles" ||
+              s.id === "UPDATE_BIOLOGICAL_OBJECTS" ||
+              s.id === "UPDATE_OBJECT_ROLES" ||
+              s.name === "Update Biological Objects" ||
+              s.name === "Update Object Roles" ||
+              (s as { step?: string }).step === "update_biological_objects" ||
+              (s as { step?: string }).step === "update_object_roles"
+          );
+
+          const selectClosingStep: PipelineStepExecution = {
+            id: "step-select_closing_objects",
+            name: "Select Closing Objects",
+            status: "PENDING",
+            duration: "Manual",
+            outputText: "Manual Action Required",
+            description: "Select target closing biological objects to restrict pathway inferences, or leave empty for all.",
+            iconName: "Target",
+            isManual: true,
+            metrics: {
+              status: "Awaiting Selection",
+            },
+          };
+
+          if (updateBioIdx !== -1) {
+            steps.splice(updateBioIdx + 1, 0, selectClosingStep);
+          } else {
+            steps.push(selectClosingStep);
+          }
+        }
+
+        // 6. Ensure "Infer Biological Pathways" step is present right after "Select Closing Objects"
+        const hasInferPathways = steps.some(
+          (s: PipelineStepExecution) =>
+            s.id === "step-infer_pathways" ||
+            s.id === "INFER_PATHWAYS" ||
+            s.name === "Infer Biological Pathways" ||
+            (s as { step?: string }).step === "infer_pathways"
+        );
+
+        if (!hasInferPathways) {
+          const selectClosingIdx = steps.findIndex(
+            (s: PipelineStepExecution) =>
+              s.id === "step-select_closing_objects" ||
+              s.id === "SELECT_CLOSING_OBJECTS" ||
+              s.name === "Select Closing Objects" ||
+              (s as { step?: string }).step === "select_closing_objects"
+          );
+
+          const inferStep: PipelineStepExecution = {
+            id: "step-infer_pathways",
+            name: "Infer Biological Pathways",
+            status: "PENDING",
+            outputText: "Pending inference execution",
+            description: "Executes in-memory Prolog rules to infer valid biological causal chains and pathways.",
+            iconName: "Activity",
+            metrics: {
+              status: "Pending",
+            },
+          };
+
+          if (selectClosingIdx !== -1) {
+            steps.splice(selectClosingIdx + 1, 0, inferStep);
+          } else {
+            steps.push(inferStep);
           }
         }
 
@@ -662,6 +807,130 @@ export const experimentService = {
       method: "DELETE",
     });
   },
+
+  /**
+   * Retrieves selected closing objects for a pipeline.
+   * GET /inferences/closing-objects/{pipelineId}
+   */
+  async getClosingObjects(pipelineId: string): Promise<string[]> {
+    try {
+      const response = await authFetch(closingObjectsEndpoint(pipelineId));
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {
+      console.warn("Failed to fetch closing objects from backend, using fallback empty list", err);
+    }
+    return [];
+  },
+
+  /**
+   * Saves closing objects and automatically triggers pathway inference.
+   * POST /inferences/closing-objects/{pipelineId}
+   */
+  async saveClosingObjects(
+    pipelineId: string,
+    closingObjects: string[],
+    summarizeKb?: boolean,
+    maxDepth?: number
+  ): Promise<Response> {
+    return authFetch(closingObjectsEndpoint(pipelineId), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        closingObjects,
+        summarizeKb,
+        maxDepth,
+      }),
+    });
+  },
+
+  /**
+   * Executes biological pathway inference in RAM and persists results to MongoDB.
+   * Clears previous pathways and graph for the pipeline before running.
+   * POST /inferences/pathways/run
+   */
+  async runPathwayInference(request: PathwayInferenceRequest): Promise<PathwayInferenceResponse> {
+    const response = await authFetch(PATHWAYS_RUN_ENDPOINT, {
+      method: "POST",
+      body: JSON.stringify(request),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => null);
+      throw new Error(err?.message || `Failed to run pathway inference: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  /**
+   * Retrieves the consolidated pathway graph for a pipeline.
+   * GET /inferences/pathways/{pipelineId}/graph
+   */
+  async getPathwayGraph(pipelineId: string): Promise<PathwayGraph | null> {
+    try {
+      const response = await authFetch(pathwaysGraphEndpoint(pipelineId));
+      if (response.ok) {
+        return await response.json();
+      }
+      return null;
+    } catch (err) {
+      console.warn(`Failed to fetch pathway graph for pipeline ${pipelineId}:`, err);
+      return null;
+    }
+  },
+
+  /**
+   * Retrieves paginated biological pathways with optional filtering.
+   * GET /inferences/pathways/{pipelineId}
+   */
+  async getPathways(
+    pipelineId: string,
+    params?: PathwayQueryParams
+  ): Promise<PaginatedPathwaysResponse> {
+    const query = new URLSearchParams();
+    if (params?.page !== undefined) query.set("page", String(params.page));
+    if (params?.size !== undefined) query.set("size", String(params.size));
+    if (params?.startObject) query.set("startObject", params.startObject);
+    if (params?.endObject) query.set("endObject", params.endObject);
+    if (params?.containsObject) query.set("containsObject", params.containsObject);
+
+    const queryString = query.toString();
+    const url = `${pathwaysListEndpoint(pipelineId)}${queryString ? `?${queryString}` : ""}`;
+
+    const response = await authFetch(url);
+    if (!response.ok) {
+      if (response.status === 404) {
+        return { list: [], total: 0, page: params?.page ?? 0, size: params?.size ?? 50 };
+      }
+      throw new Error(`Failed to fetch pathways: ${response.statusText}`);
+    }
+
+    const totalHeader = response.headers.get("X-Total-Count");
+    const pageHeader = response.headers.get("X-Page");
+    const sizeHeader = response.headers.get("X-Page-Size");
+
+    const list: BiologicalPathway[] = await response.json();
+    return {
+      list,
+      total: totalHeader ? parseInt(totalHeader, 10) : list.length,
+      page: pageHeader ? parseInt(pageHeader, 10) : (params?.page ?? 0),
+      size: sizeHeader ? parseInt(sizeHeader, 10) : (params?.size ?? 50),
+    };
+  },
+
+  /**
+   * Deletes all pathways and graph for a pipeline.
+   * DELETE /inferences/pathways/{pipelineId}
+   */
+  async deletePathways(pipelineId: string): Promise<{ status: string; pipelineId: string; deletedPathwaysCount: number }> {
+    const response = await authFetch(deletePathwaysEndpoint(pipelineId), {
+      method: "DELETE",
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to delete pathways: ${response.statusText}`);
+    }
+    return response.json();
+  },
 };
 
 export function getMockExecutionData(experimentId: string, experimentName = "Protein Folding Analysis"): ExperimentExecution {
@@ -790,7 +1059,7 @@ export function getMockExecutionData(experimentId: string, experimentName = "Pro
       },
       {
         id: "step-update_biological_objects",
-        name: "Update Biological Objects",
+        name: "Update Object Roles",
         status: "PENDING",
         duration: "Manual",
         outputText: "Manual Action Required",
@@ -800,6 +1069,31 @@ export function getMockExecutionData(experimentId: string, experimentName = "Pro
         metrics: [
           { label: "TOTAL OBJECTS", value: "7" },
           { label: "STATUS", value: "Awaiting Role Confirmation" }
+        ]
+      },
+      {
+        id: "step-select_closing_objects",
+        name: "Select Closing Objects",
+        status: "PENDING",
+        duration: "Manual",
+        outputText: "Manual Action Required",
+        description: "Select target closing biological objects to restrict pathway inferences, or leave empty for all.",
+        iconName: "Target",
+        isManual: true,
+        metrics: [
+          { label: "CANDIDATE OBJECTS", value: "7" },
+          { label: "SELECTED CLOSING OBJECTS", value: "0" },
+          { label: "STATUS", value: "Awaiting Selection" }
+        ]
+      },
+      {
+        id: "step-infer_pathways",
+        name: "Infer Biological Pathways",
+        status: "PENDING",
+        description: "Executes in-memory Prolog rules to infer valid biological causal chains and pathways.",
+        iconName: "Activity",
+        metrics: [
+          { label: "STATUS", value: "Pending" }
         ]
       },
       {

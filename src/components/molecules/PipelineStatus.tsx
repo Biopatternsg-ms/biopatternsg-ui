@@ -37,7 +37,10 @@ const STEP_LABELS: Record<string, string> = {
   UPDATE_SYNONYMS: "Update Synonyms",
   CONFIGURE_INFERENCES: "Configure Inferences",
   FIND_ROLES: "Find Biological Roles",
-  UPDATE_BIOLOGICAL_OBJECTS: "Update Biological Objects",
+  UPDATE_BIOLOGICAL_OBJECTS: "Update Object Roles",
+  UPDATE_OBJECT_ROLES: "Update Object Roles",
+  SELECT_CLOSING_OBJECTS: "Select Closing Objects",
+  INFER_PATHWAYS: "Infer Biological Pathways",
 
   // Lowercase keys
   configuration: "Configuration Setup",
@@ -54,7 +57,10 @@ const STEP_LABELS: Record<string, string> = {
   update_synonyms: "Update Synonyms",
   configure_inferences: "Configure Inferences",
   find_roles: "Find Biological Roles",
-  update_biological_objects: "Update Biological Objects",
+  update_biological_objects: "Update Object Roles",
+  update_object_roles: "Update Object Roles",
+  select_closing_objects: "Select Closing Objects",
+  infer_pathways: "Infer Biological Pathways",
 
   // Prefixed step- keys
   "step-configuration": "Configuration Setup",
@@ -70,7 +76,10 @@ const STEP_LABELS: Record<string, string> = {
   "step-update_aligned_objects": "Update Aligned Objects",
   "step-configure_inferences": "Configure Inferences",
   "step-find_roles": "Find Biological Roles",
-  "step-update_biological_objects": "Update Biological Objects",
+  "step-update_biological_objects": "Update Object Roles",
+  "step-update_object_roles": "Update Object Roles",
+  "step-select_closing_objects": "Select Closing Objects",
+  "step-infer_pathways": "Infer Biological Pathways",
 
   // Legacy mappings
   Configuration: "Configuration Setup",
@@ -81,6 +90,11 @@ const STEP_LABELS: Record<string, string> = {
   Combinations: "Pubmed Combinations Generation",
   "Search PubTator": "Search PubTator Annotations",
   "Build Knowledge Base": "Build Knowledge Base Graph",
+  "Update Biological Objects": "Update Object Roles",
+  "Update Object Roles": "Update Object Roles",
+  "Select Closing Objects": "Select Closing Objects",
+  "Infer Biological Pathways": "Infer Biological Pathways",
+  "Infer Pathways": "Infer Biological Pathways",
 };
 
 // Map status to friendly text and Badge variant
@@ -104,7 +118,10 @@ export function getFriendlyStepLabel(step?: string): string {
   const upperStep = cleanStep.toUpperCase();
   if (STEP_LABELS[upperStep]) return STEP_LABELS[upperStep];
 
-  return step;
+  return cleanStep
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 const formatStatusDate = (dateVal?: string | number) => {
