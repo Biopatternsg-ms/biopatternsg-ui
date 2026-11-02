@@ -37,6 +37,7 @@ import {
   pathwaysGraphEndpoint,
   pathwaysListEndpoint,
   deletePathwaysEndpoint,
+  groupedPathwaysEndpoint,
 } from "./apiConfig";
 
 import type {
@@ -46,6 +47,7 @@ import type {
   BiologicalPathway,
   PathwayQueryParams,
   PaginatedPathwaysResponse,
+  GroupedPathwaysResponse,
 } from "./models/Pathway";
 
 import type {
@@ -916,6 +918,42 @@ export const experimentService = {
       page: pageHeader ? parseInt(pageHeader, 10) : (params?.page ?? 0),
       size: sizeHeader ? parseInt(sizeHeader, 10) : (params?.size ?? 50),
     };
+  },
+
+  /**
+   * Retrieves grouped biological pathways consolidated by identical ordered entity sequences.
+   * GET /inferences/pathways/{pipelineId}/grouped
+   */
+  async getGroupedPathways(
+    pipelineId: string,
+    params?: PathwayQueryParams
+  ): Promise<GroupedPathwaysResponse> {
+    const query = new URLSearchParams();
+    if (params?.page !== undefined) query.set("page", String(params.page));
+    if (params?.size !== undefined) query.set("size", String(params.size));
+    if (params?.startObject) query.set("startObject", params.startObject);
+    if (params?.endObject) query.set("endObject", params.endObject);
+    if (params?.containsObject) query.set("containsObject", params.containsObject);
+
+    const queryString = query.toString();
+    const url = `${groupedPathwaysEndpoint(pipelineId)}${queryString ? `?${queryString}` : ""}`;
+
+    const response = await authFetch(url);
+    if (!response.ok) {
+      if (response.status === 404) {
+        return {
+          pipelineId,
+          totalRawPathways: 0,
+          totalGroups: 0,
+          page: params?.page ?? 0,
+          size: params?.size ?? 50,
+          groups: [],
+        };
+      }
+      throw new Error(`Failed to fetch grouped pathways: ${response.statusText}`);
+    }
+
+    return response.json();
   },
 
   /**

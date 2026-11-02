@@ -128,3 +128,60 @@ export interface PaginatedPathwaysResponse {
   page: number;
   size: number;
 }
+
+/**
+ * Biological entity participating in a grouped pathway sequence.
+ */
+export interface GroupedPathwayObject {
+  name: string;
+  role: string;
+  position: number;
+}
+
+/**
+ * Underlying event details linking a relation transition to its KB event and PubMed evidence.
+ */
+export interface GroupedPathwayStepEvent {
+  id?: string;
+  relation: string;
+  pubmedIds?: string[];
+}
+
+/**
+ * Step transition between two adjacent biological objects in a grouped pathway.
+ */
+export interface GroupedPathwayStep {
+  position: number;
+  first: string;
+  second: string;
+  relations: string[];
+  events?: GroupedPathwayStepEvent[];
+}
+
+/**
+ * Biological pathway group consolidated by identical ordered sequence of objects.
+ */
+export interface GroupedPathway {
+  groupId: string;
+  length: number;
+  startObject: string;
+  endObject: string;
+  pathwaysCount: number;
+  objects: GroupedPathwayObject[];
+  relations: string[];
+  steps: GroupedPathwayStep[];
+  relationCombinations: string[][];
+  eventIdCombinations?: string[][];
+}
+
+/**
+ * Response returned by GET /inferences/pathways/{pipelineId}/grouped.
+ */
+export interface GroupedPathwaysResponse {
+  pipelineId: string;
+  totalRawPathways: number;
+  totalGroups: number;
+  page: number;
+  size: number;
+  groups: GroupedPathway[];
+}

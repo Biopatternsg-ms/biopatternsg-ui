@@ -208,12 +208,13 @@ export const PathwayGraphView = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <LoadingSpinner className="w-10 h-10 text-primary" />
-        <p className="text-sm text-on-surface-variant font-medium animate-pulse">
-          Loading inferred biological pathway graph...
-        </p>
-      </div>
+      <LoadingSpinner
+        backdrop
+        size="lg"
+        variant="primary"
+        label="Loading inferred biological pathway graph..."
+        sublabel="Constructing force-directed topology and entity transitions"
+      />
     );
   }
 
