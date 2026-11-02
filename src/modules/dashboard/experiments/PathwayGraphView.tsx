@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   GitBranch,
@@ -100,22 +100,16 @@ export const PathwayGraphView = () => {
   const [selectedNodeName, setSelectedNodeName] = useState<string | null>(null);
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>("ALL");
 
-  const loadGraphData = useCallback(
-    async (isRefresh = false) => {
-      if (!experimentId) return;
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-      setErrorMsg(null);
+  useEffect(() => {
+    if (!experimentId) return;
+    let isCancelled = false;
 
-      try {
-        const [pipelineRes, graphRes] = await Promise.all([
-          experimentService.getPipelineById(experimentId).catch(() => null),
-          experimentService.getPathwayGraph(experimentId),
-        ]);
-
+    Promise.all([
+      experimentService.getPipelineById(experimentId).catch(() => null),
+      experimentService.getPathwayGraph(experimentId),
+    ])
+      .then(([pipelineRes, graphRes]) => {
+        if (isCancelled) return;
         if (pipelineRes?.name) {
           setExperimentName(pipelineRes.name);
         }
@@ -153,20 +147,79 @@ export const PathwayGraphView = () => {
         setLinks(validLinks);
         setTotalPathways(graphRes.totalPathways ?? 0);
         setExecutionTimeMs(graphRes.executionTimeMs ?? 0);
-      } catch (err) {
+        setErrorMsg(null);
+      })
+      .catch((err) => {
+        if (isCancelled) return;
         console.error("Error loading pathway graph:", err);
         setErrorMsg("Failed to load the pathway graph from the inferences service.");
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    },
-    [experimentId]
-  );
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setLoading(false);
+        }
+      });
 
-  useEffect(() => {
-    void loadGraphData(false);
-  }, [loadGraphData]);
+    return () => {
+      isCancelled = true;
+    };
+  }, [experimentId]);
+
+  const handleRefresh = async () => {
+    if (!experimentId) return;
+    setRefreshing(true);
+    setErrorMsg(null);
+    try {
+      const [pipelineRes, graphRes] = await Promise.all([
+        experimentService.getPipelineById(experimentId).catch(() => null),
+        experimentService.getPathwayGraph(experimentId),
+      ]);
+
+      if (pipelineRes?.name) {
+        setExperimentName(pipelineRes.name);
+      }
+
+      if (!graphRes || !Array.isArray(graphRes.nodes) || graphRes.nodes.length === 0) {
+        setNodes([]);
+        setLinks([]);
+        setTotalPathways(graphRes?.totalPathways ?? 0);
+        setExecutionTimeMs(graphRes?.executionTimeMs ?? 0);
+        setErrorMsg(
+          "No consolidated pathway graph found in pathway_graphs for this experiment."
+        );
+        return;
+      }
+
+      const mappedNodes: GraphNodeInput[] = graphRes.nodes
+        .filter((n) => n && n.name)
+        .map((n) => ({
+          name: n.name.trim(),
+          type: formatRoleLabel(n.type || n.role),
+        }));
+
+      const rawLinks: GraphLinkInput[] = (graphRes.edges || [])
+        .filter((e) => e && (e.object1 || e.first) && (e.object2 || e.second))
+        .map((e) => ({
+          object1: (e.object1 || e.first).trim(),
+          interaction: (e.interaction || e.relation || "association").trim(),
+          object2: (e.object2 || e.second).trim(),
+          pathwayCount: e.pathwayCount,
+        }));
+
+      const validLinks = filterLinksByValidNodes(mappedNodes, rawLinks);
+
+      setNodes(mappedNodes);
+      setLinks(validLinks);
+      setTotalPathways(graphRes.totalPathways ?? 0);
+      setExecutionTimeMs(graphRes.executionTimeMs ?? 0);
+      setErrorMsg(null);
+    } catch (err) {
+      console.error("Error loading pathway graph:", err);
+      setErrorMsg("Failed to load the pathway graph from the inferences service.");
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // Global color map built across all nodes so colors remain consistent when filtering
   const typeColorMap = useMemo(() => buildTypeColorMap(nodes), [nodes]);
@@ -253,7 +306,7 @@ export const PathwayGraphView = () => {
             variant="outline"
             size="md"
             disabled={refreshing}
-            onClick={() => loadGraphData(true)}
+            onClick={handleRefresh}
             className="gap-2 font-bold text-xs rounded-xl border-outline-variant/25 hover:bg-surface-container-high"
           >
             <RotateCcw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
@@ -289,7 +342,7 @@ export const PathwayGraphView = () => {
             <Button
               variant="primary"
               size="sm"
-              onClick={() => loadGraphData(true)}
+              onClick={handleRefresh}
               className="rounded-xl text-xs font-bold gap-1.5"
             >
               <RotateCcw className="w-3.5 h-3.5" />

@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-import { useState, useEffect, useMemo, useCallback, Fragment } from "react";
+import { useState, useEffect, useMemo, Fragment } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Route as RouteIcon,
@@ -97,53 +97,83 @@ export const PathwayListView = () => {
   const [selectedPathwayIndex, setSelectedPathwayIndex] = useState<number | undefined>(undefined);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  const loadData = useCallback(
-    async (isRefresh = false) => {
-      if (!experimentId) return;
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-      setErrorMsg(null);
+  useEffect(() => {
+    if (!experimentId) return;
+    let isCancelled = false;
 
-      try {
-        const [pipelineRes, groupedRes] = await Promise.all([
-          experimentService.getPipelineById(experimentId).catch(() => null),
-          experimentService.getGroupedPathways(experimentId, { page: 0, size: 500 }),
-        ]);
-
+    Promise.all([
+      experimentService.getPipelineById(experimentId).catch(() => null),
+      experimentService.getGroupedPathways(experimentId, { page: 0, size: 500 }),
+    ])
+      .then(([pipelineRes, groupedRes]) => {
+        if (isCancelled) return;
         if (pipelineRes?.name) {
           setExperimentName(pipelineRes.name);
         }
         setData(groupedRes);
-      } catch (err: unknown) {
+        setErrorMsg(null);
+      })
+      .catch((err: unknown) => {
+        if (isCancelled) return;
         const message = err instanceof Error ? err.message : "Failed to load biological pathways";
         setErrorMsg(message);
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
-    },
-    [experimentId]
-  );
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setLoading(false);
+        }
+      });
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+    return () => {
+      isCancelled = true;
+    };
+  }, [experimentId]);
+
+  const handleRefresh = async () => {
+    if (!experimentId) return;
+    setRefreshing(true);
+    setErrorMsg(null);
+    try {
+      const [pipelineRes, groupedRes] = await Promise.all([
+        experimentService.getPipelineById(experimentId).catch(() => null),
+        experimentService.getGroupedPathways(experimentId, { page: 0, size: 500 }),
+      ]);
+      if (pipelineRes?.name) {
+        setExperimentName(pipelineRes.name);
+      }
+      setData(groupedRes);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to load biological pathways";
+      setErrorMsg(message);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setPage(0);
+  };
+
+  const handleLengthFilterChange = (value: number | "ALL") => {
+    setLengthFilter(value);
+    setPage(0);
+  };
+
+  const groups = data?.groups;
 
   // Available lengths for filtering
   const availableLengths = useMemo(() => {
-    if (!data?.groups) return [];
+    if (!groups) return [];
     const set = new Set<number>();
-    data.groups.forEach((g) => set.add(g.length));
+    groups.forEach((g) => set.add(g.length));
     return Array.from(set).sort((a, b) => a - b);
-  }, [data?.groups]);
+  }, [groups]);
 
   // Local filtering by search term and length
   const filteredGroups = useMemo(() => {
-    if (!data?.groups) return [];
-    return data.groups.filter((g) => {
+    if (!groups) return [];
+    return groups.filter((g) => {
       // Length filter
       if (lengthFilter !== "ALL" && g.length !== lengthFilter) {
         return false;
@@ -158,7 +188,7 @@ export const PathwayListView = () => {
       }
       return true;
     });
-  }, [data?.groups, lengthFilter, searchTerm]);
+  }, [groups, lengthFilter, searchTerm]);
 
   // Pagination on filtered items
   const totalPages = Math.ceil(filteredGroups.length / PAGE_SIZE);
@@ -166,11 +196,6 @@ export const PathwayListView = () => {
     const start = page * PAGE_SIZE;
     return filteredGroups.slice(start, start + PAGE_SIZE);
   }, [filteredGroups, page]);
-
-  // Reset page when filters change
-  useEffect(() => {
-    setPage(0);
-  }, [searchTerm, lengthFilter]);
 
   const handleOpenModal = (pathway: GroupedPathway, index: number) => {
     setSelectedPathway(pathway);
@@ -216,7 +241,7 @@ export const PathwayListView = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => loadData(true)}
+              onClick={handleRefresh}
               disabled={refreshing}
               className="gap-1.5 font-bold text-xs shrink-0 rounded-xl border border-outline-variant/20 hover:bg-surface-container-high text-on-surface"
             >
@@ -281,13 +306,13 @@ export const PathwayListView = () => {
           <input
             type="text"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             placeholder="Search by entity name (e.g. RELA, CHOLESTEROL)..."
             className="w-full pl-9 pr-9 py-2 text-xs bg-surface-container-high rounded-xl border border-outline-variant/20 focus:outline-hidden focus:ring-2 focus:ring-primary text-on-surface placeholder:text-on-surface-variant/50 transition-all font-medium"
           />
           {searchTerm && (
             <button
-              onClick={() => setSearchTerm("")}
+              onClick={() => handleSearchChange("")}
               className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-on-surface-variant hover:text-on-surface rounded-full transition-colors"
             >
               <X className="w-3.5 h-3.5" />
@@ -302,7 +327,7 @@ export const PathwayListView = () => {
             Length:
           </span>
           <button
-            onClick={() => setLengthFilter("ALL")}
+            onClick={() => handleLengthFilterChange("ALL")}
             className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
               lengthFilter === "ALL"
                 ? "bg-primary text-on-primary shadow-xs"
@@ -314,7 +339,7 @@ export const PathwayListView = () => {
           {availableLengths.map((len) => (
             <button
               key={len}
-              onClick={() => setLengthFilter(len)}
+              onClick={() => handleLengthFilterChange(len)}
               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
                 lengthFilter === len
                   ? "bg-primary text-on-primary shadow-xs"
@@ -342,6 +367,7 @@ export const PathwayListView = () => {
               onClick={() => {
                 setSearchTerm("");
                 setLengthFilter("ALL");
+                setPage(0);
               }}
               className="mt-2 text-xs rounded-xl border border-outline-variant/20 hover:bg-surface-container-high text-on-surface"
             >
