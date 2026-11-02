@@ -94,10 +94,6 @@ const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
 
   const outgoingCount = connections.filter((l) => getNodeId(l.source) === node.id).length;
   const incomingCount = connections.filter((l) => getNodeId(l.target) === node.id).length;
-  const totalPathwayOccurrences = connections.reduce(
-    (sum, l) => sum + (typeof l.pathwayCount === "number" ? l.pathwayCount : 0),
-    0
-  );
 
   return (
     <aside
@@ -178,16 +174,6 @@ const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
                 {outgoingCount} → / ← {incomingCount}
               </span>
             </div>
-            {totalPathwayOccurrences > 0 && (
-              <div className="col-span-2 p-3 rounded-xl bg-primary/5 border border-primary/20">
-                <span className="block text-[9px] font-label font-bold uppercase tracking-wider text-primary">
-                  Pathway Transitions Frequency
-                </span>
-                <span className="mt-1 block text-base font-headline font-bold text-primary">
-                  {totalPathwayOccurrences.toLocaleString()} pathway transitions
-                </span>
-              </div>
-            )}
           </div>
         </section>
 
@@ -241,11 +227,6 @@ const NodeDetailPanel: React.FC<NodeDetailPanelProps> = ({
                         <p className="text-sm font-semibold text-on-surface truncate">
                           {otherLabel}
                         </p>
-                        {typeof link.pathwayCount === "number" && (
-                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant shrink-0">
-                            {link.pathwayCount.toLocaleString()}x
-                          </span>
-                        )}
                       </div>
                       <p className="text-[11px] text-on-surface-variant mt-0.5 truncate">
                         {isOutgoing
