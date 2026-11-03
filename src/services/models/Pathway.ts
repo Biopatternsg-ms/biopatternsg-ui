@@ -115,6 +115,8 @@ export interface PathwayQueryParams {
   startObject?: string;
   endObject?: string;
   containsObject?: string;
+  length?: number;
+  search?: string;
   page?: number;
   size?: number;
 }
@@ -181,6 +183,7 @@ export interface GroupedPathwaysResponse {
   pipelineId: string;
   totalRawPathways: number;
   totalGroups: number;
+  availableLengths?: number[];
   page: number;
   size: number;
   groups: GroupedPathway[];

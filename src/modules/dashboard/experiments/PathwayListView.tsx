@@ -88,8 +88,10 @@ export const PathwayListView = () => {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [data, setData] = useState<GroupedPathwaysResponse | null>(null);
+  const [unfilteredTotalGroups, setUnfilteredTotalGroups] = useState<number | null>(null);
   const [page, setPage] = useState<number>(0);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const [lengthFilter, setLengthFilter] = useState<number | "ALL">("ALL");
 
   // Selected pathway for modal inspection
@@ -98,19 +100,47 @@ export const PathwayListView = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
     if (!experimentId) return;
     let isCancelled = false;
 
-    Promise.all([
-      experimentService.getPipelineById(experimentId).catch(() => null),
-      experimentService.getGroupedPathways(experimentId, { page: 0, size: 500 }),
-    ])
-      .then(([pipelineRes, groupedRes]) => {
-        if (isCancelled) return;
-        if (pipelineRes?.name) {
+    experimentService
+      .getPipelineById(experimentId)
+      .then((pipelineRes) => {
+        if (!isCancelled && pipelineRes?.name) {
           setExperimentName(pipelineRes.name);
         }
+      })
+      .catch(() => null);
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [experimentId]);
+
+  useEffect(() => {
+    if (!experimentId) return;
+    let isCancelled = false;
+
+    experimentService
+      .getGroupedPathways(experimentId, {
+        page,
+        size: PAGE_SIZE,
+        length: lengthFilter === "ALL" ? undefined : lengthFilter,
+        search: debouncedSearch.trim() || undefined,
+      })
+      .then((groupedRes) => {
+        if (isCancelled) return;
         setData(groupedRes);
+        if (lengthFilter === "ALL" && !debouncedSearch.trim()) {
+          setUnfilteredTotalGroups(groupedRes.totalGroups);
+        }
         setErrorMsg(null);
       })
       .catch((err: unknown) => {
@@ -127,7 +157,7 @@ export const PathwayListView = () => {
     return () => {
       isCancelled = true;
     };
-  }, [experimentId]);
+  }, [experimentId, page, lengthFilter, debouncedSearch]);
 
   const handleRefresh = async () => {
     if (!experimentId) return;
@@ -136,12 +166,20 @@ export const PathwayListView = () => {
     try {
       const [pipelineRes, groupedRes] = await Promise.all([
         experimentService.getPipelineById(experimentId).catch(() => null),
-        experimentService.getGroupedPathways(experimentId, { page: 0, size: 500 }),
+        experimentService.getGroupedPathways(experimentId, {
+          page,
+          size: PAGE_SIZE,
+          length: lengthFilter === "ALL" ? undefined : lengthFilter,
+          search: debouncedSearch.trim() || undefined,
+        }),
       ]);
       if (pipelineRes?.name) {
         setExperimentName(pipelineRes.name);
       }
       setData(groupedRes);
+      if (lengthFilter === "ALL" && !debouncedSearch.trim()) {
+        setUnfilteredTotalGroups(groupedRes.totalGroups);
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to load biological pathways";
       setErrorMsg(message);
@@ -161,41 +199,24 @@ export const PathwayListView = () => {
   };
 
   const groups = data?.groups;
+  const backendAvailableLengths = data?.availableLengths;
 
   // Available lengths for filtering
   const availableLengths = useMemo(() => {
+    if (backendAvailableLengths && backendAvailableLengths.length > 0) {
+      return [...backendAvailableLengths].sort((a, b) => a - b);
+    }
     if (!groups) return [];
     const set = new Set<number>();
     groups.forEach((g) => set.add(g.length));
     return Array.from(set).sort((a, b) => a - b);
-  }, [groups]);
+  }, [backendAvailableLengths, groups]);
 
-  // Local filtering by search term and length
-  const filteredGroups = useMemo(() => {
-    if (!groups) return [];
-    return groups.filter((g) => {
-      // Length filter
-      if (lengthFilter !== "ALL" && g.length !== lengthFilter) {
-        return false;
-      }
-      // Search term filter
-      if (searchTerm.trim()) {
-        const query = searchTerm.trim().toLowerCase();
-        const matchesObject = g.objects.some((obj) => obj.name.toLowerCase().includes(query));
-        const matchesRelation = g.relations.some((rel) => rel.toLowerCase().includes(query));
-        const matchesGroup = g.groupId.toLowerCase().includes(query);
-        return matchesObject || matchesRelation || matchesGroup;
-      }
-      return true;
-    });
-  }, [groups, lengthFilter, searchTerm]);
-
-  // Pagination on filtered items
-  const totalPages = Math.ceil(filteredGroups.length / PAGE_SIZE);
-  const pagedGroups = useMemo(() => {
-    const start = page * PAGE_SIZE;
-    return filteredGroups.slice(start, start + PAGE_SIZE);
-  }, [filteredGroups, page]);
+  const pagedGroups = groups ?? [];
+  const filteredGroupsCount = data?.totalGroups ?? 0;
+  const totalGroupsCount = unfilteredTotalGroups ?? filteredGroupsCount;
+  const totalRawPathwaysCount = data?.totalRawPathways ?? 0;
+  const totalPages = Math.ceil(filteredGroupsCount / PAGE_SIZE);
 
   const handleOpenModal = (pathway: GroupedPathway, index: number) => {
     setSelectedPathway(pathway);
@@ -220,9 +241,6 @@ export const PathwayListView = () => {
       />
     );
   }
-
-  const totalGroupsCount = data?.totalGroups ?? 0;
-  const totalRawPathwaysCount = data?.totalRawPathways ?? 0;
 
   return (
     <div className="flex flex-col gap-6 max-w-7xl mx-auto w-full pb-16">
@@ -278,7 +296,7 @@ export const PathwayListView = () => {
           stats={[
             {
               label: "Consolidated Groups",
-              value: totalGroupsCount,
+              value: totalGroupsCount.toLocaleString(),
               valueColor: "text-primary font-bold",
             },
             {
@@ -288,7 +306,7 @@ export const PathwayListView = () => {
             },
             {
               label: "Filtered Groups",
-              value: filteredGroups.length,
+              value: filteredGroupsCount.toLocaleString(),
             },
             {
               label: "Page",
@@ -353,7 +371,7 @@ export const PathwayListView = () => {
       </div>
 
       {/* Pathways List */}
-      {filteredGroups.length === 0 ? (
+      {pagedGroups.length === 0 ? (
         <div className="glass-panel p-12 rounded-3xl border border-outline-variant/15 flex flex-col items-center justify-center text-center gap-3">
           <RouteIcon className="w-10 h-10 text-on-surface-variant/40" />
           <h3 className="font-headline text-base font-bold text-on-surface">No biological pathways match your criteria</h3>
@@ -366,6 +384,7 @@ export const PathwayListView = () => {
               size="sm"
               onClick={() => {
                 setSearchTerm("");
+                setDebouncedSearch("");
                 setLengthFilter("ALL");
                 setPage(0);
               }}
@@ -470,9 +489,9 @@ export const PathwayListView = () => {
           <span>
             Showing <strong className="text-on-surface">{page * PAGE_SIZE + 1}</strong> to{" "}
             <strong className="text-on-surface">
-              {Math.min((page + 1) * PAGE_SIZE, filteredGroups.length)}
+              {Math.min((page + 1) * PAGE_SIZE, filteredGroupsCount)}
             </strong>{" "}
-            of <strong className="text-on-surface">{filteredGroups.length}</strong> grouped pathways
+            of <strong className="text-on-surface">{filteredGroupsCount.toLocaleString()}</strong> grouped pathways
           </span>
 
           <div className="flex items-center gap-1.5">

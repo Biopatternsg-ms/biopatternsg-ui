@@ -895,6 +895,8 @@ export const experimentService = {
     if (params?.startObject) query.set("startObject", params.startObject);
     if (params?.endObject) query.set("endObject", params.endObject);
     if (params?.containsObject) query.set("containsObject", params.containsObject);
+    if (params?.length !== undefined && params.length > 0) query.set("length", String(params.length));
+    if (params?.search && params.search.trim()) query.set("search", params.search.trim());
 
     const queryString = query.toString();
     const url = `${pathwaysListEndpoint(pipelineId)}${queryString ? `?${queryString}` : ""}`;
@@ -934,6 +936,8 @@ export const experimentService = {
     if (params?.startObject) query.set("startObject", params.startObject);
     if (params?.endObject) query.set("endObject", params.endObject);
     if (params?.containsObject) query.set("containsObject", params.containsObject);
+    if (params?.length !== undefined && params.length > 0) query.set("length", String(params.length));
+    if (params?.search && params.search.trim()) query.set("search", params.search.trim());
 
     const queryString = query.toString();
     const url = `${groupedPathwaysEndpoint(pipelineId)}${queryString ? `?${queryString}` : ""}`;
@@ -945,6 +949,7 @@ export const experimentService = {
           pipelineId,
           totalRawPathways: 0,
           totalGroups: 0,
+          availableLengths: [],
           page: params?.page ?? 0,
           size: params?.size ?? 50,
           groups: [],
