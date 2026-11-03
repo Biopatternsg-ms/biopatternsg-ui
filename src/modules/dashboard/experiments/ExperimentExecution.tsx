@@ -24,6 +24,7 @@ import {
   Circle,
   Sliders,
   GitBranch,
+  Route,
   Cpu,
   Activity,
   FileText,
@@ -1258,25 +1259,42 @@ const ExperimentExecutionView = () => {
 
                             {/* Inspection Actions for automatic step Infer Biological Pathways */}
                             {isInferPathwaysStep && (
-                              <div className="mt-1 pt-2 border-t border-outline-variant/10 flex items-center justify-between gap-2">
-                                <span className="text-[11px] text-on-surface-variant font-medium">
-                                  {isStepCompleted || stepMetrics.length > 0
-                                    ? "Signaling Network Topology Ready"
-                                    : "Automated SWI-Prolog Inference"}
-                                </span>
-                                <div className="flex items-center shrink-0">
+                              <div className="mt-1 flex flex-col gap-2 p-2.5 rounded-xl border border-primary/20 bg-primary/5">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <span className="text-[11px] font-semibold truncate text-primary">
+                                    {isStepCompleted || stepMetrics.length > 0
+                                      ? "Signaling Network Topology Ready"
+                                      : "Automated SWI-Prolog Inference"}
+                                  </span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 w-full">
                                   <Button
                                     variant="primary"
                                     size="sm"
+                                    title="View Pathways List"
+                                    onClick={() =>
+                                      navigate(
+                                        `/dashboard/experiments/${networkId || data.networkId || "default"}/pathways/${experimentId || data.experimentId}`
+                                      )
+                                    }
+                                    className="w-full justify-center gap-1.5 font-bold text-xs shadow-primary-glow"
+                                  >
+                                    <Route className="w-3.5 h-3.5 shrink-0" />
+                                    <span className="truncate">Pathways List</span>
+                                  </Button>
+                                  <Button
+                                    variant="primary"
+                                    size="sm"
+                                    title="View Pathway Graph"
                                     onClick={() =>
                                       navigate(
                                         `/dashboard/experiments/${networkId || data.networkId || "default"}/pathway-graph/${experimentId || data.experimentId}`
                                       )
                                     }
-                                    className="gap-1.5 font-bold text-xs shrink-0 shadow-primary-glow px-3 py-1.5 h-auto"
+                                    className="w-full justify-center gap-1.5 font-bold text-xs shadow-primary-glow"
                                   >
-                                    <GitBranch className="w-3.5 h-3.5" />
-                                    View Pathway Graph
+                                    <GitBranch className="w-3.5 h-3.5 shrink-0" />
+                                    <span className="truncate">View Graph</span>
                                   </Button>
                                 </div>
                               </div>

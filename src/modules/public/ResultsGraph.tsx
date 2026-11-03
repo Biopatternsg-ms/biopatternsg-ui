@@ -169,7 +169,6 @@ const ResultsGraph = () => {
 
   useEffect(() => {
     if (!hasInitialData) {
-      setIsLoadingDefault(true);
       Promise.all([
         fetch("/templates/graph-nodes-example.txt").then((res) => {
           if (!res.ok) throw new Error("Failed to load graph-nodes-example.txt");

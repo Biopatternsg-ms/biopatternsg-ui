@@ -30,6 +30,7 @@ import ConfigureInferences from "@/modules/dashboard/experiments/ConfigureInfere
 import UpdateBiologicalObjects from "@/modules/dashboard/experiments/UpdateBiologicalObjects";
 import SelectClosingObjects from "@/modules/dashboard/experiments/SelectClosingObjects";
 import PathwayGraphView from "@/modules/dashboard/experiments/PathwayGraphView";
+import PathwayListView from "@/modules/dashboard/experiments/PathwayListView";
 import CreateNetwork from "@/modules/dashboard/networks/CreateNetwork";
 import { ProtectedRoute } from "@/core/router/ProtectedRoute";
 import { PublicRoute } from "@/core/router/PublicRoute";
@@ -69,6 +70,7 @@ function App() {
             <Route path="/dashboard/experiments/:networkId/biological-objects/:experimentId" element={<UpdateBiologicalObjects />} />
             <Route path="/dashboard/experiments/:networkId/closing-objects/:experimentId" element={<SelectClosingObjects />} />
             <Route path="/dashboard/experiments/:networkId/pathway-graph/:experimentId" element={<PathwayGraphView />} />
+            <Route path="/dashboard/experiments/:networkId/pathways/:experimentId" element={<PathwayListView />} />
             <Route path="/dashboard/experiments/:networkId?" element={<Experiments />} />
 
             {/* Rutas de administración */}
