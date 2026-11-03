@@ -134,10 +134,6 @@ export const PathwayListView = () => {
     if (!experimentId) return;
     let isCancelled = false;
 
-    if (!loading) {
-      setIsPageLoading(true);
-    }
-
     experimentService
       .getGroupedPathways(experimentId, {
         page,
@@ -203,18 +199,41 @@ export const PathwayListView = () => {
     }
   };
 
+  const handlePageChange = (newPage: number | ((prev: number) => number)) => {
+    setIsPageLoading(true);
+    setPage(newPage);
+  };
+
   const handleSearchChange = (value: string) => {
+    setIsPageLoading(true);
     setSearchTerm(value);
     setPage(0);
   };
 
   const handleLengthFilterChange = (value: number | "ALL") => {
+    setIsPageLoading(true);
     setLengthFilter(value);
     setPage(0);
   };
 
   const handleToggleOnlyFavorites = () => {
+    setIsPageLoading(true);
     setOnlyFavorites((prev) => !prev);
+    setPage(0);
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setIsPageLoading(true);
+    setPageSize(newSize);
+    setPage(0);
+  };
+
+  const handleResetFilters = () => {
+    setIsPageLoading(true);
+    setSearchTerm("");
+    setDebouncedSearch("");
+    setLengthFilter("ALL");
+    setOnlyFavorites(false);
     setPage(0);
   };
 
@@ -265,11 +284,6 @@ export const PathwayListView = () => {
         return prev;
       });
     }
-  };
-
-  const handlePageSizeChange = (newSize: number) => {
-    setPageSize(newSize);
-    setPage(0);
   };
 
   const groups = data?.groups;
@@ -492,13 +506,7 @@ export const PathwayListView = () => {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
-                setSearchTerm("");
-                setDebouncedSearch("");
-                setLengthFilter("ALL");
-                setOnlyFavorites(false);
-                setPage(0);
-              }}
+              onClick={handleResetFilters}
               className="mt-2 text-xs rounded-xl border border-outline-variant/20 hover:bg-surface-container-high text-on-surface"
             >
               Reset Filters
@@ -647,7 +655,7 @@ export const PathwayListView = () => {
                 variant="ghost"
                 size="sm"
                 disabled={page === 0 || isPageLoading}
-                onClick={() => setPage(0)}
+                onClick={() => handlePageChange(0)}
                 title="First page"
                 className="h-8 px-2 sm:px-2.5 gap-1 text-xs rounded-xl border border-outline-variant/20 hover:bg-surface-container-high text-on-surface disabled:opacity-40 disabled:cursor-not-allowed"
               >
@@ -659,7 +667,7 @@ export const PathwayListView = () => {
                 variant="ghost"
                 size="sm"
                 disabled={page === 0 || isPageLoading}
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                onClick={() => handlePageChange((p) => Math.max(0, p - 1))}
                 title="Previous page"
                 className="h-8 px-2 sm:px-2.5 gap-1 text-xs rounded-xl border border-outline-variant/20 hover:bg-surface-container-high text-on-surface disabled:opacity-40 disabled:cursor-not-allowed"
               >
@@ -685,7 +693,7 @@ export const PathwayListView = () => {
                     <button
                       key={pageNum}
                       disabled={isPageLoading}
-                      onClick={() => setPage(pageNum)}
+                      onClick={() => handlePageChange(pageNum)}
                       className={cn(
                         "min-w-8 h-8 px-2.5 rounded-xl font-medium text-xs transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed",
                         isActive
@@ -703,7 +711,7 @@ export const PathwayListView = () => {
                 variant="ghost"
                 size="sm"
                 disabled={page >= totalPages - 1 || isPageLoading}
-                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                onClick={() => handlePageChange((p) => Math.min(totalPages - 1, p + 1))}
                 title="Next page"
                 className="h-8 px-2 sm:px-2.5 gap-1 text-xs rounded-xl border border-outline-variant/20 hover:bg-surface-container-high text-on-surface disabled:opacity-40 disabled:cursor-not-allowed"
               >
@@ -715,7 +723,7 @@ export const PathwayListView = () => {
                 variant="ghost"
                 size="sm"
                 disabled={page >= totalPages - 1 || isPageLoading}
-                onClick={() => setPage(totalPages - 1)}
+                onClick={() => handlePageChange(totalPages - 1)}
                 title="Last page"
                 className="h-8 px-2 sm:px-2.5 gap-1 text-xs rounded-xl border border-outline-variant/20 hover:bg-surface-container-high text-on-surface disabled:opacity-40 disabled:cursor-not-allowed"
               >
