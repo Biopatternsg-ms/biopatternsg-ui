@@ -91,6 +91,8 @@ export const pathwaysListEndpoint = (pipelineId: string) =>
   `${CONFIG_AND_CONTROL}/inferences/pathways/${pipelineId}`;
 export const groupedPathwaysEndpoint = (pipelineId: string) =>
   `${CONFIG_AND_CONTROL}/inferences/pathways/${pipelineId}/grouped`;
+export const groupedPathwayFavoriteEndpoint = (pipelineId: string, groupId: string) =>
+  `${CONFIG_AND_CONTROL}/inferences/pathways/${pipelineId}/grouped/${encodeURIComponent(groupId)}/favorite`;
 export const deletePathwaysEndpoint = (pipelineId: string) =>
   `${CONFIG_AND_CONTROL}/inferences/pathways/${pipelineId}`;
 export const PIPELINES_SEARCH_CONFIG_ENDPOINT = `${PIPELINES_ENDPOINT}/search-config`;

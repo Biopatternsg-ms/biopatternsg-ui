@@ -34,6 +34,7 @@ import {
   AlertCircle,
   Hash,
   Eye,
+  Star,
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
 import { Button } from "@/components/atoms/Button";
@@ -97,6 +98,7 @@ export const PathwayListView = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const [lengthFilter, setLengthFilter] = useState<number | "ALL">("ALL");
+  const [onlyFavorites, setOnlyFavorites] = useState<boolean>(false);
 
   // Selected pathway for modal inspection
   const [selectedPathway, setSelectedPathway] = useState<GroupedPathway | null>(null);
@@ -142,11 +144,12 @@ export const PathwayListView = () => {
         size: pageSize,
         length: lengthFilter === "ALL" ? undefined : lengthFilter,
         search: debouncedSearch.trim() || undefined,
+        favorite: onlyFavorites ? true : undefined,
       })
       .then((groupedRes) => {
         if (isCancelled) return;
         setData(groupedRes);
-        if (lengthFilter === "ALL" && !debouncedSearch.trim()) {
+        if (lengthFilter === "ALL" && !debouncedSearch.trim() && !onlyFavorites) {
           setUnfilteredTotalGroups(groupedRes.totalGroups);
         }
         setErrorMsg(null);
@@ -166,7 +169,7 @@ export const PathwayListView = () => {
     return () => {
       isCancelled = true;
     };
-  }, [experimentId, page, pageSize, lengthFilter, debouncedSearch]);
+  }, [experimentId, page, pageSize, lengthFilter, debouncedSearch, onlyFavorites]);
 
   const handleRefresh = async () => {
     if (!experimentId) return;
@@ -181,13 +184,14 @@ export const PathwayListView = () => {
           size: pageSize,
           length: lengthFilter === "ALL" ? undefined : lengthFilter,
           search: debouncedSearch.trim() || undefined,
+          favorite: onlyFavorites ? true : undefined,
         }),
       ]);
       if (pipelineRes?.name) {
         setExperimentName(pipelineRes.name);
       }
       setData(groupedRes);
-      if (lengthFilter === "ALL" && !debouncedSearch.trim()) {
+      if (lengthFilter === "ALL" && !debouncedSearch.trim() && !onlyFavorites) {
         setUnfilteredTotalGroups(groupedRes.totalGroups);
       }
     } catch (err: unknown) {
@@ -207,6 +211,60 @@ export const PathwayListView = () => {
   const handleLengthFilterChange = (value: number | "ALL") => {
     setLengthFilter(value);
     setPage(0);
+  };
+
+  const handleToggleOnlyFavorites = () => {
+    setOnlyFavorites((prev) => !prev);
+    setPage(0);
+  };
+
+  const handleToggleFavorite = async (group: GroupedPathway, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    if (!experimentId) return;
+
+    const newFavorite = !group.favorite;
+
+    // Optimistic UI update
+    setData((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        groups: prev.groups.map((g) =>
+          g.groupId === group.groupId ? { ...g, favorite: newFavorite } : g
+        ),
+      };
+    });
+
+    setSelectedPathway((prev) => {
+      if (prev && prev.groupId === group.groupId) {
+        return { ...prev, favorite: newFavorite };
+      }
+      return prev;
+    });
+
+    try {
+      await experimentService.setGroupedPathwayFavorite(experimentId, group.groupId, newFavorite);
+    } catch (err) {
+      console.error("Failed to update favorite status:", err);
+      // Revert optimistic update
+      setData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          groups: prev.groups.map((g) =>
+            g.groupId === group.groupId ? { ...g, favorite: !newFavorite } : g
+          ),
+        };
+      });
+      setSelectedPathway((prev) => {
+        if (prev && prev.groupId === group.groupId) {
+          return { ...prev, favorite: !newFavorite };
+        }
+        return prev;
+      });
+    }
   };
 
   const handlePageSizeChange = (newSize: number) => {
@@ -354,35 +412,56 @@ export const PathwayListView = () => {
           )}
         </div>
 
-        {/* Length Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 sm:pb-0 shrink-0">
-          <span className="text-[11px] font-bold text-on-surface-variant mr-1 flex items-center gap-1">
-            <SlidersHorizontal className="w-3 h-3" />
-            Length:
-          </span>
+        {/* Filter Controls: Favorites + Length Filter Pills */}
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0">
+          {/* Favorites Filter Button */}
           <button
-            onClick={() => handleLengthFilterChange("ALL")}
-            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-              lengthFilter === "ALL"
-                ? "bg-primary text-on-primary shadow-xs"
-                : "bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant"
+            onClick={handleToggleOnlyFavorites}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+              onlyFavorites
+                ? "bg-amber-500/15 border border-amber-500/40 text-amber-600 dark:text-amber-400 shadow-xs"
+                : "bg-surface-container-high border border-outline-variant/15 hover:bg-surface-container-highest text-on-surface-variant"
             }`}
+            title="Filter only favorite pathways"
           >
-            All
+            <Star
+              className={`w-3.5 h-3.5 ${
+                onlyFavorites ? "fill-amber-500 text-amber-500" : "text-on-surface-variant"
+              }`}
+            />
+            Favorites only
           </button>
-          {availableLengths.map((len) => (
+
+          {/* Length Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 sm:pb-0 shrink-0">
+            <span className="text-[11px] font-bold text-on-surface-variant mr-1 flex items-center gap-1">
+              <SlidersHorizontal className="w-3 h-3" />
+              Length:
+            </span>
             <button
-              key={len}
-              onClick={() => handleLengthFilterChange(len)}
+              onClick={() => handleLengthFilterChange("ALL")}
               className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                lengthFilter === len
+                lengthFilter === "ALL"
                   ? "bg-primary text-on-primary shadow-xs"
                   : "bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant"
               }`}
             >
-              {len} {len === 1 ? "step" : "steps"}
+              All
             </button>
-          ))}
+            {availableLengths.map((len) => (
+              <button
+                key={len}
+                onClick={() => handleLengthFilterChange(len)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                  lengthFilter === len
+                    ? "bg-primary text-on-primary shadow-xs"
+                    : "bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant"
+                }`}
+              >
+                {len} {len === 1 ? "step" : "steps"}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -409,7 +488,7 @@ export const PathwayListView = () => {
           <p className="text-xs text-on-surface-variant max-w-md">
             Try adjusting your search term or length filter to inspect the inferred signaling sequences.
           </p>
-          {(searchTerm || lengthFilter !== "ALL") && (
+          {(searchTerm || lengthFilter !== "ALL" || onlyFavorites) && (
             <Button
               variant="ghost"
               size="sm"
@@ -417,6 +496,7 @@ export const PathwayListView = () => {
                 setSearchTerm("");
                 setDebouncedSearch("");
                 setLengthFilter("ALL");
+                setOnlyFavorites(false);
                 setPage(0);
               }}
               className="mt-2 text-xs rounded-xl border border-outline-variant/20 hover:bg-surface-container-high text-on-surface"
@@ -438,6 +518,20 @@ export const PathwayListView = () => {
                 {/* Card Top: Index, Pathway Chain & Badges */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                   <div className="flex items-center gap-2 flex-wrap min-w-0">
+                    <button
+                      type="button"
+                      onClick={(e) => handleToggleFavorite(group, e)}
+                      title={group.favorite ? "Remove from favorites" : "Add to favorites"}
+                      className="p-1 rounded-lg hover:bg-surface-container-high transition-colors shrink-0 text-on-surface-variant focus:outline-hidden"
+                    >
+                      <Star
+                        className={`w-4 h-4 transition-transform active:scale-125 ${
+                          group.favorite
+                            ? "fill-amber-400 text-amber-500"
+                            : "text-on-surface-variant/40 hover:text-amber-500"
+                        }`}
+                      />
+                    </button>
                     <span className="flex items-center gap-1 font-mono text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md shrink-0">
                       <Hash className="w-3 h-3" />
                       {groupGlobalIndex}
@@ -640,6 +734,7 @@ export const PathwayListView = () => {
         pathway={selectedPathway}
         pathwayIndex={selectedPathwayIndex}
         experimentName={experimentName}
+        onToggleFavorite={(p) => handleToggleFavorite(p)}
       />
     </div>
   );

@@ -27,6 +27,7 @@ import {
   Hash,
   BookOpen,
   ExternalLink,
+  Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/atoms/Badge";
@@ -72,6 +73,7 @@ export interface PathwayDetailModalProps {
   pathway: GroupedPathway | null;
   pathwayIndex?: number;
   experimentName?: string;
+  onToggleFavorite?: (pathway: GroupedPathway) => void;
 }
 
 export const PathwayDetailModal: React.FC<PathwayDetailModalProps> = ({
@@ -80,6 +82,7 @@ export const PathwayDetailModal: React.FC<PathwayDetailModalProps> = ({
   pathway,
   pathwayIndex,
   experimentName,
+  onToggleFavorite,
 }) => {
   // Prevent background scrolling while modal is open
   React.useEffect(() => {
@@ -154,13 +157,31 @@ export const PathwayDetailModal: React.FC<PathwayDetailModalProps> = ({
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            aria-label="Close modal"
-            className="text-on-surface-variant hover:text-on-surface transition-colors rounded-xl p-2 hover:bg-surface-container-high focus:outline-hidden focus:ring-2 focus:ring-primary/30 shrink-0"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            {onToggleFavorite && (
+              <button
+                type="button"
+                onClick={() => onToggleFavorite(pathway)}
+                title={pathway.favorite ? "Remove from favorites" : "Add to favorites"}
+                className="text-on-surface-variant hover:text-on-surface transition-colors rounded-xl p-2 hover:bg-surface-container-high focus:outline-hidden focus:ring-2 focus:ring-primary/30"
+              >
+                <Star
+                  className={`w-5 h-5 transition-transform active:scale-125 ${
+                    pathway.favorite
+                      ? "fill-amber-400 text-amber-500"
+                      : "text-on-surface-variant/40 hover:text-amber-500"
+                  }`}
+                />
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              aria-label="Close modal"
+              className="text-on-surface-variant hover:text-on-surface transition-colors rounded-xl p-2 hover:bg-surface-container-high focus:outline-hidden focus:ring-2 focus:ring-primary/30"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Modal Body Container */}

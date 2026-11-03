@@ -117,6 +117,7 @@ export interface PathwayQueryParams {
   containsObject?: string;
   length?: number;
   search?: string;
+  favorite?: boolean;
   page?: number;
   size?: number;
 }
@@ -174,6 +175,7 @@ export interface GroupedPathway {
   steps: GroupedPathwayStep[];
   relationCombinations: string[][];
   eventIdCombinations?: string[][];
+  favorite?: boolean;
 }
 
 /**

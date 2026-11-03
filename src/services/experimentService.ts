@@ -38,6 +38,7 @@ import {
   pathwaysListEndpoint,
   deletePathwaysEndpoint,
   groupedPathwaysEndpoint,
+  groupedPathwayFavoriteEndpoint,
 } from "./apiConfig";
 
 import type {
@@ -938,6 +939,7 @@ export const experimentService = {
     if (params?.containsObject) query.set("containsObject", params.containsObject);
     if (params?.length !== undefined && params.length > 0) query.set("length", String(params.length));
     if (params?.search && params.search.trim()) query.set("search", params.search.trim());
+    if (params?.favorite !== undefined) query.set("favorite", String(params.favorite));
 
     const queryString = query.toString();
     const url = `${groupedPathwaysEndpoint(pipelineId)}${queryString ? `?${queryString}` : ""}`;
@@ -959,6 +961,25 @@ export const experimentService = {
     }
 
     return response.json();
+  },
+
+  /**
+   * Updates the favorite status for a grouped pathway.
+   * PUT /inferences/pathways/{pipelineId}/grouped/{groupId}/favorite?favorite=true|false
+   */
+  async setGroupedPathwayFavorite(
+    pipelineId: string,
+    groupId: string,
+    favorite: boolean
+  ): Promise<boolean> {
+    const url = `${groupedPathwayFavoriteEndpoint(pipelineId, groupId)}?favorite=${favorite}`;
+    const response = await authFetch(url, {
+      method: "PUT",
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to update favorite status: ${response.statusText}`);
+    }
+    return true;
   },
 
   /**
