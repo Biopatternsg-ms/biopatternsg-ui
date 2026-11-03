@@ -27,6 +27,8 @@ import {
   SlidersHorizontal,
   ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   ArrowRight,
   RotateCcw,
   AlertCircle,
@@ -76,13 +78,14 @@ function formatRoleName(role?: string): string {
   }
 }
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE_OPTIONS = [5, 10, 15, 20, 25];
 
 export const PathwayListView = () => {
   const { networkId, experimentId } = useParams<{ networkId: string; experimentId: string }>();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState<boolean>(true);
+  const [isPageLoading, setIsPageLoading] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [experimentName, setExperimentName] = useState<string>("Experiment Execution");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -90,6 +93,7 @@ export const PathwayListView = () => {
   const [data, setData] = useState<GroupedPathwaysResponse | null>(null);
   const [unfilteredTotalGroups, setUnfilteredTotalGroups] = useState<number | null>(null);
   const [page, setPage] = useState<number>(0);
+  const [pageSize, setPageSize] = useState<number>(15);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const [lengthFilter, setLengthFilter] = useState<number | "ALL">("ALL");
@@ -128,10 +132,14 @@ export const PathwayListView = () => {
     if (!experimentId) return;
     let isCancelled = false;
 
+    if (!loading) {
+      setIsPageLoading(true);
+    }
+
     experimentService
       .getGroupedPathways(experimentId, {
         page,
-        size: PAGE_SIZE,
+        size: pageSize,
         length: lengthFilter === "ALL" ? undefined : lengthFilter,
         search: debouncedSearch.trim() || undefined,
       })
@@ -151,24 +159,26 @@ export const PathwayListView = () => {
       .finally(() => {
         if (!isCancelled) {
           setLoading(false);
+          setIsPageLoading(false);
         }
       });
 
     return () => {
       isCancelled = true;
     };
-  }, [experimentId, page, lengthFilter, debouncedSearch]);
+  }, [experimentId, page, pageSize, lengthFilter, debouncedSearch]);
 
   const handleRefresh = async () => {
     if (!experimentId) return;
     setRefreshing(true);
+    setIsPageLoading(true);
     setErrorMsg(null);
     try {
       const [pipelineRes, groupedRes] = await Promise.all([
         experimentService.getPipelineById(experimentId).catch(() => null),
         experimentService.getGroupedPathways(experimentId, {
           page,
-          size: PAGE_SIZE,
+          size: pageSize,
           length: lengthFilter === "ALL" ? undefined : lengthFilter,
           search: debouncedSearch.trim() || undefined,
         }),
@@ -185,6 +195,7 @@ export const PathwayListView = () => {
       setErrorMsg(message);
     } finally {
       setRefreshing(false);
+      setIsPageLoading(false);
     }
   };
 
@@ -195,6 +206,11 @@ export const PathwayListView = () => {
 
   const handleLengthFilterChange = (value: number | "ALL") => {
     setLengthFilter(value);
+    setPage(0);
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
     setPage(0);
   };
 
@@ -216,7 +232,7 @@ export const PathwayListView = () => {
   const filteredGroupsCount = data?.totalGroups ?? 0;
   const totalGroupsCount = unfilteredTotalGroups ?? filteredGroupsCount;
   const totalRawPathwaysCount = data?.totalRawPathways ?? 0;
-  const totalPages = Math.ceil(filteredGroupsCount / PAGE_SIZE);
+  const totalPages = Math.ceil(filteredGroupsCount / pageSize);
 
   const handleOpenModal = (pathway: GroupedPathway, index: number) => {
     setSelectedPathway(pathway);
@@ -370,8 +386,23 @@ export const PathwayListView = () => {
         </div>
       </div>
 
-      {/* Pathways List */}
-      {pagedGroups.length === 0 ? (
+      {/* Pathways List Container with loading state */}
+      <div className="relative min-h-[300px]">
+        {isPageLoading && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-surface-container-lowest/70 backdrop-blur-xs rounded-2xl transition-all animate-in fade-in duration-200">
+            <LoadingSpinner
+              backdrop={false}
+              card={true}
+              size="md"
+              variant="primary"
+              label="Loading page..."
+              sublabel="Fetching biological pathways"
+            />
+          </div>
+        )}
+
+        <div className={cn("transition-opacity duration-200", isPageLoading && "opacity-40 pointer-events-none")}>
+          {pagedGroups.length === 0 ? (
         <div className="glass-panel p-12 rounded-3xl border border-outline-variant/15 flex flex-col items-center justify-center text-center gap-3">
           <RouteIcon className="w-10 h-10 text-on-surface-variant/40" />
           <h3 className="font-headline text-base font-bold text-on-surface">No biological pathways match your criteria</h3>
@@ -397,7 +428,7 @@ export const PathwayListView = () => {
       ) : (
         <div className="flex flex-col gap-3">
           {pagedGroups.map((group, gIdx) => {
-            const groupGlobalIndex = page * PAGE_SIZE + gIdx + 1;
+            const groupGlobalIndex = page * pageSize + gIdx + 1;
             return (
               <div
                 key={group.groupId || gIdx}
@@ -482,72 +513,123 @@ export const PathwayListView = () => {
           })}
         </div>
       )}
+        </div>
+      </div>
 
       {/* Pagination Controls */}
-      {totalPages > 1 && (
+      {filteredGroupsCount > 0 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-outline-variant/15 text-xs text-on-surface-variant">
-          <span>
-            Showing <strong className="text-on-surface">{page * PAGE_SIZE + 1}</strong> to{" "}
-            <strong className="text-on-surface">
-              {Math.min((page + 1) * PAGE_SIZE, filteredGroupsCount)}
-            </strong>{" "}
-            of <strong className="text-on-surface">{filteredGroupsCount.toLocaleString()}</strong> grouped pathways
-          </span>
+          <div className="flex items-center gap-3 flex-wrap">
+            <span>
+              Showing <strong className="text-on-surface">{page * pageSize + 1}</strong> to{" "}
+              <strong className="text-on-surface">
+                {Math.min((page + 1) * pageSize, filteredGroupsCount)}
+              </strong>{" "}
+              of <strong className="text-on-surface">{filteredGroupsCount.toLocaleString()}</strong> grouped pathways
+            </span>
 
-          <div className="flex items-center gap-1.5">
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={page === 0}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              className="h-8 px-2.5 gap-1 text-xs rounded-xl border border-outline-variant/20 hover:bg-surface-container-high text-on-surface disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-              Previous
-            </Button>
-
-            <div className="flex items-center gap-1 px-1">
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNum;
-                if (totalPages <= 5) {
-                  pageNum = i;
-                } else if (page <= 2) {
-                  pageNum = i;
-                } else if (page >= totalPages - 3) {
-                  pageNum = totalPages - 5 + i;
-                } else {
-                  pageNum = page - 2 + i;
-                }
-
-                const isActive = pageNum === page;
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setPage(pageNum)}
-                    className={cn(
-                      "w-8 h-8 rounded-xl font-medium text-xs transition-colors",
-                      isActive
-                        ? "bg-primary text-white font-bold shadow-xs"
-                        : "hover:bg-surface-container-high text-on-surface-variant"
-                    )}
-                  >
-                    {pageNum + 1}
-                  </button>
-                );
-              })}
+            {/* Page Size Selector */}
+            <div className="flex items-center gap-1.5 pl-3 border-l border-outline-variant/20">
+              <span className="text-[11px] font-medium text-on-surface-variant">Rows per page:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                disabled={isPageLoading}
+                aria-label="Select rows per page"
+                className="bg-surface-container-high text-on-surface text-xs font-bold rounded-lg px-2 py-1 border border-outline-variant/20 focus:outline-hidden focus:ring-1 focus:ring-primary cursor-pointer disabled:opacity-50"
+              >
+                {PAGE_SIZE_OPTIONS.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
             </div>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={page >= totalPages - 1}
-              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-              className="h-8 px-2.5 gap-1 text-xs rounded-xl border border-outline-variant/20 hover:bg-surface-container-high text-on-surface disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Next
-              <ChevronRight className="w-3.5 h-3.5" />
-            </Button>
           </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap justify-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={page === 0 || isPageLoading}
+                onClick={() => setPage(0)}
+                title="First page"
+                className="h-8 px-2 sm:px-2.5 gap-1 text-xs rounded-xl border border-outline-variant/20 hover:bg-surface-container-high text-on-surface disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronsLeft className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">First</span>
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={page === 0 || isPageLoading}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                title="Previous page"
+                className="h-8 px-2 sm:px-2.5 gap-1 text-xs rounded-xl border border-outline-variant/20 hover:bg-surface-container-high text-on-surface disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Previous</span>
+              </Button>
+
+              <div className="flex items-center gap-1.5 sm:gap-2 px-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i;
+                  } else if (page <= 2) {
+                    pageNum = i;
+                  } else if (page >= totalPages - 3) {
+                    pageNum = totalPages - 5 + i;
+                  } else {
+                    pageNum = page - 2 + i;
+                  }
+
+                  const isActive = pageNum === page;
+                  return (
+                    <button
+                      key={pageNum}
+                      disabled={isPageLoading}
+                      onClick={() => setPage(pageNum)}
+                      className={cn(
+                        "min-w-8 h-8 px-2.5 rounded-xl font-medium text-xs transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed",
+                        isActive
+                          ? "bg-primary text-white font-bold shadow-xs"
+                          : "hover:bg-surface-container-high text-on-surface-variant"
+                      )}
+                    >
+                      {pageNum + 1}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={page >= totalPages - 1 || isPageLoading}
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                title="Next page"
+                className="h-8 px-2 sm:px-2.5 gap-1 text-xs rounded-xl border border-outline-variant/20 hover:bg-surface-container-high text-on-surface disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <span className="hidden sm:inline">Next</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={page >= totalPages - 1 || isPageLoading}
+                onClick={() => setPage(totalPages - 1)}
+                title="Last page"
+                className="h-8 px-2 sm:px-2.5 gap-1 text-xs rounded-xl border border-outline-variant/20 hover:bg-surface-container-high text-on-surface disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <span className="hidden md:inline">Last</span>
+                <ChevronsRight className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
