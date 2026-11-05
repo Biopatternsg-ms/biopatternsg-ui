@@ -35,6 +35,8 @@ import {
   Hash,
   Eye,
   Star,
+  CircleDot,
+  Target,
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
 import { Button } from "@/components/atoms/Button";
@@ -99,6 +101,8 @@ export const PathwayListView = () => {
   const [debouncedSearch, setDebouncedSearch] = useState<string>("");
   const [lengthFilter, setLengthFilter] = useState<number | "ALL">("ALL");
   const [onlyFavorites, setOnlyFavorites] = useState<boolean>(false);
+  const [startObjectFilter, setStartObjectFilter] = useState<string>("ALL");
+  const [endObjectFilter, setEndObjectFilter] = useState<string>("ALL");
 
   // Selected pathway for modal inspection
   const [selectedPathway, setSelectedPathway] = useState<GroupedPathway | null>(null);
@@ -138,6 +142,8 @@ export const PathwayListView = () => {
       .getGroupedPathways(experimentId, {
         page,
         size: pageSize,
+        startObject: startObjectFilter === "ALL" ? undefined : startObjectFilter,
+        endObject: endObjectFilter === "ALL" ? undefined : endObjectFilter,
         length: lengthFilter === "ALL" ? undefined : lengthFilter,
         search: debouncedSearch.trim() || undefined,
         favorite: onlyFavorites ? true : undefined,
@@ -145,7 +151,13 @@ export const PathwayListView = () => {
       .then((groupedRes) => {
         if (isCancelled) return;
         setData(groupedRes);
-        if (lengthFilter === "ALL" && !debouncedSearch.trim() && !onlyFavorites) {
+        if (
+          lengthFilter === "ALL" &&
+          !debouncedSearch.trim() &&
+          !onlyFavorites &&
+          startObjectFilter === "ALL" &&
+          endObjectFilter === "ALL"
+        ) {
           setUnfilteredTotalGroups(groupedRes.totalGroups);
         }
         setErrorMsg(null);
@@ -165,7 +177,7 @@ export const PathwayListView = () => {
     return () => {
       isCancelled = true;
     };
-  }, [experimentId, page, pageSize, lengthFilter, debouncedSearch, onlyFavorites]);
+  }, [experimentId, page, pageSize, lengthFilter, debouncedSearch, onlyFavorites, startObjectFilter, endObjectFilter]);
 
   const handleRefresh = async () => {
     if (!experimentId) return;
@@ -178,6 +190,8 @@ export const PathwayListView = () => {
         experimentService.getGroupedPathways(experimentId, {
           page,
           size: pageSize,
+          startObject: startObjectFilter === "ALL" ? undefined : startObjectFilter,
+          endObject: endObjectFilter === "ALL" ? undefined : endObjectFilter,
           length: lengthFilter === "ALL" ? undefined : lengthFilter,
           search: debouncedSearch.trim() || undefined,
           favorite: onlyFavorites ? true : undefined,
@@ -187,7 +201,13 @@ export const PathwayListView = () => {
         setExperimentName(pipelineRes.name);
       }
       setData(groupedRes);
-      if (lengthFilter === "ALL" && !debouncedSearch.trim() && !onlyFavorites) {
+      if (
+        lengthFilter === "ALL" &&
+        !debouncedSearch.trim() &&
+        !onlyFavorites &&
+        startObjectFilter === "ALL" &&
+        endObjectFilter === "ALL"
+      ) {
         setUnfilteredTotalGroups(groupedRes.totalGroups);
       }
     } catch (err: unknown) {
@@ -222,6 +242,18 @@ export const PathwayListView = () => {
     setPage(0);
   };
 
+  const handleStartObjectChange = (value: string) => {
+    setIsPageLoading(true);
+    setStartObjectFilter(value);
+    setPage(0);
+  };
+
+  const handleEndObjectChange = (value: string) => {
+    setIsPageLoading(true);
+    setEndObjectFilter(value);
+    setPage(0);
+  };
+
   const handlePageSizeChange = (newSize: number) => {
     setIsPageLoading(true);
     setPageSize(newSize);
@@ -234,6 +266,8 @@ export const PathwayListView = () => {
     setDebouncedSearch("");
     setLengthFilter("ALL");
     setOnlyFavorites(false);
+    setStartObjectFilter("ALL");
+    setEndObjectFilter("ALL");
     setPage(0);
   };
 
@@ -288,6 +322,8 @@ export const PathwayListView = () => {
 
   const groups = data?.groups;
   const backendAvailableLengths = data?.availableLengths;
+  const backendAvailableStartObjects = data?.availableStartObjects;
+  const backendAvailableEndObjects = data?.availableEndObjects;
 
   // Available lengths for filtering
   const availableLengths = useMemo(() => {
@@ -299,6 +335,32 @@ export const PathwayListView = () => {
     groups.forEach((g) => set.add(g.length));
     return Array.from(set).sort((a, b) => a - b);
   }, [backendAvailableLengths, groups]);
+
+  // Available start objects for filtering
+  const availableStartObjects = useMemo(() => {
+    if (backendAvailableStartObjects && backendAvailableStartObjects.length > 0) {
+      return [...backendAvailableStartObjects].sort((a, b) => a.localeCompare(b));
+    }
+    if (!groups) return [];
+    const set = new Set<string>();
+    groups.forEach((g) => {
+      if (g.startObject) set.add(g.startObject);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [backendAvailableStartObjects, groups]);
+
+  // Available end objects for filtering
+  const availableEndObjects = useMemo(() => {
+    if (backendAvailableEndObjects && backendAvailableEndObjects.length > 0) {
+      return [...backendAvailableEndObjects].sort((a, b) => a.localeCompare(b));
+    }
+    if (!groups) return [];
+    const set = new Set<string>();
+    groups.forEach((g) => {
+      if (g.endObject) set.add(g.endObject);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [backendAvailableEndObjects, groups]);
 
   const pagedGroups = groups ?? [];
   const filteredGroupsCount = data?.totalGroups ?? 0;
@@ -426,8 +488,80 @@ export const PathwayListView = () => {
           )}
         </div>
 
-        {/* Filter Controls: Favorites + Length Filter Pills */}
-        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap shrink-0">
+        {/* Filter Controls: Start + End Objects + Favorites + Length Filter Pills */}
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
+          {/* Start Object Filter */}
+          <div
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs transition-all shrink-0",
+              startObjectFilter !== "ALL"
+                ? "bg-primary/10 border-primary/40 text-primary font-bold shadow-xs"
+                : "bg-surface-container-high border-outline-variant/15 text-on-surface-variant hover:bg-surface-container-highest"
+            )}
+          >
+            <CircleDot className={cn("w-3.5 h-3.5 shrink-0", startObjectFilter !== "ALL" ? "text-primary" : "text-on-surface-variant")} />
+            <span className="text-[11px] font-bold shrink-0">Start:</span>
+            <select
+              value={startObjectFilter}
+              onChange={(e) => handleStartObjectChange(e.target.value)}
+              className="bg-transparent text-xs font-semibold text-on-surface focus:outline-hidden cursor-pointer max-w-[130px] sm:max-w-[160px] truncate"
+              title="Filter by Start Entity"
+            >
+              <option value="ALL" className="bg-surface-container text-on-surface">All ({availableStartObjects.length})</option>
+              {availableStartObjects.map((name) => (
+                <option key={name} value={name} className="bg-surface-container text-on-surface">
+                  {name}
+                </option>
+              ))}
+            </select>
+            {startObjectFilter !== "ALL" && (
+              <button
+                type="button"
+                onClick={() => handleStartObjectChange("ALL")}
+                className="p-0.5 text-primary hover:text-primary/70 rounded-full transition-colors ml-0.5"
+                title="Clear start entity filter"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
+          {/* End Object Filter */}
+          <div
+            className={cn(
+              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs transition-all shrink-0",
+              endObjectFilter !== "ALL"
+                ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 font-bold shadow-xs"
+                : "bg-surface-container-high border-outline-variant/15 text-on-surface-variant hover:bg-surface-container-highest"
+            )}
+          >
+            <Target className={cn("w-3.5 h-3.5 shrink-0", endObjectFilter !== "ALL" ? "text-emerald-500" : "text-on-surface-variant")} />
+            <span className="text-[11px] font-bold shrink-0">End:</span>
+            <select
+              value={endObjectFilter}
+              onChange={(e) => handleEndObjectChange(e.target.value)}
+              className="bg-transparent text-xs font-semibold text-on-surface focus:outline-hidden cursor-pointer max-w-[130px] sm:max-w-[160px] truncate"
+              title="Filter by End Entity"
+            >
+              <option value="ALL" className="bg-surface-container text-on-surface">All ({availableEndObjects.length})</option>
+              {availableEndObjects.map((name) => (
+                <option key={name} value={name} className="bg-surface-container text-on-surface">
+                  {name}
+                </option>
+              ))}
+            </select>
+            {endObjectFilter !== "ALL" && (
+              <button
+                type="button"
+                onClick={() => handleEndObjectChange("ALL")}
+                className="p-0.5 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 rounded-full transition-colors ml-0.5"
+                title="Clear end entity filter"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
           {/* Favorites Filter Button */}
           <button
             onClick={handleToggleOnlyFavorites}
@@ -443,7 +577,7 @@ export const PathwayListView = () => {
                 onlyFavorites ? "fill-amber-500 text-amber-500" : "text-on-surface-variant"
               }`}
             />
-            Favorites only
+            Favorites
           </button>
 
           {/* Length Filter Pills */}
@@ -476,6 +610,19 @@ export const PathwayListView = () => {
               </button>
             ))}
           </div>
+
+          {/* Reset Filters button when any filter is active */}
+          {(searchTerm || lengthFilter !== "ALL" || onlyFavorites || startObjectFilter !== "ALL" || endObjectFilter !== "ALL") && (
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition-all shrink-0"
+              title="Reset all active filters"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Reset
+            </button>
+          )}
         </div>
       </div>
 
@@ -502,7 +649,7 @@ export const PathwayListView = () => {
           <p className="text-xs text-on-surface-variant max-w-md">
             Try adjusting your search term or length filter to inspect the inferred signaling sequences.
           </p>
-          {(searchTerm || lengthFilter !== "ALL" || onlyFavorites) && (
+          {(searchTerm || lengthFilter !== "ALL" || onlyFavorites || startObjectFilter !== "ALL" || endObjectFilter !== "ALL") && (
             <Button
               variant="ghost"
               size="sm"
@@ -545,7 +692,27 @@ export const PathwayListView = () => {
                       {groupGlobalIndex}
                     </span>
                     <h3 className="font-headline text-sm font-bold text-on-surface group-hover:text-primary transition-colors truncate">
-                      {group.startObject} <span className="text-on-surface-variant font-normal">→</span> {group.endObject}
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStartObjectChange(group.startObject);
+                        }}
+                        className="hover:underline hover:text-primary cursor-pointer transition-colors"
+                        title={`Filter by start entity: ${group.startObject}`}
+                      >
+                        {group.startObject}
+                      </span>
+                      <span className="text-on-surface-variant font-normal mx-1">→</span>
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEndObjectChange(group.endObject);
+                        }}
+                        className="hover:underline hover:text-primary cursor-pointer transition-colors"
+                        title={`Filter by end entity: ${group.endObject}`}
+                      >
+                        {group.endObject}
+                      </span>
                     </h3>
                   </div>
 
