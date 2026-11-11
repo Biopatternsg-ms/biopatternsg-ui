@@ -28,7 +28,7 @@ export const WorkflowSection = () => {
             Project Overview
           </div>
           <h2 className="text-3xl md:text-4xl font-headline font-bold text-on-surface leading-tight tracking-tight">
-            Biopatterns: Hybrid Artificial Intelligence for Modeling Biological Networks
+            Biopatternsg: Hybrid Artificial Intelligence for Modeling Biological Networks
           </h2>
           <div className="space-y-4 text-on-surface-variant text-base leading-relaxed">
             <p>
