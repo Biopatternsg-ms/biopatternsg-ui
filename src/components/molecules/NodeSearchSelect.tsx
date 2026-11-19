@@ -27,11 +27,11 @@ import React, {
 } from "react";
 import { Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { GraphNodeInput } from "@/components/organisms/forceGraph/forceGraphTypes";
+import type { GraphNodeInput } from "@/domain/models/Graph";
 import {
   colorForType,
   buildTypeColorMap,
-} from "@/components/organisms/forceGraph/forceGraphTypes";
+} from "@/domain/models/Graph";
 
 /* ─────────────────────────────────────────────────────────────────────────────
    PROPS

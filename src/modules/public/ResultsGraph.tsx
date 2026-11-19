@@ -34,7 +34,7 @@
  * import type {
  *   GraphNodeInput,
  *   GraphLinkInput,
- * } from "@/components/organisms/forceGraph/forceGraphTypes";
+ * } from "@/domain/models/Graph";
  *
  * const nodes: GraphNodeInput[] = [
  *   { name: "TP53",    type: "Protein" },
@@ -111,9 +111,9 @@ import { GraphDataUploadModal } from "@/components/molecules/GraphDataUploadModa
 import type {
   GraphNodeInput,
   GraphLinkInput,
-} from "@/components/organisms/forceGraph/forceGraphTypes";
-import { buildTypeColorMap } from "@/components/organisms/forceGraph/forceGraphTypes";
-import type { GraphBackground } from "@/components/organisms/forceGraph/forceGraphProfiles";
+} from "@/domain/models/Graph";
+import { buildTypeColorMap } from "@/domain/models/Graph";
+import type { GraphBackground } from "@/config/forceGraphProfiles";
 import {
   filterLinksByValidNodes,
   parseGraphNodesTxt,

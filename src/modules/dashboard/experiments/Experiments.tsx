@@ -24,7 +24,7 @@ import { PipelineStatus, getFriendlyStepLabel } from "@/components/molecules/Pip
 import { experimentService } from "@/services/experimentService";
 import type { Experiment } from "@/services/models/Experiment";
 import { Button } from "@/components/atoms/Button";
-import { Breadcrumb } from "@/components/atoms/Breadcrumb";
+import { Breadcrumb } from "@/components/molecules/Breadcrumb";
 
 const formatUnixTime = (unixSeconds: number) => {
   const date = new Date(unixSeconds * 1000);
@@ -202,6 +202,7 @@ const Experiments = () => {
       {/* Breadcrumb Navigation */}
       <Breadcrumb
         className="mb-6"
+        onNavigate={navigate}
         items={
           networkId
             ? [

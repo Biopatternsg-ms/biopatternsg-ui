@@ -19,12 +19,10 @@
 import type {
   LoginPayload,
   RecoveryPasswordPayload,
+  LoginFormValues,
 } from "@/domain/models/Auth";
 
-export interface LoginFormValues {
-  username: string;
-  password: string;
-}
+export type { LoginFormValues };
 
 export function toLoginPayload(formValues: LoginFormValues): LoginPayload {
   return {

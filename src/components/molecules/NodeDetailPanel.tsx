@@ -21,12 +21,12 @@ import { cn } from "@/lib/utils";
 import type {
   GraphNode,
   GraphLink,
-} from "@/components/organisms/forceGraph/forceGraphTypes";
+} from "@/domain/models/Graph";
 import {
   getNodeId,
   linkKey,
   DEFAULT_NODE_COLOR,
-} from "@/components/organisms/forceGraph/forceGraphTypes";
+} from "@/domain/models/Graph";
 
 /* ─────────────────────────────────────────────────────────────────────────────
    PROPS

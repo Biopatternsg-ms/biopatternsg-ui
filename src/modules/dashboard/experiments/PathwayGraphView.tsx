@@ -38,8 +38,8 @@ import {
   buildTypeColorMap,
   type GraphNodeInput,
   type GraphLinkInput,
-} from "@/components/organisms/forceGraph/forceGraphTypes";
-import type { GraphBackground } from "@/components/organisms/forceGraph/forceGraphProfiles";
+} from "@/domain/models/Graph";
+import type { GraphBackground } from "@/config/forceGraphProfiles";
 import { filterLinksByValidNodes } from "@/utils/graphDataParser";
 import { experimentService } from "@/services/experimentService";
 import { cn } from "@/lib/utils";
@@ -277,6 +277,7 @@ export const PathwayGraphView = () => {
     <div className="flex flex-col gap-6 animate-fade-in pb-12">
       {/* Top Header & Breadcrumb */}
       <ManualStepHeader
+        onNavigate={navigate}
         networkId={networkId}
         experimentId={experimentId}
         experimentName={experimentName}

@@ -7,16 +7,15 @@ The **ForceGraphViewer** is an advanced organism orchestrating full-scale biolog
 - **Level:** Organism
 - **Source Code:**
   - Component: [`src/components/organisms/forceGraph/ForceGraphViewer.tsx`](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/components/organisms/forceGraph/ForceGraphViewer.tsx)
-  - Types: [`src/components/organisms/forceGraph/forceGraphTypes.ts`](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/components/organisms/forceGraph/forceGraphTypes.ts)
-  - Profiles: [`src/components/organisms/forceGraph/forceGraphProfiles.ts`](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/components/organisms/forceGraph/forceGraphProfiles.ts)
+  - Domain Types: [`src/domain/models/Graph.ts`](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/domain/models/Graph.ts)
+  - Contrast Profiles: [`src/config/forceGraphProfiles.ts`](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/config/forceGraphProfiles.ts)
 
 ## Dependencies
 
-- `@/components/atoms/ForceGraphCanvas`: Canvas 2D rendering engine.
+- `@/components/atoms/ForceGraphCanvas`: Canvas rendering engine.
 - `@/components/molecules/NodeDetailPanel`: Node inspection side panel.
-- `@/components/molecules/NodeSearchSelect`: Real-time node search.
-- `@/components/molecules/GraphDataUploadModal`: File data upload modal.
-- `lucide-react`: Controls for zoom, fullscreen, centering, and reset.
+- `@/domain/models/Graph`: Pure domain models (`GraphNode`, `GraphLink`, `ForceGraphData`).
+- `@/config/forceGraphProfiles`: Clinical contrast profiles (`GraphVisualProfile`, `GRAPH_PROFILES`).
 
 ## Component Properties (Props)
 

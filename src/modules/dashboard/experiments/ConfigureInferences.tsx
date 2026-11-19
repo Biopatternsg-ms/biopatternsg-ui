@@ -39,7 +39,7 @@ import {
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
 import { Button } from "@/components/atoms/Button";
-import { Breadcrumb } from "@/components/atoms/Breadcrumb";
+import { Breadcrumb } from "@/components/molecules/Breadcrumb";
 import { Badge } from "@/components/atoms/Badge";
 import { Input } from "@/components/atoms/Input";
 import { experimentService } from "@/services/experimentService";
@@ -314,6 +314,7 @@ export default function ConfigureInferences() {
       {/* Navigation Breadcrumb */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <Breadcrumb
+          onNavigate={navigate}
           items={
             networkId
               ? [

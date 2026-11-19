@@ -487,6 +487,7 @@ const UpdateAlignedObjects = () => {
     <div className="flex flex-col gap-6">
       {/* Navigation Breadcrumb + Header Section */}
       <ManualStepHeader
+        onNavigate={navigate}
         networkId={networkId}
         experimentId={experimentId}
         experimentName={experimentData?.experimentName}

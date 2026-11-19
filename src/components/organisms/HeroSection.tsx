@@ -16,29 +16,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { DataForm } from "@/components/organisms/DataForm";
-import { useAuth } from "@/context/AuthContext";
-import * as z from "zod";
-import { toLoginPayload, type LoginFormValues } from "@/adapters/authAdapter";
-import { loginUser } from "@/services/authService";
-import type { TokenPair } from "@/domain/models/Auth";
-import type { DataFormConfig } from "@/components/organisms/DataFormConfig";
-import { extractAppRole, getRoleConfig } from "@/config/roles";
 
-function parseJwtPayload(token: string) {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
-    return JSON.parse(jsonPayload);
-  } catch {
-    return null;
-  }
-}
+import { DataForm } from "@/components/organisms/DataForm";
+import type { DataFormConfig } from "@/components/organisms/DataFormConfig";
+import type { LoginFormValues } from "@/domain/models/Auth";
+import * as z from "zod";
 
 export const loginSchema = z.object({
   username: z
@@ -48,95 +30,20 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password is required."),
 });
 
+export interface HeroSectionProps {
+  loginConfig: DataFormConfig<LoginFormValues>;
+}
+
 /**
  * HeroSection Organism.
  * Editorial asymmetric layout: 7/5 column split.
+ * Purely presentational organism — receives configured login contract from parent module.
  */
-const HeroSection = () => {
-  const { login } = useAuth();
-  const navigate = useNavigate();
-
-  const pendingTokensRef = useRef<TokenPair | null>(null);
-  const pendingHomePathRef = useRef<string>("/dashboard/network");
-
-  const loginConfig: DataFormConfig<LoginFormValues> = {
-    schema: loginSchema,
-    fields: [
-      {
-        name: "username",
-        label: "Email address",
-        type: "email",
-        placeholder: "name@institute.edu",
-        helperText: "Enter your email address",
-        colSpan: "full",
-      },
-      {
-        name: "password",
-        label: "Password",
-        type: "password",
-        placeholder: "••••••••",
-        helperText: "Enter your account password",
-        colSpan: "full",
-        labelRight: (
-          <button
-            type="button"
-            onClick={() => navigate("/recovery-password")}
-            className="text-[10px] text-primary font-bold uppercase tracking-widest hover:underline focus:outline-none focus:ring-2 focus:ring-primary/30 rounded"
-          >
-            Forgot?
-          </button>
-        ),
-      },
-    ],
-    title: "Access Lab Portal",
-    subtitle: "Secure Access Portal",
-    submitLabel: "Sign in",
-    submittingLabel: "Signing in...",
-    onSubmit: async (values) => {
-      const payload = toLoginPayload(values);
-      return loginUser(payload);
-    },
-    successStatus: 200,
-    successModal: {
-      title: "Welcome!",
-      message: "Sign in successful. Redirecting...",
-    },
-    errorModal: {
-      defaultMessage: "An error occurred while signing in.",
-      parseResponseMessage: true,
-    },
-    onSuccessResponse: async (response) => {
-      const data = (await response.json()) as TokenPair;
-
-      const jwtPayload = parseJwtPayload(data.access_token);
-      const realmAccess = jwtPayload?.realm_access as { roles?: string[] } | undefined;
-      const appRole = extractAppRole(realmAccess?.roles);
-
-      if (!appRole) {
-        throw new Error("User does not have an assigned role to access the platform.");
-      }
-
-      pendingTokensRef.current = data;
-      pendingHomePathRef.current = getRoleConfig(appRole).homePath;
-    },
-    onSuccessClose: () => {
-      if (pendingTokensRef.current) {
-        login(pendingTokensRef.current);
-      }
-      navigate(pendingHomePathRef.current, { replace: true });
-    },
-    /* footerLink: {
-      text: "New researcher on the team?",
-      label: "Create an institutional account",
-      to: "/register",
-    }, */
-  };
-
+const HeroSection = ({ loginConfig }: HeroSectionProps) => {
   return (
     <section className="relative px-8 pt-20 pb-10 max-w-screen-2xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
       {/* Left — Editorial copy */}
       <div className="lg:col-span-7 space-y-8">
-        {/* Heading — tracking-tighter per Typography rule */}
         <h1 className="text-6xl md:text-8xl font-black font-headline tracking-tighter text-on-surface leading-[0.9]">
           Build Gene Regulatory <span className="text-primary">Networks</span> with AI.
         </h1>

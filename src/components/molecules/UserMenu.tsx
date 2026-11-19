@@ -16,56 +16,60 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import { Avatar } from "@/components/atoms/Avatar";
-import { useAuth } from "@/context/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuLabel
+  DropdownMenuLabel,
 } from "@/components/atoms/DropdownMenu";
 import { LogOut } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const UserMenu = () => {
-  const { logout, user } = useAuth();
+export interface UserProfileDisplay {
+  name?: string;
+  email?: string;
+  initials?: string;
+  avatarUrl?: string;
+}
 
-  const handleLogout = () => {
-    logout();
-    window.location.href = "/";
-  };
+export interface UserMenuProps {
+  user?: UserProfileDisplay | null;
+  onLogout?: () => void;
+  className?: string;
+}
 
-  // Intentamos obtener el nombre de distintos posibles claims del JWT
-  const displayName = user?.name || user?.preferred_username || user?.upn || user?.sub || "User";
+const UserMenu = ({ user, onLogout, className }: UserMenuProps) => {
+  const displayName = user?.name || user?.email || "User";
 
   return (
-    <div className="flex items-center gap-4">
+    <div className={cn("flex items-center gap-4", className)}>
       {/* User display name (desktop) */}
       <div className="hidden md:flex flex-col items-end justify-center">
         <span className="font-headline font-bold text-sm text-on-surface">
           {displayName}
         </span>
       </div>
-      
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button className="rounded-full focus:outline-none focus:ring-2 focus:ring-primary ring-offset-2 transition-all cursor-pointer">
             <Avatar />
           </button>
         </DropdownMenuTrigger>
-        
+
         <DropdownMenuContent align="end" className="min-w-[200px]">
           {/* Mobile user name */}
           <div className="md:hidden">
-            <DropdownMenuLabel>
-              {displayName}
-            </DropdownMenuLabel>
+            <DropdownMenuLabel>{displayName}</DropdownMenuLabel>
             <DropdownMenuSeparator />
           </div>
-          
+
           <DropdownMenuItem
-            onClick={handleLogout}
+            onClick={onLogout}
             className="text-error hover:bg-error/10 focus:bg-error/10"
           >
             <LogOut className="w-4 h-4 mr-2" />

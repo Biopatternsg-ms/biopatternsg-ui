@@ -24,7 +24,7 @@ import { Button } from "@/components/atoms/Button";
 import type {
   GraphNodeInput,
   GraphLinkInput,
-} from "@/components/organisms/forceGraph/forceGraphTypes";
+} from "@/domain/models/Graph";
 import { parseAndValidateGraphFiles } from "@/utils/graphDataParser";
 
 export interface GraphDataUploadModalProps {

@@ -18,7 +18,7 @@
  */
 
 import { Badge } from "@/components/atoms/Badge";
-import type { PipelineStatus as PipelineStatusType } from "@/services/models/Experiment";
+import type { PipelineStatus as PipelineStatusType } from "@/domain/models/Experiment";
 
 // Map technical steps to friendly labels matching execution pipeline steps
 const STEP_LABELS: Record<string, string> = {

@@ -21,7 +21,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/atoms/Button";
-import { Breadcrumb } from "@/components/atoms/Breadcrumb";
+import { Breadcrumb } from "@/components/molecules/Breadcrumb";
 import { Stepper, type Step } from "@/components/molecules/Stepper";
 import { SuccessModal } from "@/components/molecules/SuccessModal";
 import { ErrorModal } from "@/components/molecules/ErrorModal";
@@ -426,6 +426,7 @@ const CreateExperiment = () => {
       {/* Breadcrumb Navigation */}
       <Breadcrumb
         className="mb-6"
+        onNavigate={navigate}
         items={[
           {
             label: "Experiments",

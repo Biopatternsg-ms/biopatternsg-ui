@@ -26,27 +26,32 @@ import {
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/atoms/Badge";
 import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
-import { experimentService } from "@/services/experimentService";
-import type { InferenceResponse } from "@/services/models/Experiment";
+import { Button } from "@/components/atoms/Button";
 import { CATEGORY_STYLES, CATEGORY_KEYS } from "@/config/biologicalCategories";
 
 export interface BiologicalRolesModalProps {
   open: boolean;
   onClose: () => void;
-  pipelineId: string;
+  loading?: boolean;
+  error?: string | null;
+  rolesMap?: Record<string, string[]>;
+  pipelineId?: string;
   experimentName?: string;
   restrictionLevel?: string;
+  onRetry?: () => void;
 }
 
 export const BiologicalRolesModal: React.FC<BiologicalRolesModalProps> = ({
   open,
   onClose,
+  loading = false,
+  error = null,
+  rolesMap = {},
   pipelineId,
   experimentName,
   restrictionLevel = "VERY_RESTRICTED",
+  onRetry,
 }) => {
-  const [loading, setLoading] = React.useState(true);
-  const [inferenceData, setInferenceData] = React.useState<InferenceResponse | null>(null);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [selectedFilterCategory, setSelectedFilterCategory] = React.useState<string>("ALL");
 
@@ -72,36 +77,8 @@ export const BiologicalRolesModal: React.FC<BiologicalRolesModalProps> = ({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [open, onClose]);
 
-  // Load inference data from backend
-  React.useEffect(() => {
-    if (!open || !pipelineId) return;
-
-    let ignore = false;
-    async function loadData() {
-      try {
-        setLoading(true);
-        const data = await experimentService.getInferenceByPipelineId(pipelineId);
-        if (!ignore) {
-          setInferenceData(data);
-        }
-      } catch (err) {
-        console.error("Failed loading inference roles", err);
-      } finally {
-        if (!ignore) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadData();
-    return () => {
-      ignore = true;
-    };
-  }, [open, pipelineId]);
-
   if (!open) return null;
 
-  const rolesMap = inferenceData?.roles || {};
   const allSymbols = Object.keys(rolesMap);
 
   const getEntityActiveRoles = (symbol: string): string[] => {
@@ -188,7 +165,20 @@ export const BiologicalRolesModal: React.FC<BiologicalRolesModalProps> = ({
 
         {/* Modal Body Container */}
         <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6 custom-scrollbar">
-          {loading ? (
+          {error ? (
+            <div className="py-16 flex flex-col items-center justify-center text-center gap-3">
+              <div className="w-14 h-14 rounded-2xl bg-error/10 text-error flex items-center justify-center">
+                <AlertCircle className="w-7 h-7" />
+              </div>
+              <h3 className="font-headline font-bold text-base text-on-surface">Failed Loading Roles</h3>
+              <p className="text-xs text-on-surface-variant max-w-md">{error}</p>
+              {onRetry && (
+                <Button variant="outline" size="sm" onClick={onRetry} className="mt-2">
+                  Retry
+                </Button>
+              )}
+            </div>
+          ) : loading ? (
             <div className="py-20 flex flex-col items-center justify-center">
               <LoadingSpinner
                 backdrop={false}

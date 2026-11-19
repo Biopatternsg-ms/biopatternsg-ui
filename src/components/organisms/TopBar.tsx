@@ -19,6 +19,7 @@
 import { Menu, Bell, HelpCircle } from "lucide-react";
 import { UserMenu } from "@/components/molecules/UserMenu";
 import { useSidebar } from "@/context/SidebarContext";
+import { useAuth } from "@/context/AuthContext";
 
 interface TopBarProps {
   /** The breadcrumb title shown on desktop, e.g. "Dashboard" */
@@ -27,6 +28,14 @@ interface TopBarProps {
 
 const TopBar = ({ title = "Dashboard" }: TopBarProps) => {
   const { toggleSidebar, toggleMobileSidebar } = useSidebar();
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    window.location.href = "/";
+  };
+
+  const displayName = user?.name || user?.preferred_username || user?.upn || user?.sub || "User";
 
   return (
     <header className="h-16 w-full sticky top-0 z-40 bg-surface flex justify-between items-center px-8">
@@ -69,7 +78,13 @@ const TopBar = ({ title = "Dashboard" }: TopBarProps) => {
         </div>
 
         {/* Profile */}
-        <UserMenu />
+        <UserMenu
+          user={{
+            name: displayName,
+            email: typeof user?.email === "string" ? user.email : undefined,
+          }}
+          onLogout={handleLogout}
+        />
       </div>
     </header>
   );

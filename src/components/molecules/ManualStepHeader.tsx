@@ -19,8 +19,7 @@
 
 import type { ReactNode } from "react";
 import { ArrowLeft, type LucideIcon } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { Breadcrumb } from "@/components/atoms/Breadcrumb";
+import { Breadcrumb } from "@/components/molecules/Breadcrumb";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
 import { cn } from "@/lib/utils";
@@ -38,6 +37,7 @@ export interface ManualStepHeaderProps {
   backHref?: string;
   backLabel?: string;
   onBack?: () => void;
+  onNavigate?: (href: string) => void;
   actions?: ReactNode;
   className?: string;
 }
@@ -55,19 +55,18 @@ export function ManualStepHeader({
   backHref,
   backLabel = "Back to Execution Monitor",
   onBack,
+  onNavigate,
   actions,
   className,
 }: ManualStepHeaderProps) {
-  const navigate = useNavigate();
-
   const defaultExecutionHref = `/dashboard/experiments/${networkId || ""}/execution/${experimentId || ""}`;
   const resolvedBackHref = backHref || defaultExecutionHref;
 
   const handleBack = () => {
     if (onBack) {
       onBack();
-    } else {
-      navigate(resolvedBackHref);
+    } else if (onNavigate) {
+      onNavigate(resolvedBackHref);
     }
   };
 
@@ -91,7 +90,7 @@ export function ManualStepHeader({
     <div className={cn("flex flex-col gap-6", className)}>
       {/* Top Breadcrumb & Back Action */}
       <div className="flex justify-between items-center">
-        <Breadcrumb items={breadcrumbItems} />
+        <Breadcrumb items={breadcrumbItems} onNavigate={onNavigate} />
         <Button
           variant="ghost"
           size="sm"

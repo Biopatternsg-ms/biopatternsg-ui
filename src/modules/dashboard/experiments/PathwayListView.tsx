@@ -334,6 +334,7 @@ export const PathwayListView = () => {
     <div className="flex flex-col gap-6 max-w-7xl mx-auto w-full pb-16">
       {/* Header */}
       <ManualStepHeader
+        onNavigate={navigate}
         networkId={networkId}
         experimentId={experimentId}
         experimentName={experimentName}

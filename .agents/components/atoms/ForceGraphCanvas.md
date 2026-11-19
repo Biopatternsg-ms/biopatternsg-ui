@@ -10,8 +10,9 @@ The **ForceGraphCanvas** component is a high-performance 2D rendering canvas ato
 
 ## Dependencies
 
-- Integrated physical simulation engine.
-- Types imported from `forceGraphTypes.ts` and `forceGraphProfiles.ts`.
+- `react-force-graph-3d`, `three`, `three-spritetext`: 3D Force-directed simulation and rendering engine.
+- Shared domain types imported from `@/domain/models/Graph`.
+- Visual contrast profiles imported from `@/config/forceGraphProfiles`.
 
 ## Component Properties (Props)
 
