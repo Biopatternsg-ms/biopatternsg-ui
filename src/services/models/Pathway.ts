@@ -186,6 +186,8 @@ export interface GroupedPathwaysResponse {
   totalRawPathways: number;
   totalGroups: number;
   availableLengths?: number[];
+  availableStartObjects?: string[];
+  availableEndObjects?: string[];
   page: number;
   size: number;
   groups: GroupedPathway[];
