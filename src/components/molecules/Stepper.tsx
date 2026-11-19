@@ -33,6 +33,11 @@ export interface StepperProps {
 }
 
 export function Stepper({ steps, currentStep, className, onStepClick }: StepperProps) {
+  const progressPercent =
+    steps.length > 1
+      ? (Math.min(Math.max(currentStep, 0), steps.length - 1) / (steps.length - 1)) * 100
+      : 0;
+
   return (
     <div className={cn("w-full", className)}>
       <div className="flex items-start justify-between relative">
@@ -42,7 +47,7 @@ export function Stepper({ steps, currentStep, className, onStepClick }: StepperP
         {/* Active line */}
         <div 
           className="absolute left-0 top-5 -translate-y-1/2 h-1 bg-primary transition-all duration-500 z-0 rounded-full" 
-          style={{ width: `${(Math.min(currentStep, steps.length - 1) / (steps.length - 1)) * 100}%` }}
+          style={{ width: `${progressPercent}%` }}
         />
 
         {steps.map((step, index) => {

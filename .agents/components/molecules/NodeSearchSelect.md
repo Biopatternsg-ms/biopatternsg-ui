@@ -24,6 +24,11 @@ The **NodeSearchSelect** component is a molecule featuring a real-time search in
 | `placeholder` | `string` | No | `"Search node by name..."` | Search field placeholder. |
 | `typeColorMap` | `Record<string, string>` | No | `undefined` | Optional external color map for types. |
 
+## Styling & Design System Compliance
+
+- **Design System Tokens**: Input surfaces and dropdown container utilize *The Clinical Lens* surface hierarchy (`bg-surface-card`, `bg-surface-container-high`, `text-on-surface`).
+- **Zero Static Inline Styles**: All layout, positioning, dropdown shadows, and typography use Tailwind CSS utility classes. The `style` attribute is strictly delimited to the runtime dynamic node swatch indicator dot (`backgroundColor: colorForType(...)`).
+
 ## Usage Example
 
 ```tsx

@@ -38,6 +38,7 @@ export default {
         "surface-base": "#f8f9ff",
         "surface-section": "#eff4ff",
         "surface-card": "#ffffff",
+        "surface-sidebar": "#eef3ff",
 
         // Material Color System tokens (extracted from HTML)
         "inverse-on-surface": "#f1effa",
@@ -140,6 +141,11 @@ export default {
         xl: "0 16px 64px -12px rgba(13, 28, 46, 0.14)",
         "primary-glow": "0 8px 32px -4px rgba(0, 80, 203, 0.20)",
         nav: "0 8px 32px 0 rgba(0, 102, 255, 0.04)",
+      },
+
+      // ─── Background Images & Patterns ─────────────────────────────────────
+      backgroundImage: {
+        "grid-dots": "radial-gradient(circle at 2px 2px, #0050cb 1px, transparent 0)",
       },
 
       // ─── Letter Spacing ───────────────────────────────────────────────────

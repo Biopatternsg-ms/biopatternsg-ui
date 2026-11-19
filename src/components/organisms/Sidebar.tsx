@@ -42,7 +42,7 @@ const Sidebar = () => {
 
       <nav
         className={cn(
-          "flex flex-col h-screen fixed left-0 top-0 bg-[#eef3ff] z-50 transition-all duration-300",
+          "flex flex-col h-screen fixed left-0 top-0 bg-surface-sidebar z-50 transition-all duration-300",
           isCollapsed ? "md:w-20 md:p-4 md:gap-6" : "md:w-64 md:p-6 md:gap-8",
           isMobileOpen ? "w-64 p-6 gap-8 translate-x-0" : "-translate-x-full md:translate-x-0"
         )}

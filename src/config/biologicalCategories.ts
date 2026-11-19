@@ -104,3 +104,48 @@ export const CATEGORY_KEYS = [
   "DISEASE",
   "VARIANT",
 ] as const;
+
+/**
+ * Canonical dictionary mapping biological role keys to clinical hex colors.
+ */
+export const ROLE_COLORS: Record<string, string> = {
+  ligand: "#0066ff",
+  protein: "#ff6b35",
+  enzyme: "#10b981",
+  receptor: "#f59e0b",
+  transcription_factor: "#ec4899",
+  tf: "#ec4899",
+  adaptor_protein: "#8b5cf6",
+  disease: "#06b6d4",
+  variant: "#ef4444",
+  gene: "#14b8a6",
+};
+
+export const DEFAULT_ROLE_COLOR = "#94a3b8";
+
+/**
+ * Resolves the canonical hex color for a given biological role.
+ */
+export function getRoleColor(role?: string): string {
+  if (!role) return DEFAULT_ROLE_COLOR;
+  const clean = role.toLowerCase().trim().replace(/-/g, "_").replace(/\s+/g, "_");
+  return ROLE_COLORS[clean] || DEFAULT_ROLE_COLOR;
+}
+
+/**
+ * Formats a biological role string into a human-readable title.
+ */
+export function formatRoleName(role?: string): string {
+  if (!role) return "Protein";
+  const clean = role.toLowerCase().trim().replace(/-/g, "_").replace(/\s+/g, "_");
+  switch (clean) {
+    case "transcription_factor":
+    case "tf":
+      return "Transcription Factor";
+    case "adaptor_protein":
+      return "Adaptor Protein";
+    default:
+      return clean.charAt(0).toUpperCase() + clean.slice(1);
+  }
+}
+

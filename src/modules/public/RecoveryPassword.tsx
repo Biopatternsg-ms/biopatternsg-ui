@@ -90,14 +90,7 @@ const RecoveryPassword = () => {
 
       <main className="flex-1 pt-28">
         <section className="bg-surface-section min-h-[calc(100vh-112px)] flex items-center justify-center px-8 py-16 relative">
-          <div
-            className="absolute inset-0 pointer-events-none opacity-[0.02]"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle at 2px 2px, #0050cb 1px, transparent 0)",
-              backgroundSize: "40px 40px",
-            }}
-          />
+          <div className="absolute inset-0 pointer-events-none opacity-[0.02] bg-grid-dots bg-[size:40px_40px]" />
 
           <div className="relative z-10 w-full max-w-lg">
             <div className="text-center mb-6">

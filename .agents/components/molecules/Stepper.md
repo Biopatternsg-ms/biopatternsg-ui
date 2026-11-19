@@ -29,7 +29,10 @@ The **Stepper** component is a multi-stage sequential progress molecule guiding 
 | `onStepClick` | `(stepIndex: number) => void` | No | `undefined` | Step navigation callback. |
 | `className` | `string` | No | `undefined` | Additional Tailwind CSS classes. |
 
-## Usage Example
+## Styling & Design System Compliance
+
+- **Design System Tokens**: Fully compliant with *The Clinical Lens* token system (`bg-primary`, `bg-surface-card`, `border-outline-variant`, `shadow-primary-glow`).
+- **Zero Static Inline Styles**: All layout, positions, borders, and colors are governed purely by Tailwind CSS utility classes. The `style` attribute is strictly delimited to runtime progress width calculation (`style={{ width: `${progressPercent}%` }}`).
 
 ```tsx
 import { Stepper } from "@/components/molecules/Stepper";
