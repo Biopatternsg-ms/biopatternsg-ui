@@ -18,21 +18,27 @@
  */
 
 import type {
-  InferenceResponse as InferenceResponseDTO,
-  PipelineStatus as PipelineStatusDTO,
+  ExperimentDto,
+  PipelineStatusDto,
+  InferenceResponseDto,
+  BiologicalObjectItemDto,
+  AlignedResultResponseDto,
 } from "@/services/models/Experiment";
 import type {
+  Experiment,
+  PipelineStatus,
   BiologicalRoleItem,
   InferenceRolesDomain,
-  PipelineStatus,
+  BiologicalObjectItem,
+  AlignedObjectItem,
 } from "@/domain/models/Experiment";
 
 /**
- * Adapter to translate backend experiment and inference DTOs to pure domain models.
+ * Adapter to translate backend experiment, inference, and biological object DTOs to pure domain models.
  * Adheres to BioPatternSG UI Constitution Principle IV (Mandatory Adapter Pattern).
  */
 
-export function toPipelineStatus(dto: PipelineStatusDTO): PipelineStatus {
+export function toPipelineStatus(dto: PipelineStatusDto): PipelineStatus {
   return {
     step: dto.step,
     status: dto.status,
@@ -40,7 +46,83 @@ export function toPipelineStatus(dto: PipelineStatusDTO): PipelineStatus {
   };
 }
 
-export function toInferenceRolesDomain(dto?: InferenceResponseDTO | null): InferenceRolesDomain {
+export function toExperimentDomain(dto: ExperimentDto): Experiment {
+  const epochMs =
+    typeof dto.createdAt === "number"
+      ? dto.createdAt > 1e11
+        ? dto.createdAt
+        : dto.createdAt * 1000
+      : undefined;
+
+  return {
+    id: dto.id,
+    name: dto.name,
+    description: dto.description,
+    networkId: dto.networkId,
+    levels: dto.levels,
+    retMax: dto.retMax,
+    maxComplexes: dto.maxComplexes,
+    step: dto.step,
+    transcriptionFactorConfig: dto.transcriptionFactorConfig,
+    expertObjects: dto.expertObjects,
+    createdAt: epochMs ? new Date(epochMs).toISOString() : undefined,
+    status: dto.status ? toPipelineStatus(dto.status) : undefined,
+    useOnlyPrincipalName: dto.useOnlyPrincipalName,
+  };
+}
+
+export function toBiologicalObjectDomain(dto: BiologicalObjectItemDto): BiologicalObjectItem {
+  return {
+    name: dto.name,
+    symbol: dto.symbol,
+    synonyms: dto.synonyms ? [...dto.synonyms] : undefined,
+    biotypes: [...(dto.biotypes || [])],
+    meshRoles: [...(dto.meshRoles || [])],
+    roles: [...(dto.roles || [])],
+    alternativeIds: dto.alternativeIds ? [...dto.alternativeIds] : undefined,
+    description: dto.description,
+  };
+}
+
+export function toAlignedObjectDomain(dto: AlignedResultResponseDto): AlignedObjectItem[] {
+  const alignedItems: AlignedObjectItem[] = [];
+
+  // Map explicitly aligned items with synonyms
+  dto.alignedAs.forEach((item, index) => {
+    alignedItems.push({
+      id: `aligned-${index}`,
+      symbol: item.expertObjectName,
+      status: "ALIGNED_AS",
+      synonyms: [...item.alternativeIds],
+    });
+  });
+
+  // Map aligned without synonyms
+  dto.aligned.forEach((symbol, index) => {
+    if (!alignedItems.some((a) => a.symbol === symbol)) {
+      alignedItems.push({
+        id: `direct-${index}`,
+        symbol,
+        status: "ALIGNED",
+        synonyms: [],
+      });
+    }
+  });
+
+  // Map unaligned
+  dto.noAligned.forEach((symbol, index) => {
+    alignedItems.push({
+      id: `no-aligned-${index}`,
+      symbol,
+      status: "NO_ALIGNED",
+      synonyms: [],
+    });
+  });
+
+  return alignedItems;
+}
+
+export function toInferenceRolesDomain(dto?: InferenceResponseDto | null): InferenceRolesDomain {
   const roles = dto?.roles ?? {};
   const allSymbols = Object.keys(roles);
   const entitiesWithActiveRolesCount = allSymbols.filter((sym) => {
@@ -59,7 +141,7 @@ export function toInferenceRolesDomain(dto?: InferenceResponseDTO | null): Infer
   };
 }
 
-export function toBiologicalRoleList(dto?: InferenceResponseDTO | null): BiologicalRoleItem[] {
+export function toBiologicalRoleList(dto?: InferenceResponseDto | null): BiologicalRoleItem[] {
   const roles = dto?.roles ?? {};
   return Object.entries(roles).map(([symbol, roleValues]) => {
     const activeRoles = Array.isArray(roleValues)

@@ -46,7 +46,7 @@ import { experimentService } from "@/services/experimentService";
 import type {
   ExperimentExecution,
   RestrictionLevel,
-} from "@/services/models/Experiment";
+} from "@/domain/models/Experiment";
 import { SuccessModal } from "@/components/molecules/SuccessModal";
 import { ErrorModal } from "@/components/molecules/ErrorModal";
 import { CATEGORIES_LIST, CATEGORY_STYLES } from "@/config/biologicalCategories";

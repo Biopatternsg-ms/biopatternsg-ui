@@ -31,7 +31,7 @@ import { StepExpertObjects } from "./createExperiment/StepExpertObjects";
 import { StepSearchConfig } from "./createExperiment/StepSearchConfig";
 import { experimentService } from "@/services/experimentService";
 import { expertObjectsToCsvFile } from "@/utils/csvParser";
-import type { Experiment, ExpertObject, TranscriptionFactorConfig } from "@/services/models/Experiment";
+import type { Experiment, ExpertObject, TranscriptionFactorConfig } from "@/domain/models/Experiment";
 
 const steps: Step[] = [
   {

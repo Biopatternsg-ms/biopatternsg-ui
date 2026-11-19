@@ -17,7 +17,14 @@
  * limitations under the License.
  */
 
-export interface TranscriptionFactorConfig {
+/**
+ * Backend wire transport DTOs for experiments, execution pipelines, and inferred biological roles.
+ * All interfaces carry the `Dto` suffix to clearly distinguish them from pure domain models.
+ *
+ * Adheres to BioPatternSG UI Constitution Principle IV (Mandatory Adapter Pattern).
+ */
+
+export interface TranscriptionFactorConfigDto {
   sources: string[];
   genome?: string;
   track?: string;
@@ -30,19 +37,19 @@ export interface TranscriptionFactorConfig {
   promoterRegion: string;
 }
 
-export interface ExpertObject {
+export interface ExpertObjectDto {
   symbol: string | null;
   uniprotId: string | null;
   hgncId: string | null;
 }
 
-export interface PipelineStatus {
+export interface PipelineStatusDto {
   step: string;
   status: string;
   createdAt: string;
 }
 
-export interface MetricCard {
+export interface MetricCardDto {
   label: string;
   value: string;
   subLabel?: string;
@@ -52,12 +59,12 @@ export interface MetricCard {
   warningCount?: number;
 }
 
-export interface SubStep {
+export interface SubStepDto {
   name: string;
   status: "COMPLETED" | "ACTIVE" | "PENDING";
 }
 
-export interface PipelineStepExecution {
+export interface PipelineStepExecutionDto {
   id: string;
   name: string;
   status: "COMPLETED" | "ACTIVE" | "PENDING" | "FAILED";
@@ -68,22 +75,21 @@ export interface PipelineStepExecution {
   iconName: string;
   isManual?: boolean;
   actionRoute?: string;
-  subSteps?: SubStep[];
-  metrics?: MetricCard[] | Record<string, string>;
+  subSteps?: SubStepDto[];
+  metrics?: MetricCardDto[] | Record<string, string>;
 }
 
-export interface ExperimentExecution {
+export interface ExperimentExecutionDto {
   experimentId: string;
   experimentName: string;
   networkId?: string;
   status: "ACTIVE" | "COMPLETED" | "FAILED" | "PENDING";
   totalExecutionTime: string;
   currentPhaseDuration: string;
-  steps: PipelineStepExecution[];
+  steps: PipelineStepExecutionDto[];
 }
 
-
-export interface Experiment {
+export interface ExperimentDto {
   id: string;
   name: string;
   description: string;
@@ -92,41 +98,41 @@ export interface Experiment {
   retMax?: number;
   maxComplexes?: number;
   step?: string;
-  transcriptionFactorConfig?: TranscriptionFactorConfig;
-  expertObjects?: ExpertObject[];
-  createdAt?: number;
-  status?: PipelineStatus;
+  transcriptionFactorConfig?: TranscriptionFactorConfigDto;
+  expertObjects?: ExpertObjectDto[];
+  createdAt?: number; // Raw epoch timestamp from backend
+  status?: PipelineStatusDto;
   useOnlyPrincipalName?: boolean;
 }
 
-export interface AlignedAsItem {
+export interface AlignedAsItemDto {
   expertObjectName: string;
   alternativeIds: string[];
 }
 
-export interface AlignedResultResponse {
+export interface AlignedResultResponseDto {
   pipelineId: string;
   aligned: string[];
   noAligned: string[];
-  alignedAs: AlignedAsItem[];
+  alignedAs: AlignedAsItemDto[];
 }
 
-export interface PipelineSynonymResponse {
+export interface PipelineSynonymResponseDto {
   name: string;
   synonyms: string[];
 }
 
-export interface KbEventResponse {
+export interface KbEventResponseDto {
   first: string;
   relation: string;
   second: string;
   pubmedIds: string[];
 }
 
-export type RestrictionLevel = "RESTRICTED" | "VERY_RESTRICTED" | "UNRESTRICTED";
+export type RestrictionLevelDto = "RESTRICTED" | "VERY_RESTRICTED" | "UNRESTRICTED";
 
-export interface InferenceConfig {
-  restrictionLevel: RestrictionLevel;
+export interface InferenceConfigDto {
+  restrictionLevel: RestrictionLevelDto;
   summarizeKb?: boolean;
   maxDepth?: number;
   startFirstRoles?: string[];
@@ -139,10 +145,10 @@ export interface InferenceConfig {
   endObjects?: string[];
 }
 
-export interface InferenceResponse {
+export interface InferenceResponseDto {
   id?: string;
   pipelineId: string;
-  restrictionLevel: RestrictionLevel;
+  restrictionLevel: RestrictionLevelDto;
   summarizeKb?: boolean;
   maxDepth?: number;
   startFirstRoles?: string[];
@@ -154,7 +160,7 @@ export interface InferenceResponse {
   roles?: Record<string, string[]>;
 }
 
-export interface BiologicalObjectItem {
+export interface BiologicalObjectItemDto {
   symbol?: string;
   name: string;
   synonyms?: string[];
@@ -164,3 +170,23 @@ export interface BiologicalObjectItem {
   alternativeIds?: string[];
   description?: string;
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   BACKWARD COMPATIBILITY ALIASES (Deprecated: prefer explicit *Dto or @/domain/models)
+   ───────────────────────────────────────────────────────────────────────────── */
+export type TranscriptionFactorConfig = TranscriptionFactorConfigDto;
+export type ExpertObject = ExpertObjectDto;
+export type PipelineStatus = PipelineStatusDto;
+export type MetricCard = MetricCardDto;
+export type SubStep = SubStepDto;
+export type PipelineStepExecution = PipelineStepExecutionDto;
+export type ExperimentExecution = ExperimentExecutionDto;
+export type Experiment = ExperimentDto;
+export type AlignedAsItem = AlignedAsItemDto;
+export type AlignedResultResponse = AlignedResultResponseDto;
+export type PipelineSynonymResponse = PipelineSynonymResponseDto;
+export type KbEventResponse = KbEventResponseDto;
+export type RestrictionLevel = RestrictionLevelDto;
+export type InferenceConfig = InferenceConfigDto;
+export type InferenceResponse = InferenceResponseDto;
+export type BiologicalObjectItem = BiologicalObjectItemDto;

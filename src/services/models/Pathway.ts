@@ -18,10 +18,17 @@
  */
 
 /**
+ * Backend wire transport DTOs for pathway endpoints and inference graph responses.
+ * All interfaces carry the `Dto` suffix to clearly distinguish them from pure domain models.
+ *
+ * Adheres to BioPatternSG UI Constitution Principle IV (Mandatory Adapter Pattern).
+ */
+
+/**
  * Payload sent to execute pathway inference on MongoDB knowledge base.
  * POST /api/inferences/pathways/run
  */
-export interface PathwayInferenceRequest {
+export interface PathwayInferenceRequestDto {
   pipelineId: string;
   user?: string;
   restrictedObjects?: string[];
@@ -33,7 +40,7 @@ export interface PathwayInferenceRequest {
 /**
  * Response returned by pathway inference execution.
  */
-export interface PathwayInferenceResponse {
+export interface PathwayInferenceResponseDto {
   status: "SUCCESS" | "ERROR";
   pipelineId: string;
   pathwaysCount: number;
@@ -46,7 +53,7 @@ export interface PathwayInferenceResponse {
 /**
  * Consolidated Pathway Graph node from pathway_graphs.
  */
-export interface PathwayGraphNode {
+export interface PathwayGraphNodeDto {
   name: string;
   role?: string;
   type?: string;
@@ -55,7 +62,7 @@ export interface PathwayGraphNode {
 /**
  * Consolidated Pathway Graph directed edge from pathway_graphs.
  */
-export interface PathwayGraphEdge {
+export interface PathwayGraphEdgeDto {
   first: string;
   relation: string;
   second: string;
@@ -68,19 +75,19 @@ export interface PathwayGraphEdge {
 /**
  * Consolidated Pathway Graph structure returned by GET /inferences/pathway-graphs/{pipelineId}.
  */
-export interface PathwayGraph {
+export interface PathwayGraphDto {
   pipelineId: string;
   user?: string;
   totalPathways?: number;
   executionTimeMs?: number;
-  nodes: PathwayGraphNode[];
-  edges: PathwayGraphEdge[];
+  nodes: PathwayGraphNodeDto[];
+  edges: PathwayGraphEdgeDto[];
 }
 
 /**
  * Single event reaction within an inferred pathway.
  */
-export interface PathwayEventStep {
+export interface PathwayEventStepDto {
   first: string;
   relation: string;
   second: string;
@@ -89,7 +96,7 @@ export interface PathwayEventStep {
 /**
  * Biological entity participating in an inferred pathway.
  */
-export interface PathwayObjectStep {
+export interface PathwayObjectStepDto {
   name: string;
   roles: string[];
 }
@@ -97,21 +104,21 @@ export interface PathwayObjectStep {
 /**
  * Inferred biological pathway document.
  */
-export interface BiologicalPathway {
+export interface BiologicalPathwayDto {
   id?: string;
   pipelineId: string;
   pathwayIndex: number;
   length: number;
   startObject: string;
   endObject: string;
-  events: PathwayEventStep[];
-  objects: PathwayObjectStep[];
+  events: PathwayEventStepDto[];
+  objects: PathwayObjectStepDto[];
 }
 
 /**
  * Query parameters for fetching paginated pathways.
  */
-export interface PathwayQueryParams {
+export interface PathwayQueryParamsDto {
   startObject?: string;
   endObject?: string;
   containsObject?: string;
@@ -125,8 +132,8 @@ export interface PathwayQueryParams {
 /**
  * Paginated pathways response wrapper.
  */
-export interface PaginatedPathwaysResponse {
-  list: BiologicalPathway[];
+export interface PaginatedPathwaysResponseDto {
+  list: BiologicalPathwayDto[];
   total: number;
   page: number;
   size: number;
@@ -135,7 +142,7 @@ export interface PaginatedPathwaysResponse {
 /**
  * Biological entity participating in a grouped pathway sequence.
  */
-export interface GroupedPathwayObject {
+export interface GroupedPathwayObjectDto {
   name: string;
   role: string;
   position: number;
@@ -144,7 +151,7 @@ export interface GroupedPathwayObject {
 /**
  * Underlying event details linking a relation transition to its KB event and PubMed evidence.
  */
-export interface GroupedPathwayStepEvent {
+export interface GroupedPathwayStepEventDto {
   id?: string;
   relation: string;
   pubmedIds?: string[];
@@ -153,26 +160,26 @@ export interface GroupedPathwayStepEvent {
 /**
  * Step transition between two adjacent biological objects in a grouped pathway.
  */
-export interface GroupedPathwayStep {
+export interface GroupedPathwayStepDto {
   position: number;
   first: string;
   second: string;
   relations: string[];
-  events?: GroupedPathwayStepEvent[];
+  events?: GroupedPathwayStepEventDto[];
 }
 
 /**
  * Biological pathway group consolidated by identical ordered sequence of objects.
  */
-export interface GroupedPathway {
+export interface GroupedPathwayDto {
   groupId: string;
   length: number;
   startObject: string;
   endObject: string;
   pathwaysCount: number;
-  objects: GroupedPathwayObject[];
+  objects: GroupedPathwayObjectDto[];
   relations: string[];
-  steps: GroupedPathwayStep[];
+  steps: GroupedPathwayStepDto[];
   relationCombinations: string[][];
   eventIdCombinations?: string[][];
   favorite?: boolean;
@@ -181,7 +188,7 @@ export interface GroupedPathway {
 /**
  * Response returned by GET /inferences/pathways/{pipelineId}/grouped.
  */
-export interface GroupedPathwaysResponse {
+export interface GroupedPathwaysResponseDto {
   pipelineId: string;
   totalRawPathways: number;
   totalGroups: number;
@@ -190,5 +197,24 @@ export interface GroupedPathwaysResponse {
   availableEndObjects?: string[];
   page: number;
   size: number;
-  groups: GroupedPathway[];
+  groups: GroupedPathwayDto[];
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   BACKWARD COMPATIBILITY ALIASES (Deprecated: prefer explicit *Dto or @/domain/models)
+   ───────────────────────────────────────────────────────────────────────────── */
+export type PathwayInferenceRequest = PathwayInferenceRequestDto;
+export type PathwayInferenceResponse = PathwayInferenceResponseDto;
+export type PathwayGraphNode = PathwayGraphNodeDto;
+export type PathwayGraphEdge = PathwayGraphEdgeDto;
+export type PathwayGraph = PathwayGraphDto;
+export type PathwayEventStep = PathwayEventStepDto;
+export type PathwayObjectStep = PathwayObjectStepDto;
+export type BiologicalPathway = BiologicalPathwayDto;
+export type PathwayQueryParams = PathwayQueryParamsDto;
+export type PaginatedPathwaysResponse = PaginatedPathwaysResponseDto;
+export type GroupedPathwayObject = GroupedPathwayObjectDto;
+export type GroupedPathwayStepEvent = GroupedPathwayStepEventDto;
+export type GroupedPathwayStep = GroupedPathwayStepDto;
+export type GroupedPathway = GroupedPathwayDto;
+export type GroupedPathwaysResponse = GroupedPathwaysResponseDto;

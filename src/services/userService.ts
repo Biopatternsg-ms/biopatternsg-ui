@@ -35,6 +35,8 @@ export async function registerUser(payload: RegisterPayload): Promise<Response> 
   });
 }
 
+import type { PaginatedResponseDto } from "./models/NetworkDto";
+
 export interface UserModel {
   id: string;
   username: string;
@@ -44,10 +46,7 @@ export interface UserModel {
   createdTimestamp: number;
 }
 
-export interface PaginatedResponse<T> {
-  count: number;
-  list: T[];
-}
+export type PaginatedResponse<T> = PaginatedResponseDto<T>;
 
 /**
  * Fetches the paginated list of users for the admin dashboard.

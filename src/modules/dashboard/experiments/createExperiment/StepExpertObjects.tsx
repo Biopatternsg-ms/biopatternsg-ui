@@ -21,7 +21,7 @@ import { useEffect, useRef } from "react";
 import { FormField } from "@/components/molecules/FormField";
 import { Button } from "@/components/atoms/Button";
 import { expertObjectsToCsvFile, parseExpertObjectsCsv } from "@/utils/csvParser";
-import type { ExpertObject } from "@/services/models/Experiment";
+import type { ExpertObject } from "@/domain/models/Experiment";
 
 export interface StepExpertObjectsProps {
   expertObjectsFile: File | null;

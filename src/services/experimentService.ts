@@ -52,7 +52,7 @@ import type {
 } from "./models/Pathway";
 
 import type {
-  Experiment,
+  ExperimentDto,
   ExpertObject,
   TranscriptionFactorConfig,
   ExperimentExecution,
@@ -65,11 +65,12 @@ import type {
   InferenceResponse,
   BiologicalObjectItem,
 } from "./models/Experiment";
+import type { Experiment } from "@/domain/models/Experiment";
+import { toExperimentDomain } from "@/adapters/experimentAdapter";
 
-export interface PaginatedResponse<T> {
-  count: number;
-  list: T[];
-}
+import type { PaginatedResponseDto } from "./models/NetworkDto";
+
+export type PaginatedResponse<T> = PaginatedResponseDto<T>;
 
 const DEFAULT_MOCK_KB_EVENTS: KbEventResponse[] = [
   { first: "CYP7A1", relation: "ACTIVATES", second: "BILE ACID", pubmedIds: ["31284561", "29481234"] },
@@ -105,7 +106,11 @@ export const experimentService = {
       throw new Error("Failed to fetch pipelines");
     }
 
-    return response.json();
+    const data: PaginatedResponseDto<ExperimentDto> = await response.json();
+    return {
+      count: data.count,
+      list: (data.list || []).map(toExperimentDomain),
+    };
   },
 
   /**
@@ -116,7 +121,8 @@ export const experimentService = {
     if (!response.ok) {
       throw new Error("Failed to fetch pipeline");
     }
-    return response.json();
+    const dto: ExperimentDto = await response.json();
+    return toExperimentDomain(dto);
   },
 
   /**

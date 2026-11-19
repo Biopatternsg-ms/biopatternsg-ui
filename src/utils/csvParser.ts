@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import type { ExpertObject } from "@/services/models/Experiment";
+import type { ExpertObject } from "@/domain/models/Experiment";
 
 const CSV_SEPARATOR = ";";
 const REQUIRED_HEADERS = ["symbol", "uniprotid", "hgncid"];

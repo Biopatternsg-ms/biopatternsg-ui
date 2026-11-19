@@ -17,15 +17,27 @@
  * limitations under the License.
  */
 
-import type { GroupedPathway as GroupedPathwayDTO } from "@/services/models/Pathway";
-import type { GroupedPathway } from "@/domain/models/Pathway";
+import type {
+  GroupedPathwayDto,
+  GroupedPathwaysResponseDto,
+  BiologicalPathwayDto,
+  PathwayGraphNodeDto,
+  PathwayGraphEdgeDto,
+} from "@/services/models/Pathway";
+import type {
+  GroupedPathway,
+  GroupedPathwaysResult,
+  BiologicalPathway,
+  PathwayGraphNode,
+  PathwayGraphEdge,
+} from "@/domain/models/Pathway";
 
 /**
  * Adapter to translate backend pathway DTOs to pure domain models.
  * Adheres to BioPatternSG UI Constitution Principle IV (Mandatory Adapter Pattern).
  */
 
-export function toGroupedPathway(dto: GroupedPathwayDTO): GroupedPathway {
+export function toGroupedPathway(dto: GroupedPathwayDto): GroupedPathway {
   return {
     groupId: dto.groupId,
     length: dto.length,
@@ -55,6 +67,57 @@ export function toGroupedPathway(dto: GroupedPathwayDTO): GroupedPathway {
   };
 }
 
-export function toGroupedPathwayList(dtos: GroupedPathwayDTO[]): GroupedPathway[] {
+export function toGroupedPathwayList(dtos: GroupedPathwayDto[]): GroupedPathway[] {
   return dtos.map(toGroupedPathway);
+}
+
+export function toPathwayGraphNode(dto: PathwayGraphNodeDto): PathwayGraphNode {
+  return {
+    name: dto.name,
+    role: dto.role,
+    type: dto.type,
+  };
+}
+
+export function toPathwayGraphEdge(dto: PathwayGraphEdgeDto): PathwayGraphEdge {
+  return {
+    first: dto.first,
+    relation: dto.relation,
+    second: dto.second,
+    pathwayCount: dto.pathwayCount,
+  };
+}
+
+export function toBiologicalPathway(dto: BiologicalPathwayDto): BiologicalPathway {
+  return {
+    id: dto.id,
+    pipelineId: dto.pipelineId,
+    pathwayIndex: dto.pathwayIndex,
+    length: dto.length,
+    startObject: dto.startObject,
+    endObject: dto.endObject,
+    events: dto.events.map((e) => ({
+      first: e.first,
+      relation: e.relation,
+      second: e.second,
+    })),
+    objects: dto.objects.map((o) => ({
+      name: o.name,
+      roles: [...o.roles],
+    })),
+  };
+}
+
+export function toGroupedPathwaysResult(dto: GroupedPathwaysResponseDto): GroupedPathwaysResult {
+  return {
+    pipelineId: dto.pipelineId,
+    totalRawPathways: dto.totalRawPathways,
+    totalGroups: dto.totalGroups,
+    availableLengths: dto.availableLengths ? [...dto.availableLengths] : undefined,
+    availableStartObjects: dto.availableStartObjects ? [...dto.availableStartObjects] : undefined,
+    availableEndObjects: dto.availableEndObjects ? [...dto.availableEndObjects] : undefined,
+    page: dto.page,
+    size: dto.size,
+    groups: (dto.groups || []).map(toGroupedPathway),
+  };
 }
