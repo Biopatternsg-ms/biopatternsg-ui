@@ -14,6 +14,12 @@ The **PathwayDetailModal** component is an inspection dialog molecule presenting
 - `@/components/atoms/Button`: Action and close buttons.
 - `@/components/atoms/Badge`: Categorical and biological badges.
 - `@/domain/models/Pathway`: `GroupedPathway` pure domain entity.
+- `@/config/biologicalCategories`: `getRoleColor`, `formatRoleName` for standardized role palettes.
+
+## Styling & Design System Compliance
+
+- **Biological Color Token Centralization**: Uses `getRoleColor` and `formatRoleName` imported from `src/config/biologicalCategories.ts`, eliminating all local duplicated color arrays.
+- **Zero Static Inline Styles**: All layout, borders, dialog containers, and typography use Tailwind CSS utility classes. The `style` attribute is strictly delimited to runtime dynamic data role colors (`backgroundColor: roleColor`, `color: roleColor`).
 
 ## Component Properties (Props)
 

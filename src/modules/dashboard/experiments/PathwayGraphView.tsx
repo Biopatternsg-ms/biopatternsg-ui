@@ -39,15 +39,15 @@ import {
   type GraphNodeInput,
   type GraphLinkInput,
 } from "@/domain/models/Graph";
-import type { GraphBackground } from "@/config/forceGraphProfiles";
+import { GRAPH_PROFILES, type GraphBackground } from "@/config/forceGraphProfiles";
 import { experimentService } from "@/services/experimentService";
 import { toPathwayGraphForceData } from "@/adapters/pathwayAdapter";
 import { cn } from "@/lib/utils";
 
 const BACKGROUND_OPTIONS: { value: GraphBackground; label: string; swatch: string }[] = [
-  { value: "black", label: "Dark Canvas", swatch: "rgba(10,10,20,1)" },
-  { value: "white", label: "Light Canvas", swatch: "#ffffff" },
-  { value: "skyblue", label: "Sky Blue", swatch: "#87ceeb" },
+  { value: "black", label: "Dark Canvas", swatch: GRAPH_PROFILES.black.backgroundColor },
+  { value: "white", label: "Light Canvas", swatch: GRAPH_PROFILES.white.backgroundColor },
+  { value: "skyblue", label: "Sky Blue", swatch: GRAPH_PROFILES.skyblue.backgroundColor },
 ];
 
 export const PathwayGraphView = () => {

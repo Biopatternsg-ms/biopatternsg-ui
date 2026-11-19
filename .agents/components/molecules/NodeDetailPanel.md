@@ -26,6 +26,11 @@ The **NodeDetailPanel** is a collapsible side-panel molecule displaying comprehe
 | `onClose` | `() => void` | Yes | - | Panel close callback. |
 | `isOpen` | `boolean` | No | `true` | Visibility state. |
 
+## Styling & Design System Compliance
+
+- **Design System Tokens**: Fully compliant with *The Clinical Lens* surface architecture (`bg-surface-card`, `bg-surface-container-high`, `border-outline-variant`).
+- **Zero Static Inline Styles**: All layout, borders, paddings, and typography use Tailwind CSS utility classes. The `style` attribute is strictly delimited to runtime dynamic data colors (`backgroundColor: ${typeColor}20`, `color: typeColor`).
+
 ## Usage Example
 
 ```tsx

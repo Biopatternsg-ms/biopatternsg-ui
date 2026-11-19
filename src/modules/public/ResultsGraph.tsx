@@ -113,7 +113,7 @@ import type {
   GraphLinkInput,
 } from "@/domain/models/Graph";
 import { buildTypeColorMap } from "@/domain/models/Graph";
-import type { GraphBackground } from "@/config/forceGraphProfiles";
+import { GRAPH_PROFILES, type GraphBackground } from "@/config/forceGraphProfiles";
 import {
   filterLinksByValidNodes,
   parseGraphNodesTxt,
@@ -134,9 +134,9 @@ const DEFAULT_DESCRIPTION =
 
 /** Background selector options. */
 const BACKGROUND_OPTIONS: { value: GraphBackground; label: string; swatch: string }[] = [
-  { value: "black", label: "Black", swatch: "rgba(10,10,20,1)" },
-  { value: "white", label: "White", swatch: "#ffffff" },
-  { value: "skyblue", label: "Sky blue", swatch: "#87ceeb" },
+  { value: "black", label: "Black", swatch: GRAPH_PROFILES.black.backgroundColor },
+  { value: "white", label: "White", swatch: GRAPH_PROFILES.white.backgroundColor },
+  { value: "skyblue", label: "Sky blue", swatch: GRAPH_PROFILES.skyblue.backgroundColor },
 ];
 
 /* ═════════════════════════════════════════════════════════════════════════════

@@ -13,6 +13,11 @@ The **Sidebar** component is a collapsible lateral navigation organism for the r
 - `react-router-dom`: `Link` component and `useLocation` hook.
 - `@/lib/utils`: `cn` utility.
 
+## Styling & Design System Compliance
+
+- **Surface Tokens**: Nav container uses semantic token `bg-surface-sidebar` (resolved to `#eef3ff` in `tailwind.config.ts`), eliminating hardcoded hex background values.
+- **Zero Inline Styles**: 100% of positioning, transitions, widths, and collapsible states use Tailwind CSS utility classes and `cn()`.
+
 ## Usage Example
 
 ```tsx
