@@ -47,6 +47,7 @@ import type { BiologicalObjectItem } from "@/domain/models/Experiment";
 import { SuccessModal } from "@/components/molecules/SuccessModal";
 import { ErrorModal } from "@/components/molecules/ErrorModal";
 import { CATEGORIES_LIST } from "@/config/biologicalCategories";
+import { selectClosingObjectsSchema } from "@/schemas/experiments/objectUpdateSchemas";
 import { cn } from "@/lib/utils";
 
 const MIN_CLOSING_OBJECTS = 1;
@@ -270,12 +271,12 @@ export const SelectClosingObjects = () => {
   // Submit closing objects & trigger inference
   const handleConfirmSaveAndRun = async () => {
     if (!experimentId) return;
-    if (selectedKeys.size < MIN_CLOSING_OBJECTS) {
-      setErrorMessage(`You must select at least ${MIN_CLOSING_OBJECTS} closing object.`);
-      return;
-    }
-    if (selectedKeys.size > MAX_CLOSING_OBJECTS) {
-      setErrorMessage(`You cannot select more than ${MAX_CLOSING_OBJECTS} closing objects.`);
+
+    const validation = selectClosingObjectsSchema.safeParse({
+      selectedClosingObjectIds: Array.from(selectedKeys),
+    });
+    if (!validation.success) {
+      setErrorMessage(validation.error.issues[0]?.message || "Invalid selection.");
       return;
     }
 

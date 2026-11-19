@@ -17,31 +17,18 @@
  * limitations under the License.
  */
 
+import { useFormContext, Controller } from "react-hook-form";
 import { FormField } from "@/components/molecules/FormField";
 import { Checkbox } from "@/components/atoms/Checkbox";
 import { Label } from "@/components/atoms/Label";
+import type { CreateExperimentFormValues } from "@/schemas/experiments/createExperimentSchema";
 
-export interface StepSearchConfigProps {
-  searchLevel: string;
-  onSearchLevelChange: (value: string) => void;
-  retMax: string;
-  onRetMaxChange: (value: string) => void;
-  useOnlyPrincipalName: boolean;
-  onUseOnlyPrincipalNameChange: (value: boolean) => void;
-  maxComplexes: string;
-  onMaxComplexesChange: (value: string) => void;
-}
-
-export function StepSearchConfig({
-  searchLevel,
-  onSearchLevelChange,
-  retMax,
-  onRetMaxChange,
-  useOnlyPrincipalName,
-  onUseOnlyPrincipalNameChange,
-  maxComplexes,
-  onMaxComplexesChange,
-}: StepSearchConfigProps) {
+export function StepSearchConfig() {
+  const {
+    register,
+    control,
+    formState: { errors },
+  } = useFormContext<CreateExperimentFormValues>();
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -51,49 +38,85 @@ export function StepSearchConfig({
       </p>
 
       <div className="grid grid-cols-1 gap-6">
-        <FormField
-          label="Search Level"
-          type="number"
-          placeholder="e.g. 1, 2, 3"
-          min={1}
-          max={3}
-          value={searchLevel}
-          onChange={(e) => onSearchLevelChange(e.target.value)}
-        />
-        <FormField
-          label="Maximum Search Number in Pubtator"
-          type="number"
-          placeholder="e.g. 100"
-          value={retMax}
-          onChange={(e) => onRetMaxChange(e.target.value)}
-        />
-        <FormField
-          label="Maximum Number of Complexes"
-          type="number"
-          placeholder="e.g. 10"
-          min={1}
-          value={maxComplexes}
-          onChange={(e) => onMaxComplexesChange(e.target.value)}
-        />
-        <div className="flex items-center space-x-3 bg-surface-container-high/50 p-4 rounded-xl border border-outline-variant/10">
-          <Checkbox
-            id="useOnlyPrincipalName"
-            checked={useOnlyPrincipalName}
-            onCheckedChange={(checked) => onUseOnlyPrincipalNameChange(checked === true)}
+        <div>
+          <FormField
+            label="Search Level"
+            type="number"
+            placeholder="e.g. 1, 2, 3"
+            min={1}
+            max={3}
+            aria-invalid={!!errors.searchLevel}
+            {...register("searchLevel")}
           />
-          <div className="grid gap-1.5 leading-none">
-            <Label
-              htmlFor="useOnlyPrincipalName"
-              size="md"
-              className="text-on-surface cursor-pointer select-none"
+          {errors.searchLevel && (
+            <p
+              role="alert"
+              className="text-[11px] text-error font-label font-medium tracking-wide mt-1"
             >
-              Use Only Principal Name
-            </Label>
-            <p className="text-xs text-on-surface-variant">
-              Only search using the main canonical name of entities.
+              {errors.searchLevel.message}
             </p>
-          </div>
+          )}
         </div>
+
+        <div>
+          <FormField
+            label="Max Results (Pubtator)"
+            type="number"
+            placeholder="e.g. 100"
+            min={1}
+            max={10000}
+            aria-invalid={!!errors.retMax}
+            {...register("retMax")}
+          />
+          {errors.retMax && (
+            <p
+              role="alert"
+              className="text-[11px] text-error font-label font-medium tracking-wide mt-1"
+            >
+              {errors.retMax.message}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <FormField
+            label="Max Complexes"
+            type="number"
+            placeholder="e.g. 10"
+            min={1}
+            max={1000}
+            aria-invalid={!!errors.maxComplexes}
+            {...register("maxComplexes")}
+          />
+          {errors.maxComplexes && (
+            <p
+              role="alert"
+              className="text-[11px] text-error font-label font-medium tracking-wide mt-1"
+            >
+              {errors.maxComplexes.message}
+            </p>
+          )}
+        </div>
+
+        <Controller
+          name="useOnlyPrincipalName"
+          control={control}
+          render={({ field }) => (
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="useOnlyPrincipalName"
+                checked={field.value}
+                onCheckedChange={(checked) => field.onChange(checked === true)}
+              />
+              <Label
+                htmlFor="useOnlyPrincipalName"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-on-surface"
+              >
+                Use only principal name
+              </Label>
+            </div>
+          )}
+        />
       </div>
     </div>
   );

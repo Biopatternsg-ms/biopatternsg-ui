@@ -18,27 +18,30 @@
  */
 
 import { useEffect, useRef } from "react";
+import { useFormContext } from "react-hook-form";
 import { FormField } from "@/components/molecules/FormField";
 import { Button } from "@/components/atoms/Button";
 import { expertObjectsToCsvFile, parseExpertObjectsCsv } from "@/utils/csvParser";
 import type { ExpertObject } from "@/domain/models/Experiment";
+import type { CreateExperimentFormValues } from "@/schemas/experiments/createExperimentSchema";
 
 export interface StepExpertObjectsProps {
-  expertObjectsFile: File | null;
-  onFileChange: (file: File | null) => void;
-  onFileParsed: (objects: ExpertObject[]) => void;
   onError: (message: string) => void;
   expertObjects?: ExpertObject[];
 }
 
 export function StepExpertObjects({
-  expertObjectsFile,
-  onFileChange,
-  onFileParsed,
   onError,
   expertObjects,
 }: StepExpertObjectsProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const {
+    watch,
+    setValue,
+    formState: { errors },
+  } = useFormContext<CreateExperimentFormValues>();
+
+  const expertObjectsFile = watch("expertObjectsFile");
 
   const handleDownloadTemplate = () => {
     const link = document.createElement("a");
@@ -77,18 +80,25 @@ export function StepExpertObjects({
     input.files = dataTransfer.files;
   }, [expertObjectsFile]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleFileChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     const input = e.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
 
     if (!file) {
-      onFileChange(null);
+      setValue("expertObjectsFile", null, { shouldValidate: true });
+      setValue("expertObjectsList", [], { shouldValidate: true });
       return;
     }
 
-    const isCsv = file.name.toLowerCase().endsWith(".csv") || file.type === "text/csv";
+    const isCsv =
+      file.name.toLowerCase().endsWith(".csv") || file.type === "text/csv";
     if (!isCsv) {
-      onFileChange(null);
+      setValue("expertObjectsFile", null, { shouldValidate: true });
+      setValue("expertObjectsList", [], { shouldValidate: true });
       onError("Only CSV files are allowed.");
       input.value = "";
       return;
@@ -99,10 +109,11 @@ export function StepExpertObjects({
       try {
         const text = event.target?.result as string;
         const parsed = parseExpertObjectsCsv(text);
-        onFileChange(file);
-        onFileParsed(parsed);
+        setValue("expertObjectsFile", file, { shouldValidate: true });
+        setValue("expertObjectsList", parsed, { shouldValidate: true });
       } catch (err) {
-        onFileChange(null);
+        setValue("expertObjectsFile", null, { shouldValidate: true });
+        setValue("expertObjectsList", [], { shouldValidate: true });
         onError(err instanceof Error ? err.message : "Error reading CSV file.");
         input.value = "";
       }
@@ -118,26 +129,43 @@ export function StepExpertObjects({
       </p>
 
       <div className="grid grid-cols-1 gap-6">
-        <FormField
-          label="Expert objects"
-          type="file"
-          accept=".csv"
-          ref={fileInputRef}
-          labelRight={
-            <Button variant="link" size="sm" onClick={handleDownloadTemplate}>
-              Download template CSV
+        <div>
+          <FormField
+            ref={fileInputRef}
+            label="Upload CSV"
+            type="file"
+            accept=".csv,text/csv"
+            onChange={handleFileChange}
+          />
+          {errors.expertObjectsFile && (
+            <p
+              role="alert"
+              className="text-[11px] text-error font-label font-medium tracking-wide mt-1"
+            >
+              {String(errors.expertObjectsFile.message)}
+            </p>
+          )}
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleDownloadTemplate}
+          >
+            Download CSV template
+          </Button>
+
+          {expertObjects && expertObjects.length > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleDownloadCurrentCsv}
+            >
+              Download current CSV
             </Button>
-          }
-          onChange={handleFileChange}
-        />
-        {expertObjects && expertObjects.length > 0 && (
-          <p className="text-sm text-on-surface-variant">
-            Selected file:
-            <Button variant="link" size="sm" onClick={handleDownloadCurrentCsv}>
-              Expert-objects.csv
-            </Button>
-          </p>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

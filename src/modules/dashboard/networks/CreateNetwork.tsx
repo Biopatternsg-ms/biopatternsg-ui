@@ -25,15 +25,17 @@ import { networkService } from "@/services/networkService";
 import { toCreateNetworkPayload } from "@/adapters/networkAdapter";
 import type { DataFormConfig } from "@/components/organisms/DataFormConfig";
 
-const createNetworkSchema = z.object({
+export const createNetworkSchema = z.object({
   name: z.string().min(1, "Network name is required."),
   description: z.string().min(1, "Description is required."),
 });
 
+export type CreateNetworkFormValues = z.infer<typeof createNetworkSchema>;
+
 const CreateNetwork = () => {
   const navigate = useNavigate();
 
-  const networkConfig: DataFormConfig<{ name: string; description: string }> = {
+  const networkConfig: DataFormConfig<CreateNetworkFormValues> = {
     schema: createNetworkSchema,
     fields: [
       {

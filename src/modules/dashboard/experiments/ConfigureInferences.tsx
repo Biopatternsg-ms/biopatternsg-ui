@@ -19,6 +19,12 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useForm, useWatch, type Resolver } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  inferenceConfigSchema,
+  type InferenceConfigFormValues,
+} from "@/schemas/experiments/inferenceConfigSchema";
 import {
   Activity,
   ArrowLeft,
@@ -59,16 +65,63 @@ export default function ConfigureInferences() {
   const [loading, setLoading] = useState(true);
   const [experimentData, setExperimentData] = useState<ExperimentExecution | null>(null);
 
-  // Configuration Form State
-  const [restrictionLevel, setRestrictionLevel] = useState<RestrictionLevel>("RESTRICTED");
-  const summarizeKb = true;
-  const [maxDepth, setMaxDepth] = useState<number>(10);
-  const [startFirstRoles, setStartFirstRoles] = useState<string[]>(["LIGAND"]);
-  const [startSecondRoles, setStartSecondRoles] = useState<string[]>(["PROTEIN"]);
-  const [intermediateFirstRoles, setIntermediateFirstRoles] = useState<string[]>(["PROTEIN"]);
-  const [intermediateSecondRoles, setIntermediateSecondRoles] = useState<string[]>(["PROTEIN"]);
-  const [endFirstRoles, setEndFirstRoles] = useState<string[]>(["PROTEIN"]);
-  const [endSecondRoles, setEndSecondRoles] = useState<string[]>(["PROTEIN"]);
+  // React Hook Form & Zod Schema Validation
+  const form = useForm<InferenceConfigFormValues>({
+    resolver: zodResolver(inferenceConfigSchema) as unknown as Resolver<InferenceConfigFormValues>,
+    mode: "onTouched",
+    defaultValues: {
+      restrictionLevel: "RESTRICTED",
+      summarizeKb: true,
+      maxDepth: 10,
+      startFirstRoles: ["LIGAND"],
+      startSecondRoles: ["PROTEIN"],
+      intermediateFirstRoles: ["PROTEIN"],
+      intermediateSecondRoles: ["PROTEIN"],
+      endFirstRoles: ["PROTEIN"],
+      endSecondRoles: ["PROTEIN"],
+    },
+  });
+
+  const restrictionLevel = useWatch({ control: form.control, name: "restrictionLevel" }) as RestrictionLevel;
+  const summarizeKb = useWatch({ control: form.control, name: "summarizeKb" });
+  const maxDepth = useWatch({ control: form.control, name: "maxDepth" }) ?? 10;
+  const startFirstRoles = useWatch({ control: form.control, name: "startFirstRoles" }) || [];
+  const startSecondRoles = useWatch({ control: form.control, name: "startSecondRoles" }) || [];
+  const intermediateFirstRoles = useWatch({ control: form.control, name: "intermediateFirstRoles" }) || [];
+  const intermediateSecondRoles = useWatch({ control: form.control, name: "intermediateSecondRoles" }) || [];
+  const endFirstRoles = useWatch({ control: form.control, name: "endFirstRoles" }) || [];
+  const endSecondRoles = useWatch({ control: form.control, name: "endSecondRoles" }) || [];
+
+  const setRestrictionLevel = (level: RestrictionLevel) => {
+    form.setValue("restrictionLevel", level as "RESTRICTED" | "VERY_RESTRICTED", { shouldValidate: true });
+  };
+  const setMaxDepth = (depth: number) => {
+    form.setValue("maxDepth", depth, { shouldValidate: true });
+  };
+  const setStartFirstRoles = (updater: React.SetStateAction<string[]>) => {
+    const next = typeof updater === "function" ? updater(form.getValues("startFirstRoles")) : updater;
+    form.setValue("startFirstRoles", next, { shouldValidate: true });
+  };
+  const setStartSecondRoles = (updater: React.SetStateAction<string[]>) => {
+    const next = typeof updater === "function" ? updater(form.getValues("startSecondRoles")) : updater;
+    form.setValue("startSecondRoles", next, { shouldValidate: true });
+  };
+  const setIntermediateFirstRoles = (updater: React.SetStateAction<string[]>) => {
+    const next = typeof updater === "function" ? updater(form.getValues("intermediateFirstRoles")) : updater;
+    form.setValue("intermediateFirstRoles", next, { shouldValidate: true });
+  };
+  const setIntermediateSecondRoles = (updater: React.SetStateAction<string[]>) => {
+    const next = typeof updater === "function" ? updater(form.getValues("intermediateSecondRoles")) : updater;
+    form.setValue("intermediateSecondRoles", next, { shouldValidate: true });
+  };
+  const setEndFirstRoles = (updater: React.SetStateAction<string[]>) => {
+    const next = typeof updater === "function" ? updater(form.getValues("endFirstRoles")) : updater;
+    form.setValue("endFirstRoles", next, { shouldValidate: true });
+  };
+  const setEndSecondRoles = (updater: React.SetStateAction<string[]>) => {
+    const next = typeof updater === "function" ? updater(form.getValues("endSecondRoles")) : updater;
+    form.setValue("endSecondRoles", next, { shouldValidate: true });
+  };
 
   const toggleRole = (
     roleKey: string,
@@ -213,6 +266,7 @@ export default function ConfigureInferences() {
     return () => {
       ignore = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [experimentId]);
 
   // Check if prerequisite step "Update Aligned Objects" is completed
@@ -238,6 +292,11 @@ export default function ConfigureInferences() {
   // Handle Save and Complete Action
   const handleConfirmSaveAndComplete = async () => {
     setIsConfirmCompleteModalOpen(false);
+    const valid = await form.trigger();
+    if (!valid) {
+      setErrorMessage("Please ensure all role selections and depth parameters are valid.");
+      return;
+    }
     setIsSubmitting(true);
     try {
       const pipeId = experimentId || "pipeline-demo-123";
