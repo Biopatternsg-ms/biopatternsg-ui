@@ -18,35 +18,67 @@
  */
 
 import type { NetworkDto, PaginatedResponseDto } from "@/services/models/NetworkDto";
-import type { Network } from "@/domain/models/Network";
+import type { Network, CreateNetworkInput } from "@/domain/models/Network";
 import type { PaginatedResult } from "@/domain/models/Common";
 
+export interface CreateNetworkPayload {
+  name: string;
+  description: string;
+}
+
 /**
- * Adapter mediating between Network backend DTOs and pure domain models.
- * Adheres strictly to Principle IV (Mandatory Adapter Pattern).
+ * Maps a single NetworkDto into a pure Network domain model.
+ * Normalizes epoch timestamps (seconds or ms) into an ISO string.
+ */
+export function toNetworkDomain(dto: NetworkDto): Network {
+  const epochMs =
+    typeof dto.createdAt === "number"
+      ? dto.createdAt > 1e11
+        ? dto.createdAt
+        : dto.createdAt * 1000
+      : Date.now();
+
+  return {
+    id: dto.id,
+    userId: dto.userId,
+    name: dto.name,
+    description: dto.description,
+    createdAt: new Date(epochMs).toISOString(),
+  };
+}
+
+/**
+ * Maps a paginated response of NetworkDto into a pure domain PaginatedResult<Network>.
+ */
+export function toPaginatedNetworksDomain(
+  dto: PaginatedResponseDto<NetworkDto>
+): PaginatedResult<Network> {
+  return {
+    count: dto.count,
+    list: (dto.list || []).map(toNetworkDomain),
+  };
+}
+
+/**
+ * Maps user form inputs into the API payload expected by the network service.
+ */
+export function toCreateNetworkPayload(
+  formValues: CreateNetworkInput | { name: string; description: string }
+): CreateNetworkPayload {
+  return {
+    name: formValues.name.trim(),
+    description: formValues.description.trim(),
+  };
+}
+
+/**
+ * Adapter object mediating between Network backend DTOs and pure domain models.
+ * Supports dual exports in compliance with BioPatternSG UI Constitution Principle IV.
  */
 export const networkAdapter = {
-  toDomain(dto: NetworkDto): Network {
-    const epochMs =
-      typeof dto.createdAt === "number"
-        ? dto.createdAt > 1e11
-          ? dto.createdAt
-          : dto.createdAt * 1000
-        : Date.now();
-
-    return {
-      id: dto.id,
-      userId: dto.userId,
-      name: dto.name,
-      description: dto.description,
-      createdAt: new Date(epochMs).toISOString(),
-    };
-  },
-
-  toPaginatedDomain(dto: PaginatedResponseDto<NetworkDto>): PaginatedResult<Network> {
-    return {
-      count: dto.count,
-      list: (dto.list || []).map(networkAdapter.toDomain),
-    };
-  },
+  toDomain: toNetworkDomain,
+  toNetworkDomain,
+  toPaginatedDomain: toPaginatedNetworksDomain,
+  toPaginatedNetworksDomain,
+  toCreateNetworkPayload,
 };

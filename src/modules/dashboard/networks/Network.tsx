@@ -22,17 +22,9 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/atoms/Button";
 import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
 import { networkService } from "@/services/networkService";
+import { formatDateToDisplay } from "@/utils/dateUtils";
 import type { Network as NetworkModel } from "@/domain/models/Network";
 import { cn } from "@/lib/utils";
-
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return dateString;
-  const day = date.getDate().toString().padStart(2, "0");
-  const month = (date.getMonth() + 1).toString().padStart(2, "0");
-  const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
-};
 
 const getStatusColor = (index: number): string => {
   if (index % 3 === 2) return "bg-tertiary";
@@ -92,7 +84,7 @@ const Network = () => {
     {
       header: "Creation Date",
       className: "col-span-3 text-on-surface-variant whitespace-nowrap",
-      render: (item) => formatDate(item.createdAt),
+      render: (item) => formatDateToDisplay(item.createdAt),
     },
     {
       header: "Options",

@@ -31,6 +31,7 @@ import { StepExpertObjects } from "./createExperiment/StepExpertObjects";
 import { StepSearchConfig } from "./createExperiment/StepSearchConfig";
 import { experimentService } from "@/services/experimentService";
 import { expertObjectsToCsvFile } from "@/utils/csvParser";
+import { toExperimentDomain, toCreateExperimentPayload } from "@/adapters/experimentAdapter";
 import type { Experiment, ExpertObject, TranscriptionFactorConfig } from "@/domain/models/Experiment";
 
 const steps: Step[] = [
@@ -170,12 +171,19 @@ const CreateExperiment = () => {
 
       setIsSubmitting(true);
       try {
+        const payload = toCreateExperimentPayload({
+          networkId,
+          name: experimentName,
+          description: experimentDescription,
+        });
+
         const response = experiment?.id
-          ? await experimentService.updatePipelineDescription(experiment.id, experiment.name ?? "", experimentDescription)
-          : await experimentService.createPipeline(networkId, experimentName, experimentDescription);
+          ? await experimentService.updatePipelineDescription(experiment.id, experiment.name ?? "", payload.description)
+          : await experimentService.createPipeline(payload.networkId, payload.name, payload.description);
 
         if (response.ok) {
-          const data: Experiment = await response.json();
+          const raw = await response.json();
+          const data: Experiment = toExperimentDomain(raw);
           setExperiment(data);
           setExperimentDescription(data.description);
           setCurrentStep((prev) => prev + 1);
@@ -227,7 +235,8 @@ const CreateExperiment = () => {
       try {
         const response = await experimentService.updatePipeline(experiment.id, tfConfig);
         if (response.ok) {
-          const updatedData: Experiment = await response.json();
+          const raw = await response.json();
+          const updatedData: Experiment = toExperimentDomain(raw);
           setExperiment(updatedData);
           setCurrentStep((prev) => prev + 1);
         } else {
@@ -258,7 +267,8 @@ const CreateExperiment = () => {
           experiment.expertObjects ?? []
         );
         if (response.ok) {
-          const updatedData: Experiment = await response.json();
+          const raw = await response.json();
+          const updatedData: Experiment = toExperimentDomain(raw);
           setExperiment(updatedData);
           setCurrentStep((prev) => prev + 1);
         } else {

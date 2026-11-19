@@ -46,9 +46,9 @@ import {
 import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
 import { experimentService } from "@/services/experimentService";
 import { networkService } from "@/services/networkService";
+import { parseExperimentMetrics } from "@/utils/metricUtils";
 import type {
   ExperimentExecution,
-  ExperimentMetric,
   ManualStepMetadata,
   PipelineStepExecution,
 } from "@/domain/models/Experiment";
@@ -248,104 +248,6 @@ export function isStepActionDisabled(step: PipelineStepExecution, execution?: Ex
 
   if (idx <= 0) return false;
   return execution.steps.slice(0, idx).some((s) => s.status !== "COMPLETED");
-}
-
-
-const METRIC_LABELS: Record<string, string> = {
-  // Initialization Stage
-  expertObjectsConfigured: "CONFIGURED EXPERT OBJECTS",
-  expertObjectSymbols: "EXPERT OBJECTS",
-  searchLevels: "SEARCH LEVELS",
-  retMax: "PUBMED LIMIT (RETMAX)",
-  maxComplexes: "MAX COMPLEXES",
-  useOnlyPrincipalName: "USE ONLY PRINCIPAL NAME",
-  tfSources: "TF SOURCES",
-  promoterRegion: "PROMOTER REGION",
-  genome: "REGISTERED GENOME",
-  chromosome: "CHROMOSOME",
-
-  // Biological Objects Stage
-  transcriptionFactorsFound: "TRANSCRIPTION FACTORS FOUND",
-  expertObjectsValidated: "EXPERT OBJECTS VALIDATED",
-  totalMinedObjects: "TOTAL MINED OBJECTS",
-
-  // PubMed Integration Stage
-  combinationsGenerated: "PUBMED COMBINATIONS GENERATED",
-  pubmedIdsFound: "PUBMED IDS FOUND",
-  pairsSearched: "PAIRS SEARCHED",
-  pmidsAnnotated: "ANNOTATED PMIDS (PUBTATOR)",
-  pmidsNotFound: "PMIDS WITHOUT EVENTS",
-  kbEventsGenerated: "KNOWLEDGE BASE EVENTS",
-  pmidsProcessed: "PMIDS PROCESSED (KB)",
-  pmidsWithErrors: "PMIDS WITH ERRORS (KB)",
-  alignedObjects: "ALIGNED OBJECTS",
-  notAlignedObjects: "UNALIGNED OBJECTS",
-
-  // Inferences Stage
-  restrictionLevel: "RESTRICTION LEVEL",
-  totalAlignedObjects: "ALIGNED OBJECTS EVALUATED",
-  meshIdsFound: "MESH IDS FOUND",
-  rolesIdentified: "ROLES IDENTIFIED",
-  entitiesWithActiveRoles: "ENTITIES WITH ACTIVE ROLES",
-  totalEntitiesEvaluated: "TOTAL ENTITIES EVALUATED",
-  pathwaysCount: "PATHWAYS INFERRED",
-  graphNodesCount: "GRAPH NODES",
-  graphEdgesCount: "GRAPH EDGES",
-  executionTimeMs: "INFERENCE TIME (MS)",
-  inferenceStatus: "INFERENCE STATUS",
-  statusMessage: "STATUS",
-  candidateClosingObjects: "CANDIDATE CLOSING OBJECTS",
-  selectedClosingObjects: "SELECTED CLOSING OBJECTS",
-  closingObjectsCount: "CLOSING OBJECTS COUNT",
-  closingObjects: "CLOSING OBJECTS",
-};
-
-function formatMetricValue(value: string): string {
-  if (value === "true") return "Yes";
-  if (value === "false") return "No";
-  return value;
-}
-
-interface ParsedMetricItem extends ExperimentMetric {
-  isLongText?: boolean;
-}
-
-type RawMetricInput = ExperimentMetric[] | Record<string, string | number | boolean | null | undefined>;
-
-function parseRawMetrics(rawMetrics?: RawMetricInput): ParsedMetricItem[] {
-  if (!rawMetrics) return [];
-  if (Array.isArray(rawMetrics)) {
-    return rawMetrics.map((m) => {
-      const label = String(m.label || "");
-      const value = String(m.value || "");
-      return {
-        ...m,
-        label,
-        value,
-        isLongText: label.length > 20 || value.length > 25,
-      };
-    });
-  }
-
-  return Object.entries(rawMetrics)
-    .filter(([, val]) => val !== null && val !== undefined && val !== "")
-    .map(([key, val]) => {
-      const label = METRIC_LABELS[key] || key.replace(/([A-Z])/g, " $1").toUpperCase();
-      const stringVal = formatMetricValue(String(val));
-      const isLongText =
-        label.length > 20 ||
-        stringVal.length > 25 ||
-        key === "promoterRegion" ||
-        key === "expertObjectSymbols" ||
-        key === "tfSources" ||
-        key === "statusMessage";
-
-      return {
-        label,
-        value: stringVal,
-        isLongText,
-      };
-    });
 }
 
 // Helper to parse "hh:mm:ss", "Xh Ym Zs", "Xm Ys", or "Xs" to total seconds
@@ -1099,7 +1001,7 @@ const ExperimentExecutionView = () => {
               {/* Sub-steps Checklist details for Stage */}
               {selectedStage.steps && selectedStage.steps.length > 0 && (() => {
                 const visibleSteps = selectedStage.steps.filter((step) => {
-                  const stepMetrics = parseRawMetrics(step.metrics);
+                  const stepMetrics = parseExperimentMetrics(step.metrics);
                   const isRolesStep =
                     step.id === "step-find_roles" ||
                     step.name === "Find Biological Roles" ||
@@ -1124,7 +1026,7 @@ const ExperimentExecutionView = () => {
                     <div className={`grid gap-4 mt-1 ${visibleSteps.length === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"}`}>
                       {visibleSteps.map((step, sIdx) => {
                         const firstActiveStep = data.steps.find((s) => s.status === "ACTIVE" && !isStepActionDisabled(s, data));
-                        const stepMetrics = parseRawMetrics(step.metrics);
+                        const stepMetrics = parseExperimentMetrics(step.metrics);
                         const manualRoute = getManualStepRoute(step, networkId || data.networkId, experimentId);
                         const manualConfig = getManualStepConfig(step);
                         const isRolesStep =

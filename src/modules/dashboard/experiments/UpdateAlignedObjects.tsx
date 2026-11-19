@@ -49,6 +49,7 @@ import { SynonymChip } from "@/components/atoms/SynonymChip";
 import { ManualStepHeader } from "@/components/molecules/ManualStepHeader";
 import { StepStatsBar } from "@/components/molecules/StepStatsBar";
 import { experimentService } from "@/services/experimentService";
+import { toSaveAlignedObjectsPayload } from "@/adapters/experimentAdapter";
 import type { AlignedObjectItem, ExperimentExecution } from "@/domain/models/Experiment";
 import { SuccessModal } from "@/components/molecules/SuccessModal";
 
@@ -396,7 +397,7 @@ const UpdateAlignedObjects = () => {
     setIsSubmitting(true);
     try {
       const pipeId = experimentId || "pipeline-demo-123";
-      const symbolList = objects.map((o) => o.symbol);
+      const symbolList = toSaveAlignedObjectsPayload(objects);
 
       // Save alignedExpertObjects in config-and-control
       await experimentService.saveAlignedExpertObjects(pipeId, symbolList);
@@ -426,7 +427,7 @@ const UpdateAlignedObjects = () => {
     setIsSubmitting(true);
     try {
       const pipeId = experimentId || "pipeline-demo-123";
-      const symbolList = objects.map((o) => o.symbol);
+      const symbolList = toSaveAlignedObjectsPayload(objects);
 
       // Save alignedExpertObjects and complete step with metrics
       await experimentService.saveAlignedExpertObjects(pipeId, symbolList);

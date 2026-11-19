@@ -66,7 +66,12 @@ import type {
   BiologicalObjectItem,
 } from "./models/Experiment";
 import type { Experiment } from "@/domain/models/Experiment";
-import { toExperimentDomain } from "@/adapters/experimentAdapter";
+import {
+  toExperimentDomain,
+  toBiologicalObjectDomain,
+  toInferenceConfigPayload,
+  type InferenceConfigPayload,
+} from "@/adapters/experimentAdapter";
 
 import type { PaginatedResponseDto } from "./models/NetworkDto";
 
@@ -197,21 +202,14 @@ export const experimentService = {
    */
   async saveInferenceConfig(
     pipelineId: string,
-    inferenceConfig: InferenceConfig
+    inferenceConfig: InferenceConfig | InferenceConfigPayload
   ): Promise<Response> {
+    const payload = toInferenceConfigPayload(inferenceConfig);
     return authFetch(PIPELINES_INFERENCE_CONFIG_ENDPOINT, {
       method: "POST",
       body: JSON.stringify({
         pipelineId,
-        restrictionLevel: inferenceConfig.restrictionLevel,
-        summarizeKb: inferenceConfig.summarizeKb ?? true,
-        maxDepth: inferenceConfig.maxDepth ?? 10,
-        startFirstRoles: inferenceConfig.startFirstRoles ?? ["LIGAND"],
-        startSecondRoles: inferenceConfig.startSecondRoles ?? ["PROTEIN"],
-        intermediateFirstRoles: inferenceConfig.intermediateFirstRoles ?? ["PROTEIN"],
-        intermediateSecondRoles: inferenceConfig.intermediateSecondRoles ?? ["PROTEIN"],
-        endFirstRoles: inferenceConfig.endFirstRoles ?? ["PROTEIN"],
-        endSecondRoles: inferenceConfig.endSecondRoles ?? ["PROTEIN"],
+        ...payload,
       }),
     });
   },
@@ -728,7 +726,8 @@ export const experimentService = {
     try {
       const response = await authFetch(`${INFERENCES_BIOLOGICAL_OBJECTS_ENDPOINT}/${pipelineId}`);
       if (response.ok) {
-        return await response.json();
+        const dtos = await response.json();
+        return Array.isArray(dtos) ? dtos.map(toBiologicalObjectDomain) : [];
       }
     } catch (err) {
       console.warn("Failed to fetch biological objects from backend, using fallback mock", err);

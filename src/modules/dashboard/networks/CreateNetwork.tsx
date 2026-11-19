@@ -22,6 +22,7 @@ import { Breadcrumb } from "@/components/molecules/Breadcrumb";
 import { DataForm } from "@/components/organisms/DataForm";
 import * as z from "zod";
 import { networkService } from "@/services/networkService";
+import { toCreateNetworkPayload } from "@/adapters/networkAdapter";
 import type { DataFormConfig } from "@/components/organisms/DataFormConfig";
 
 const createNetworkSchema = z.object({
@@ -58,7 +59,7 @@ const CreateNetwork = () => {
     submitLabel: "Create Network",
     submittingLabel: "Creating...",
     onSubmit: async (values) =>
-      networkService.createNetwork(values.name.trim(), values.description.trim()),
+      networkService.createNetwork(toCreateNetworkPayload(values)),
     successStatus: 201,
     successModal: {
       title: "Network Created Successfully",
