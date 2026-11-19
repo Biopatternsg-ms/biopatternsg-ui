@@ -19,6 +19,7 @@
 import * as React from "react";
 import {
   hasAccessToken,
+  getAccessToken,
   clearTokens,
   setTokens,
 } from "@/core/http/tokenStorage";
@@ -36,7 +37,7 @@ import { extractAppRole } from "@/config/roles";
  *   - login(tokens)    : persists the tokens and flips the flag to true.
  *   - logout()         : clears the tokens and flips the flag to false.
  *
- * On mount the provider reads the flag from localStorage via a lazy state
+ * On mount the provider reads the flag from tokenStorage via a lazy state
  * initializer, so a page reload does not log the user out. It also
  * subscribes to the "session-expired" event fired by the httpClient when a
  * refresh fails, so the app reacts globally without each component having
@@ -83,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const [user, setUser] = React.useState<UserPayload | null>(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem("access_token") : null;
+    const token = getAccessToken();
     return token ? parseJwt(token) : null;
   });
 
