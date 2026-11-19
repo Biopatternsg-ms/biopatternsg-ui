@@ -19,6 +19,8 @@
 
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useForm, FormProvider, type Resolver } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/atoms/Button";
 import { Breadcrumb } from "@/components/molecules/Breadcrumb";
@@ -32,7 +34,11 @@ import { StepSearchConfig } from "./createExperiment/StepSearchConfig";
 import { experimentService } from "@/services/experimentService";
 import { expertObjectsToCsvFile } from "@/utils/csvParser";
 import { toExperimentDomain, toCreateExperimentPayload } from "@/adapters/experimentAdapter";
-import type { Experiment, ExpertObject, TranscriptionFactorConfig } from "@/domain/models/Experiment";
+import type { Experiment, TranscriptionFactorConfig } from "@/domain/models/Experiment";
+import {
+  createExperimentSchema,
+  type CreateExperimentFormValues,
+} from "@/schemas/experiments/createExperimentSchema";
 
 const steps: Step[] = [
   {
@@ -53,49 +59,42 @@ const steps: Step[] = [
   },
 ];
 
-const CreateExperiment = () => {
+export const CreateExperiment = () => {
   const navigate = useNavigate();
   const { networkId, experimentId } = useParams<{ networkId: string; experimentId: string }>();
   const isEditMode = !!experimentId;
   const [currentStep, setCurrentStep] = useState(0);
 
-  const [experimentName, setExperimentName] = useState("");
-  const [experimentDescription, setExperimentDescription] = useState("");
   const [experiment, setExperiment] = useState<Experiment | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const [sourceSelection, setSourceSelection] = useState<string>("JASPAR");
-  const [genome, setGenome] = useState("");
-  const [track, setTrack] = useState("");
-  const [identity, setIdentity] = useState("");
-  const [chromosome, setChromosome] = useState("");
-  const [strand, setStrand] = useState("");
-  const [start, setStart] = useState("");
-  const [end, setEnd] = useState("");
-  const [reliability, setReliability] = useState("");
-  const [promoterRegion, setPromoterRegion] = useState("");
-
-  const modelPlaceholders = {
-    genome: "e.g.: HG38",
-    track: "e.g.: jaspar2022",
-    identity: "e.g.: 100.0",
-    chromosome: "e.g.: chr8",
-    strand: "e.g.: NEGATIVE",
-    start: "e.g.: 58498163",
-    end: "e.g.: 58502163",
-    reliability: "e.g.: 95",
-    promoterRegion: "Enter promoter region sequence...",
-  };
-
-  const [searchLevel, setSearchLevel] = useState<string>("");
-  const [retMax, setRetMax] = useState<string>("");
-  const [maxComplexes, setMaxComplexes] = useState<string>("");
-  const [useOnlyPrincipalName, setUseOnlyPrincipalName] = useState(true);
-  const [expertObjectsFile, setExpertObjectsFile] = useState<File | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
-
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [errorModalOpen, setErrorModalOpen] = useState(false);
+
+  const methods = useForm<CreateExperimentFormValues>({
+    resolver: zodResolver(createExperimentSchema) as unknown as Resolver<CreateExperimentFormValues>,
+    mode: "onTouched",
+    defaultValues: {
+      name: "",
+      description: "",
+      sourceSelection: "JASPAR",
+      genome: "",
+      track: "",
+      identity: "",
+      chromosome: "",
+      strand: "",
+      start: "",
+      end: "",
+      reliability: "",
+      promoterRegion: "",
+      expertObjectsFile: null,
+      expertObjectsList: [],
+      searchLevel: "",
+      retMax: "",
+      maxComplexes: "",
+      useOnlyPrincipalName: true,
+    },
+  });
 
   useEffect(() => {
     if (!experimentId) {
@@ -107,46 +106,39 @@ const CreateExperiment = () => {
       try {
         const data = await experimentService.getPipelineById(experimentId);
         setExperiment(data);
-        setExperimentName(data.name ?? "");
-        setExperimentDescription(data.description ?? "");
 
         const tfConfig = data.transcriptionFactorConfig;
-        if (tfConfig) {
-          const hasJaspar = tfConfig.sources?.includes("JASPAR") ?? false;
-          const hasTfBind = tfConfig.sources?.includes("TFBIND") ?? false;
-          setSourceSelection(hasJaspar && hasTfBind ? "BOTH" : hasJaspar ? "JASPAR" : "TFBIND");
-          setGenome(tfConfig.genome ?? "");
-          setTrack(tfConfig.track ?? "");
-          setIdentity(tfConfig.identity?.toString() ?? "");
-          setChromosome(tfConfig.chromosome ?? "");
-          setStrand(tfConfig.strand ?? "");
-          setStart(tfConfig.start ?? "");
-          setEnd(tfConfig.end ?? "");
-          setReliability(tfConfig.reliability?.toString() ?? "");
-          setPromoterRegion(tfConfig.promoterRegion ?? "");
-        }
+        const hasJaspar = tfConfig?.sources?.includes("JASPAR") ?? false;
+        const hasTfBind = tfConfig?.sources?.includes("TFBIND") ?? false;
+        const sourceSelection = hasJaspar && hasTfBind ? "BOTH" : hasJaspar ? "JASPAR" : "TFBIND";
 
-        if (data.levels != null) {
-          setSearchLevel(data.levels.toString());
-        }
+        const expertFile =
+          data.expertObjects && data.expertObjects.length > 0
+            ? expertObjectsToCsvFile(data.expertObjects)
+            : null;
 
-        if (data.retMax != null) {
-          setRetMax(data.retMax.toString());
-        }
-
-        if (data.maxComplexes != null) {
-          setMaxComplexes(data.maxComplexes.toString());
-        }
-
-        if (data.useOnlyPrincipalName !== undefined) {
-          setUseOnlyPrincipalName(data.useOnlyPrincipalName);
-        }
-
-        if (data.expertObjects && data.expertObjects.length > 0) {
-          setExpertObjectsFile(expertObjectsToCsvFile(data.expertObjects));
-        }
+        methods.reset({
+          name: data.name ?? "",
+          description: data.description ?? "",
+          sourceSelection,
+          genome: tfConfig?.genome ?? "",
+          track: tfConfig?.track ?? "",
+          identity: tfConfig?.identity !== undefined && tfConfig.identity !== null ? String(tfConfig.identity) : "",
+          chromosome: tfConfig?.chromosome ?? "",
+          strand: tfConfig?.strand ?? "",
+          start: tfConfig?.start !== undefined && tfConfig.start !== null ? String(tfConfig.start) : "",
+          end: tfConfig?.end !== undefined && tfConfig.end !== null ? String(tfConfig.end) : "",
+          reliability: tfConfig?.reliability !== undefined && tfConfig.reliability !== null ? String(tfConfig.reliability) : "",
+          promoterRegion: tfConfig?.promoterRegion ?? "",
+          expertObjectsFile: expertFile,
+          expertObjectsList: data.expertObjects ?? [],
+          searchLevel: data.levels !== undefined && data.levels !== null ? String(data.levels) : "",
+          retMax: data.retMax !== undefined && data.retMax !== null ? String(data.retMax) : "",
+          maxComplexes: data.maxComplexes !== undefined && data.maxComplexes !== null ? String(data.maxComplexes) : "",
+          useOnlyPrincipalName: data.useOnlyPrincipalName ?? true,
+        });
       } catch {
-        setErrorMessage("Error loading experiment information.");
+        setErrorMessage("Could not load experiment data.");
         setErrorModalOpen(true);
       } finally {
         setIsSubmitting(false);
@@ -154,17 +146,18 @@ const CreateExperiment = () => {
     };
 
     fetchExperiment();
-  }, [experimentId]);
+  }, [experimentId, methods]);
 
   const handleNext = async () => {
     if (currentStep === 0) {
-      if (!networkId) {
-        setErrorMessage("Network ID is missing in the URL.");
-        setErrorModalOpen(true);
-        return;
-      }
-      if (!experimentName || !experimentDescription) {
-        setErrorMessage("Please enter a name and description.");
+      const valid = await methods.trigger(["name", "description"]);
+      if (!valid) return;
+
+      const { name, description } = methods.getValues();
+      const resolvedNetworkId = networkId || experiment?.networkId || "";
+
+      if (!resolvedNetworkId && !experiment?.id) {
+        setErrorMessage("Missing network ID.");
         setErrorModalOpen(true);
         return;
       }
@@ -172,9 +165,9 @@ const CreateExperiment = () => {
       setIsSubmitting(true);
       try {
         const payload = toCreateExperimentPayload({
-          networkId,
-          name: experimentName,
-          description: experimentDescription,
+          networkId: resolvedNetworkId,
+          name,
+          description,
         });
 
         const response = experiment?.id
@@ -185,7 +178,6 @@ const CreateExperiment = () => {
           const raw = await response.json();
           const data: Experiment = toExperimentDomain(raw);
           setExperiment(data);
-          setExperimentDescription(data.description);
           setCurrentStep((prev) => prev + 1);
         } else {
           setErrorMessage(
@@ -208,26 +200,39 @@ const CreateExperiment = () => {
         return;
       }
 
+      const values = methods.getValues();
+      const fieldsToValidate: (keyof CreateExperimentFormValues)[] = ["sourceSelection", "promoterRegion"];
+
+      if (values.sourceSelection === "JASPAR" || values.sourceSelection === "BOTH") {
+        fieldsToValidate.push("genome", "track", "identity", "chromosome", "strand", "start", "end");
+      }
+      if (values.sourceSelection === "TFBIND" || values.sourceSelection === "BOTH") {
+        fieldsToValidate.push("reliability");
+      }
+
+      const valid = await methods.trigger(fieldsToValidate);
+      if (!valid) return;
+
       const sources: string[] = [];
-      if (sourceSelection === "JASPAR") sources.push("JASPAR");
-      else if (sourceSelection === "TFBIND") sources.push("TFBIND");
-      else if (sourceSelection === "BOTH") {
+      if (values.sourceSelection === "JASPAR") sources.push("JASPAR");
+      else if (values.sourceSelection === "TFBIND") sources.push("TFBIND");
+      else if (values.sourceSelection === "BOTH") {
         sources.push("JASPAR");
         sources.push("TFBIND");
       }
 
       const tfConfig: TranscriptionFactorConfig = {
         sources,
-        reliability: Number(reliability),
-        promoterRegion,
-        ...(sourceSelection !== "TFBIND" && {
-          genome,
-          track,
-          identity: Number(identity),
-          chromosome,
-          strand,
-          start,
-          end,
+        reliability: Number(values.reliability),
+        promoterRegion: values.promoterRegion,
+        ...(values.sourceSelection !== "TFBIND" && {
+          genome: values.genome,
+          track: values.track,
+          identity: Number(values.identity),
+          chromosome: values.chromosome,
+          strand: values.strand,
+          start: values.start,
+          end: values.end,
         }),
       };
 
@@ -255,16 +260,19 @@ const CreateExperiment = () => {
         setErrorModalOpen(true);
         return;
       }
-      if (!expertObjectsFile) {
+
+      const { expertObjectsFile, expertObjectsList } = methods.getValues();
+      if (!expertObjectsFile && (!expertObjectsList || expertObjectsList.length === 0)) {
         setCurrentStep((prev) => prev + 1);
         return;
       }
 
       setIsSubmitting(true);
       try {
+        const objectsToSend = expertObjectsList.length > 0 ? expertObjectsList : (experiment.expertObjects ?? []);
         const response = await experimentService.updateExperimentConfiguration(
           experiment.id,
-          experiment.expertObjects ?? []
+          objectsToSend
         );
         if (response.ok) {
           const raw = await response.json();
@@ -272,7 +280,7 @@ const CreateExperiment = () => {
           setExperiment(updatedData);
           setCurrentStep((prev) => prev + 1);
         } else {
-          setErrorMessage("Error saving experiment expert objects.");
+          setErrorMessage("Error updating expert objects.");
           setErrorModalOpen(true);
         }
       } catch {
@@ -287,61 +295,25 @@ const CreateExperiment = () => {
         setErrorModalOpen(true);
         return;
       }
-      if (!searchLevel) {
-        setErrorMessage("Please enter the search level.");
-        setErrorModalOpen(true);
-        return;
-      }
-      if (!retMax) {
-        setErrorMessage("Please enter maximum search limit for PubTator.");
-        setErrorModalOpen(true);
-        return;
-      }
-      if (!maxComplexes) {
-        setErrorMessage("Please enter maximum complexes count.");
-        setErrorModalOpen(true);
-        return;
-      }
 
-      const levels = Number(searchLevel);
-      if (Number.isNaN(levels)) {
-        setErrorMessage("Search level must be a valid number.");
-        setErrorModalOpen(true);
-        return;
-      }
-      if (levels < 1 || levels > 3) {
-        setErrorMessage("Search level must be between 1 and 3.");
-        setErrorModalOpen(true);
-        return;
-      }
+      const valid = await methods.trigger([
+        "searchLevel",
+        "retMax",
+        "maxComplexes",
+        "useOnlyPrincipalName",
+      ]);
+      if (!valid) return;
 
-      const retMaxNumber = Number(retMax);
-      if (Number.isNaN(retMaxNumber)) {
-        setErrorMessage("Maximum search limit must be a valid number.");
-        setErrorModalOpen(true);
-        return;
-      }
-
-      const maxComplexesNumber = Number(maxComplexes);
-      if (Number.isNaN(maxComplexesNumber)) {
-        setErrorMessage("Maximum complexes count must be a valid number.");
-        setErrorModalOpen(true);
-        return;
-      }
-      if (maxComplexesNumber <= 0) {
-        setErrorMessage("Maximum complexes count must be greater than zero.");
-        setErrorModalOpen(true);
-        return;
-      }
+      const { searchLevel, retMax, maxComplexes, useOnlyPrincipalName } = methods.getValues();
 
       setIsSubmitting(true);
       try {
         const response = await experimentService.updateSearchConfig(
           experiment.id,
-          levels,
-          retMaxNumber,
+          Number(searchLevel),
+          Number(retMax),
           useOnlyPrincipalName,
-          maxComplexesNumber
+          Number(maxComplexes)
         );
         if (response.ok) {
           setSuccessModalOpen(true);
@@ -360,7 +332,7 @@ const CreateExperiment = () => {
 
   const handleBack = () => {
     if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
+      setCurrentStep((prev) => prev - 1);
     }
   };
 
@@ -372,160 +344,111 @@ const CreateExperiment = () => {
   const renderStepContent = () => {
     switch (currentStep) {
       case 0:
-        return (
-          <StepGeneralConfig
-            name={experiment?.id ? (experiment.name ?? "") : experimentName}
-            description={experiment?.id ? (experiment.description ?? "") : experimentDescription}
-            onNameChange={setExperimentName}
-            onDescriptionChange={setExperimentDescription}
-            nameReadOnly={!!experiment?.id}
-          />
-        );
+        return <StepGeneralConfig nameReadOnly={!!experiment?.id} />;
       case 1:
-        return (
-          <StepModelParameters
-            sourceSelection={sourceSelection}
-            onSourceChange={setSourceSelection}
-            genome={genome} onGenomeChange={setGenome}
-            track={track} onTrackChange={setTrack}
-            identity={identity} onIdentityChange={setIdentity}
-            chromosome={chromosome} onChromosomeChange={setChromosome}
-            strand={strand} onStrandChange={setStrand}
-            start={start} onStartChange={setStart}
-            end={end} onEndChange={setEnd}
-            reliability={reliability} onReliabilityChange={setReliability}
-            promoterRegion={promoterRegion} onPromoterRegionChange={setPromoterRegion}
-            placeholders={modelPlaceholders}
-          />
-        );
+        return <StepModelParameters />;
       case 2:
         return (
           <StepExpertObjects
-            expertObjectsFile={expertObjectsFile}
-            onFileChange={setExpertObjectsFile}
-            onFileParsed={(objects: ExpertObject[]) => {
-              setExperiment((prev) => (prev ? { ...prev, expertObjects: objects } : prev));
-            }}
+            expertObjects={experiment?.expertObjects}
             onError={(msg) => {
               setErrorMessage(msg);
               setErrorModalOpen(true);
             }}
-            expertObjects={experiment?.expertObjects}
           />
         );
       case 3:
-        return (
-          <StepSearchConfig
-            searchLevel={searchLevel}
-            onSearchLevelChange={setSearchLevel}
-            retMax={retMax}
-            onRetMaxChange={setRetMax}
-            useOnlyPrincipalName={useOnlyPrincipalName}
-            onUseOnlyPrincipalNameChange={setUseOnlyPrincipalName}
-            maxComplexes={maxComplexes}
-            onMaxComplexesChange={setMaxComplexes}
-          />
-        );
+        return <StepSearchConfig />;
       default:
         return null;
     }
   };
 
   return (
-    <div>
-      {/* Breadcrumb Navigation */}
-      <Breadcrumb
-        className="mb-6"
-        onNavigate={navigate}
-        items={[
-          {
-            label: "Experiments",
-            href: networkId ? `/dashboard/experiments/${networkId}` : "/dashboard/network",
-          },
-          { label: isEditMode ? "Edit Experiment" : "Create Experiment" },
-        ]}
-      />
+    <FormProvider {...methods}>
+      <div>
+        {/* Breadcrumb Navigation */}
+        <Breadcrumb
+          className="mb-6"
+          onNavigate={navigate}
+          items={[
+            {
+              label: "Experiments",
+              href: networkId ? `/dashboard/experiments/${networkId}` : "/dashboard/network",
+            },
+            { label: isEditMode ? "Edit Experiment" : "Create Experiment" },
+          ]}
+        />
 
-      {/* Page Header */}
-      <div className="flex flex-col gap-2 max-w-2xl mb-8">
-        <h1 className="font-headline text-3xl font-black text-on-surface tracking-tighter">
-          {isEditMode ? "Edit Experiment" : "Register New Experiment"}
-        </h1>
-        <p className="text-on-surface-variant font-body text-sm leading-relaxed">
-          Configure a new experimental pipeline. Set general properties, fine-tune model hyperparameters, and confirm your setup.
-        </p>
-      </div>
+        {/* Page Header */}
+        <div className="flex flex-col gap-2 max-w-2xl mb-8">
+          <h2 className="text-2xl font-black font-headline tracking-tight text-on-surface">
+            {isEditMode ? "Edit Experiment" : "Create Experiment"}
+          </h2>
+          <p className="text-sm text-on-surface-variant font-body">
+            Configure the experimental pipeline parameters and transcription factors step by step.
+          </p>
+        </div>
 
-      {/* Glass Card Container */}
-      <div className="flex justify-center">
-        <div className="w-full max-w-3xl glass-panel p-8 rounded-2xl border border-outline-variant/15 shadow-xl relative overflow-hidden">
-          {/* Decorative background blur orb */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
+        {/* Stepper Wizard Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="lg:col-span-4 glass-panel p-6 rounded-2xl border border-outline-variant/15 shadow-sm">
+            <Stepper steps={steps} currentStep={currentStep} />
+          </div>
 
-          <div className="relative z-10">
-            {/* Stepper */}
-            <div className="mb-12 mt-4 px-4 sm:px-8">
-              <Stepper
-                steps={steps}
-                currentStep={currentStep}
-                onStepClick={(index) => {
-                  if (index === 0) {
-                    setCurrentStep(index);
-                    return;
-                  }
+          <div className="lg:col-span-8">
+            <div className="glass-panel p-8 rounded-2xl border border-outline-variant/15 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl pointer-events-none" />
 
-                  if (experiment?.id) {
-                    setCurrentStep(index);
-                  } else {
-                    setErrorMessage("Basic experiment information must be saved first.");
-                    setErrorModalOpen(true);
-                  }
-                }}
-              />
-            </div>
+              <div className="relative z-10">
+                {renderStepContent()}
 
-            {/* Step Content */}
-            <div className="min-h-[250px]">
-              {renderStepContent()}
-            </div>
-
-            {/* Footer Navigation */}
-            <div className="mt-10 pt-6 border-t border-outline-variant/10 flex justify-between items-center">
-              <Button
-                variant="ghost"
-                onClick={handleBack}
-                disabled={currentStep === 0}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleNext}
-                disabled={(currentStep === steps.length - 1 && (!searchLevel || !retMax || !maxComplexes)) || isSubmitting}
-                className="gap-2"
-              >
-                {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                {currentStep === steps.length - 1 ? (isEditMode ? "Save Experiment" : "Create Experiment") : "Next"}
-              </Button>
+                <div className="flex justify-between items-center mt-8 pt-6 border-t border-outline-variant/15">
+                  <Button
+                    variant="outline"
+                    onClick={handleBack}
+                    disabled={currentStep === 0 || isSubmitting}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={handleNext}
+                    disabled={isSubmitting}
+                    className="flex items-center gap-2"
+                  >
+                    {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {currentStep === steps.length - 1
+                      ? isEditMode
+                        ? "Save Changes"
+                        : "Create Experiment"
+                      : "Next"}
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
+        <SuccessModal
+          open={successModalOpen}
+          onClose={handleSuccessClose}
+          title={isEditMode ? "Experiment Updated!" : "Experiment Created!"}
+          message={
+            isEditMode
+              ? "The experiment search configuration was updated successfully."
+              : "The experiment has been created and configured successfully. You can now execute the pipeline."
+          }
+        />
+
+        <ErrorModal
+          open={errorModalOpen}
+          onClose={() => setErrorModalOpen(false)}
+          title="Operation Failed"
+          message={errorMessage}
+        />
       </div>
-
-      <SuccessModal
-        open={successModalOpen}
-        title="Experiment Created"
-        message="Experiment configured successfully."
-        onClose={handleSuccessClose}
-      />
-
-      <ErrorModal
-        open={errorModalOpen}
-        title="Error"
-        message={errorMessage || "An error occurred while creating the experiment."}
-        onClose={() => setErrorModalOpen(false)}
-      />
-    </div>
+    </FormProvider>
   );
 };
 

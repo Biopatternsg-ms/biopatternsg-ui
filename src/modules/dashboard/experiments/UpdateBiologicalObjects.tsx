@@ -44,6 +44,7 @@ import { ManualStepHeader } from "@/components/molecules/ManualStepHeader";
 import { StepStatsBar } from "@/components/molecules/StepStatsBar";
 import { experimentService } from "@/services/experimentService";
 import { toSaveBiologicalRolesPayload } from "@/adapters/experimentAdapter";
+import { updateBiologicalObjectsSchema } from "@/schemas/experiments/objectUpdateSchemas";
 import type {
   BiologicalObjectItem,
   RestrictionLevel,
@@ -278,6 +279,15 @@ export const UpdateBiologicalObjects = () => {
   // Confirm and save roles to backend
   const handleConfirmSave = async () => {
     setIsConfirmModalOpen(false);
+
+    const validation = updateBiologicalObjectsSchema.safeParse({ objects });
+    if (!validation.success) {
+      setErrorMessage(
+        validation.error.issues[0]?.message || "Invalid biological objects configuration."
+      );
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const pipeId = experimentId || "pipeline-demo-123";

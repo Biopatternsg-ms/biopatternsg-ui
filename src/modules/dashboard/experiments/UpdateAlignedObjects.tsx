@@ -50,6 +50,10 @@ import { ManualStepHeader } from "@/components/molecules/ManualStepHeader";
 import { StepStatsBar } from "@/components/molecules/StepStatsBar";
 import { experimentService } from "@/services/experimentService";
 import { toSaveAlignedObjectsPayload } from "@/adapters/experimentAdapter";
+import {
+  synonymInputSchema,
+  updateAlignedObjectsSchema,
+} from "@/schemas/experiments/objectUpdateSchemas";
 import type { AlignedObjectItem, ExperimentExecution } from "@/domain/models/Experiment";
 import { SuccessModal } from "@/components/molecules/SuccessModal";
 
@@ -375,6 +379,11 @@ const UpdateAlignedObjects = () => {
   };
 
   const handleAddSynonymAsNewSymbol = (synonym: string) => {
+    const val = synonymInputSchema.safeParse(synonym);
+    if (!val.success) {
+      alert(val.error.issues[0]?.message || "Invalid synonym.");
+      return;
+    }
     const newObj: AlignedObjectItem = {
       id: `new-${Date.now()}-${synonym}`,
       symbol: synonym,
@@ -394,6 +403,13 @@ const UpdateAlignedObjects = () => {
 
   const handleConfirmSaveAndRegenerate = async () => {
     setIsConfirmRegenerateModalOpen(false);
+
+    const validation = updateAlignedObjectsSchema.safeParse({ alignedObjects: objects });
+    if (!validation.success) {
+      alert(validation.error.issues[0]?.message || "Invalid aligned objects list.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const pipeId = experimentId || "pipeline-demo-123";
@@ -424,6 +440,13 @@ const UpdateAlignedObjects = () => {
 
   const handleConfirmSaveAndComplete = async () => {
     setIsConfirmCompleteModalOpen(false);
+
+    const validation = updateAlignedObjectsSchema.safeParse({ alignedObjects: objects });
+    if (!validation.success) {
+      alert(validation.error.issues[0]?.message || "Invalid aligned objects list.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const pipeId = experimentId || "pipeline-demo-123";
