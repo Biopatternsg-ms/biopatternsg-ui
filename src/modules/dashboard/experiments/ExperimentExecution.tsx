@@ -48,9 +48,10 @@ import { experimentService } from "@/services/experimentService";
 import { networkService } from "@/services/networkService";
 import type { ExperimentExecution, MetricCard, PipelineStepExecution } from "@/services/models/Experiment";
 import { Button } from "@/components/atoms/Button";
-import { Breadcrumb } from "@/components/atoms/Breadcrumb";
+import { Breadcrumb } from "@/components/molecules/Breadcrumb";
 import { Badge } from "@/components/atoms/Badge";
 import { BiologicalRolesModal } from "@/components/molecules/BiologicalRolesModal";
+import { useBiologicalRoles } from "./hooks/useBiologicalRoles";
 
 const stepIcons: Record<string, LucideIcon> = {
   Sliders: Sliders,
@@ -520,6 +521,14 @@ const ExperimentExecutionView = () => {
   const [networkName, setNetworkName] = useState<string | null>(null);
   const [isRolesModalOpen, setIsRolesModalOpen] = useState(false);
 
+  const rolesPipelineId = isRolesModalOpen ? (experimentId || data?.experimentId) : undefined;
+  const {
+    loading: isRolesLoading,
+    error: rolesError,
+    inferenceDomain: rolesDomain,
+    fetchRoles: refetchRoles,
+  } = useBiologicalRoles(rolesPipelineId);
+
   // Fetch Network details
   useEffect(() => {
     const targetNetworkId = networkId || data?.networkId;
@@ -751,6 +760,7 @@ const ExperimentExecutionView = () => {
       {/* Breadcrumb Navigation & Back Actions */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <Breadcrumb
+          onNavigate={navigate}
           items={
             networkId
               ? [
@@ -1337,8 +1347,15 @@ const ExperimentExecutionView = () => {
       <BiologicalRolesModal
         open={isRolesModalOpen}
         onClose={() => setIsRolesModalOpen(false)}
+        loading={isRolesLoading}
+        error={rolesError}
+        rolesMap={rolesDomain?.roles || {}}
         pipelineId={experimentId || data.experimentId}
         experimentName={data.experimentName}
+        onRetry={() => {
+          const pid = experimentId || data?.experimentId;
+          if (pid) refetchRoles(pid);
+        }}
       />
     </div>
   );

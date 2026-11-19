@@ -16,8 +16,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import { ChevronRight, type LucideIcon } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/atoms/Button";
 import { cn } from "@/lib/utils";
 
@@ -30,18 +30,17 @@ export interface BreadcrumbItem {
 export interface BreadcrumbProps {
   items: BreadcrumbItem[];
   className?: string;
+  onNavigate?: (href: string) => void;
 }
 
 /**
- * Atomic Breadcrumb component.
+ * Presentational Breadcrumb Molecule.
  *
- * Renders a horizontal trail of navigation items. Items with an `href` are
- * rendered as clickable ghost buttons; the last item (or items without `href`)
- * is rendered as active text. Items are separated by a chevron.
+ * Renders a horizontal trail of navigation items composing the Button atom.
+ * Items with an `href` are rendered as clickable ghost buttons dispatching `onNavigate`.
+ * The last item (or items without `href`) is rendered as active text.
  */
-export function Breadcrumb({ items, className }: BreadcrumbProps) {
-  const navigate = useNavigate();
-
+export function Breadcrumb({ items, className, onNavigate }: BreadcrumbProps) {
   if (items.length === 0) {
     return null;
   }
@@ -60,7 +59,7 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
             {item.href && !isLast ? (
               <Button
                 variant="ghost"
-                onClick={() => navigate(item.href!)}
+                onClick={() => onNavigate?.(item.href!)}
                 className="text-on-surface-variant hover:text-primary gap-2"
               >
                 {Icon && <Icon className="w-4 h-4" />}

@@ -26,19 +26,19 @@ import type {
   GraphNodeInput,
   GraphLinkInput,
   ForceGraphData,
-} from "@/components/organisms/forceGraph/forceGraphTypes";
+} from "@/domain/models/Graph";
 import {
   getNodeId,
   linkKey,
   colorForType,
   buildTypeColorMap,
-} from "@/components/organisms/forceGraph/forceGraphTypes";
+} from "@/domain/models/Graph";
 import {
   getGraphProfile,
   DEFAULT_GRAPH_BACKGROUND,
   type GraphBackground,
   type GraphVisualProfile,
-} from "@/components/organisms/forceGraph/forceGraphProfiles";
+} from "@/config/forceGraphProfiles";
 
 /* ─────────────────────────────────────────────────────────────────────────────
    PROPS

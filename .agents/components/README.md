@@ -26,14 +26,14 @@ The components in this project are organized following the principles of **Atomi
 
 | Level | Component Count | Source Directory | Documentation |
 | :--- | :---: | :--- | :--- |
-| **Atoms** | 15 | [`src/components/atoms/`](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/components/atoms) | [View Atoms](#-atoms-15) |
-| **Molecules** | 14 | [`src/components/molecules/`](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/components/molecules) | [View Molecules](#-molecules-14) |
+| **Atoms** | 14 | [`src/components/atoms/`](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/components/atoms) | [View Atoms](#-atoms-14) |
+| **Molecules** | 15 | [`src/components/molecules/`](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/components/molecules) | [View Molecules](#-molecules-15) |
 | **Organisms** | 12 | [`src/components/organisms/`](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/components/organisms) | [View Organisms](#-organisms-12) |
 | **Total** | **41** | `src/components/` | Fully Documented |
 
 ---
 
-## 🧩 Atoms (15)
+## 🧩 Atoms (14)
 
 Fundamental, indivisible interface building blocks:
 
@@ -41,7 +41,6 @@ Fundamental, indivisible interface building blocks:
 | :--- | :--- | :--- | :--- |
 | **Avatar** | Displays user initials or fallback researcher profile icon. | [Avatar.md](atoms/Avatar.md) | [Avatar.tsx](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/components/atoms/Avatar.tsx) |
 | **Badge** | Compact pill badge with semantic clinical variants (success, warning, error). | [Badge.md](atoms/Badge.md) | [Badge.tsx](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/components/atoms/Badge.tsx) |
-| **Breadcrumb** | Hierarchical navigation breadcrumb with link routing and home button. | [Breadcrumb.md](atoms/Breadcrumb.md) | [Breadcrumb.tsx](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/components/atoms/Breadcrumb.tsx) |
 | **Button** | Clinical interactive button with variants, sizes, loading spinners, and icons. | [Button.md](atoms/Button.md) | [Button.tsx](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/components/atoms/Button.tsx) |
 | **Checkbox** | Accessible binary selector with label and error support. | [Checkbox.md](atoms/Checkbox.md) | [Checkbox.tsx](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/components/atoms/Checkbox.tsx) |
 | **DropdownMenu** | Interactive floating menu with outside click detection and keyboard escape. | [DropdownMenu.md](atoms/DropdownMenu.md) | [DropdownMenu.tsx](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/components/atoms/DropdownMenu.tsx) |
@@ -57,7 +56,7 @@ Fundamental, indivisible interface building blocks:
 
 ---
 
-## 🔬 Molecules (14)
+## 🔬 Molecules (15)
 
 Functional combinations of atoms solving distinct interface interactions:
 
@@ -65,6 +64,7 @@ Functional combinations of atoms solving distinct interface interactions:
 | :--- | :--- | :--- | :--- |
 | **BenefitCard** | Card presenting platform capabilities with leading thematic icons. | [BenefitCard.md](molecules/BenefitCard.md) | [BenefitCard.tsx](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/components/molecules/BenefitCard.tsx) |
 | **BiologicalRolesModal** | Dialog for reviewing and managing inferred biological roles across entities. | [BiologicalRolesModal.md](molecules/BiologicalRolesModal.md) | [BiologicalRolesModal.tsx](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/components/molecules/BiologicalRolesModal.tsx) |
+| **Breadcrumb** | Hierarchical navigation breadcrumb composing Button atom with decoupled onNavigate callback. | [Breadcrumb.md](molecules/Breadcrumb.md) | [Breadcrumb.tsx](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/components/molecules/Breadcrumb.tsx) |
 | **ErrorModal** | Alert dialog for notifying users of critical errors and execution failures. | [ErrorModal.md](molecules/ErrorModal.md) | [ErrorModal.tsx](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/components/molecules/ErrorModal.tsx) |
 | **FormField** | Molecule bundling `Label`, input control, and validation error messages. | [FormField.md](molecules/FormField.md) | [FormField.tsx](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/components/molecules/FormField.tsx) |
 | **GraphDataUploadModal** | Drag-and-drop modal for uploading biological dataset files (`.txt`). | [GraphDataUploadModal.md](molecules/GraphDataUploadModal.md) | [GraphDataUploadModal.tsx](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/components/molecules/GraphDataUploadModal.tsx) |

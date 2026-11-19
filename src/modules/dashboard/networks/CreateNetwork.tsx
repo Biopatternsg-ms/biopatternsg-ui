@@ -18,7 +18,7 @@
  */
 
 import { useNavigate } from "react-router-dom";
-import { Breadcrumb } from "@/components/atoms/Breadcrumb";
+import { Breadcrumb } from "@/components/molecules/Breadcrumb";
 import { DataForm } from "@/components/organisms/DataForm";
 import * as z from "zod";
 import { networkService } from "@/services/networkService";
@@ -81,6 +81,7 @@ const CreateNetwork = () => {
       {/* Breadcrumb Navigation */}
       <Breadcrumb
         className="mb-6"
+        onNavigate={navigate}
         items={[
           { label: "Networks", href: "/dashboard/network" },
           { label: "Register Network" },

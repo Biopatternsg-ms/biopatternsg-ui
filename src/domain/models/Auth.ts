@@ -27,6 +27,11 @@ export interface LoginPayload {
   password: string;
 }
 
+export interface LoginFormValues {
+  username: string;
+  password: string;
+}
+
 export interface LoginErrorResponse {
   message: string;
 }

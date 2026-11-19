@@ -394,6 +394,7 @@ export const UpdateBiologicalObjects = () => {
     <div className="flex flex-col gap-6 animate-fade-in pb-12">
       {/* Top Header & Breadcrumb with Reusable Molecule */}
       <ManualStepHeader
+        onNavigate={navigate}
         networkId={networkId}
         experimentId={experimentId}
         experimentName={experimentName}

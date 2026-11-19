@@ -20,7 +20,7 @@
 import type {
   GraphNodeInput,
   GraphLinkInput,
-} from "@/components/organisms/forceGraph/forceGraphTypes";
+} from "@/domain/models/Graph";
 
 /**
  * Parses a TXT string containing node definitions separated by semicolons (;).

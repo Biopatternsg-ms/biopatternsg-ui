@@ -1,30 +1,32 @@
 # TopBar (Organism)
 
-The **TopBar** component is a top navigation header organism complementing the `DashboardLayout`. It embeds `Breadcrumb` navigation, mobile sidebar toggles, and the `UserMenu` for profile management.
+The **TopBar** component is a top navigation header organism complementing the `DashboardLayout`. It embeds the page/breadcrumb title, sidebar toggles, and the presentational `UserMenu` molecule.
 
 ## Overview
 
 - **Level:** Organism
 - **Source Code:** [`src/components/organisms/TopBar.tsx`](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/components/organisms/TopBar.tsx)
+- **Architecture:** Organism assembling layout navigation controls. Consumes `SidebarContext` and `AuthContext` to supply presentational props (`user`, `onLogout`) to `UserMenu`.
 
 ## Dependencies
 
-- `lucide-react`: `Menu` icon for mobile viewports.
-- `@/components/atoms/Breadcrumb`: Hierarchical navigation breadcrumb.
-- `@/components/molecules/UserMenu`: User session dropdown menu.
+- `lucide-react`: `Menu`, `Bell`, `HelpCircle` icons.
+- `@/components/molecules/UserMenu`: Presentational user session dropdown menu.
+- `@/context/SidebarContext`: Desktop/mobile sidebar state toggles.
+- `@/context/AuthContext`: Authentication user and logout action.
 
 ## Component Properties (Props)
 
 | Property | Type | Required | Default | Description |
 | :--- | :--- | :---: | :---: | :--- |
-| `onToggleSidebar` | `() => void` | No | `undefined` | Callback invoked when clicking the mobile hamburger toggle. |
+| `title` | `string` | No | `"Dashboard"` | The breadcrumb/page title shown on the navigation bar. |
 
 ## Usage Example
 
 ```tsx
 import { TopBar } from "@/components/organisms/TopBar";
 
-export function CustomHeader({ toggleNav }) {
-  return <TopBar onToggleSidebar={toggleNav} />;
+export function DashboardHeader() {
+  return <TopBar title="Gene Networks" />;
 }
 ```

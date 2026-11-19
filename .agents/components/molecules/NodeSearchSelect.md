@@ -6,34 +6,45 @@ The **NodeSearchSelect** component is a molecule featuring a real-time search in
 
 - **Level:** Molecule
 - **Source Code:** [`src/components/molecules/NodeSearchSelect.tsx`](file:///home/yacson/Proyectos/biopatternsg-ms/services/biopatternsg-ui/src/components/molecules/NodeSearchSelect.tsx)
+- **Domain Modeling:** Consumes `GraphNodeInput` from `@/domain/models/Graph`.
 
 ## Dependencies
 
-- `lucide-react`: `Search`, `X`, `Check` icons.
-- `@/components/atoms/Input`: Search input atom.
-- Graph types from `forceGraphTypes.ts`.
+- `lucide-react`: `Search`, `X` icons.
+- `@/domain/models/Graph`: `GraphNodeInput`, `colorForType`, `buildTypeColorMap`.
+- `@/lib/utils`: `cn` utility.
 
 ## Component Properties (Props)
 
 | Property | Type | Required | Default | Description |
 | :--- | :--- | :---: | :---: | :--- |
 | `nodes` | `GraphNodeInput[]` | Yes | - | Candidate nodes array available in the graph. |
-| `selectedNodeId` | `string \| null` | No | `null` | Currently selected node identifier. |
-| `onSelectNode` | `(node: GraphNodeInput \| null) => void` | Yes | - | Selection change callback. |
-| `placeholder` | `string` | No | `"Search node by ID or label..."` | Search field placeholder. |
-| `colorMap` | `Record<string, string>` | No | `{}` | Color map for category pills. |
+| `value` | `string \| null` | No | `null` | Currently selected node name. |
+| `onChange` | `(nodeName: string \| null) => void` | Yes | - | Selection change callback. |
+| `placeholder` | `string` | No | `"Search node by name..."` | Search field placeholder. |
+| `typeColorMap` | `Record<string, string>` | No | `undefined` | Optional external color map for types. |
 
 ## Usage Example
 
 ```tsx
 import { NodeSearchSelect } from "@/components/molecules/NodeSearchSelect";
+import type { GraphNodeInput } from "@/domain/models/Graph";
 
-export function GraphToolbar({ nodes, onSelect }) {
+export function GraphToolbar({
+  nodes,
+  selectedNode,
+  onSelect,
+}: {
+  nodes: GraphNodeInput[];
+  selectedNode: string | null;
+  onSelect: (name: string | null) => void;
+}) {
   return (
     <div className="w-72">
       <NodeSearchSelect
         nodes={nodes}
-        onSelectNode={onSelect}
+        value={selectedNode}
+        onChange={onSelect}
       />
     </div>
   );

@@ -32,7 +32,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/atoms/Badge";
 import { Button } from "@/components/atoms/Button";
-import type { GroupedPathway } from "@/services/models/Pathway";
+import type { GroupedPathway } from "@/domain/models/Pathway";
 
 const ROLE_COLORS: Record<string, string> = {
   ligand: "#0066ff",

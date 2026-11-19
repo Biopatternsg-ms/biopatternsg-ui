@@ -18,10 +18,9 @@
  */
 
 /**
- * Type definitions and constants for the Force-Directed Graph visualization.
+ * Pure domain definitions and entities for the Force-Directed Biological Network Graph.
  *
- * These types are shared across ForceGraphCanvas (atom),
- * NodeDetailPanel (molecule), and ForceGraphViewer (organism).
+ * Adheres to BioPatternSG UI Constitution Principle III (Pure Domain Modeling).
  */
 
 /* ─────────────────────────────────────────────────────────────────────────────
@@ -32,6 +31,11 @@
 export interface GraphNodeInput {
   name: string;
   type: string;
+  id?: string;
+  category?: string;
+  val?: number;
+  properties?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 /** A connection as provided by the consumer. */
@@ -39,24 +43,30 @@ export interface GraphLinkInput {
   object1: string;
   interaction: string;
   object2: string;
+  source?: string;
+  target?: string;
   pathwayCount?: number;
+  properties?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   INTERNAL TYPES — What ForceGraph2D consumes
+   INTERNAL TYPES — What ForceGraph2D / ForceGraph3D consumes
    ───────────────────────────────────────────────────────────────────────────── */
 
 /**
- * Internal node representation consumed by ForceGraph2D.
+ * Internal node representation consumed by ForceGraph2D / ForceGraph3D.
  *
- * `x`, `y`, `vx`, `vy` are injected at runtime by d3-force.
+ * `x`, `y`, `z`, `vx`, `vy`, `vz` are injected at runtime by d3-force / 3d-force.
  */
 export interface GraphNode {
   id: string;
   name: string;
   type: string;
   color: string;
-  // d3-force runtime
+  category?: string;
+  val?: number;
+  // d3-force runtime coordinates & velocities
   x?: number;
   y?: number;
   z?: number;
@@ -68,16 +78,17 @@ export interface GraphNode {
   fz?: number;
 }
 
-/** Internal link representation consumed by ForceGraph2D. */
+/** Internal link representation consumed by ForceGraph2D / ForceGraph3D. */
 export interface GraphLink {
   source: string | GraphNode;
   target: string | GraphNode;
   interaction: string;
   pathwayCount?: number;
+  color?: string;
   index?: number;
 }
 
-/** The graphData shape expected by ForceGraph2D. */
+/** The graphData shape expected by ForceGraph2D / ForceGraph3D. */
 export interface ForceGraphData {
   nodes: GraphNode[];
   links: GraphLink[];
@@ -117,11 +128,7 @@ export function buildTypeColorMap(nodes: ReadonlyArray<{ type: string }>): Recor
   );
 }
 
-/**
- * Highlight color for selected/active elements.
- * Kept for compatibility — the effective value is now defined per background
- * in `forceGraphProfiles.ts` (`node.highlightColor` / `linkColor.highlighted`).
- */
+/** Highlight color for selected/active elements. */
 export const HIGHLIGHT_COLOR = "#ffffff";
 
 /** Opacity for non-connected elements when a node is selected. */

@@ -25,13 +25,13 @@ import type {
   GraphNode,
   GraphLink,
   ForceGraphData,
-} from "@/components/organisms/forceGraph/forceGraphTypes";
+} from "@/domain/models/Graph";
 import {
   getNodeId,
   linkKey,
   DIMMED_OPACITY,
-} from "@/components/organisms/forceGraph/forceGraphTypes";
-import type { GraphVisualProfile } from "@/components/organisms/forceGraph/forceGraphProfiles";
+} from "@/domain/models/Graph";
+import type { GraphVisualProfile } from "@/config/forceGraphProfiles";
 
 /* ─────────────────────────────────────────────────────────────────────────────
    PROPS

@@ -22,7 +22,7 @@ import * as z from "zod";
 import { toCreateAdminUserPayload, type CreateAdminUserFormValues } from "@/adapters/userAdapter";
 import { createAdminUser } from "@/services/userService";
 import type { DataFormConfig } from "@/components/organisms/DataFormConfig";
-import { Breadcrumb } from "@/components/atoms/Breadcrumb";
+import { Breadcrumb } from "@/components/molecules/Breadcrumb";
 
 export const createUserSchema = z.object({
   email: z
@@ -95,6 +95,7 @@ const CreateUser = () => {
       {/* Breadcrumb Navigation */}
       <Breadcrumb
         className="mb-6"
+        onNavigate={navigate}
         items={[
           { label: "Users", href: "/dashboard/admin/users" },
           { label: "Create User" },

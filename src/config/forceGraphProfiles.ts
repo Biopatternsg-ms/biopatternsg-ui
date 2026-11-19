@@ -24,10 +24,10 @@
  * of these profiles, which defines: background color, node size, node
  * spacing, link colors and link widths.
  *
- * The "black" profile is based on the original hardcoded values (links now white, widths +50%).
+ * The "black" profile is based on clinical high-contrast dark values.
  */
 
-/** Backgrounds supported by ForceGraphViewer. */
+/** Backgrounds supported by ForceGraphViewer and ForceGraphCanvas. */
 export type GraphBackground = "black" | "white" | "skyblue";
 
 export interface GraphVisualProfile {
@@ -76,7 +76,7 @@ export interface GraphVisualProfile {
 }
 
 export const GRAPH_PROFILES: Record<GraphBackground, GraphVisualProfile> = {
-  /* ── Black: original values, unchanged ── */
+  /* ── Black: original clinical dark values ── */
   black: {
     backgroundColor: "rgba(10,10,20,1)",
     node: {
@@ -97,7 +97,7 @@ export const GRAPH_PROFILES: Record<GraphBackground, GraphVisualProfile> = {
     linkWidth: { default: 0.9, connected: 1.8, highlighted: 3.75, arrowLength: 4, arrowOpacity: 0.3 },
   },
 
-  /* ── White: same sizes, inverted palette (dark slate / black) ── */
+  /* ── White: inverted palette (dark slate / black) ── */
   white: {
     backgroundColor: "#ffffff",
     node: {
@@ -118,7 +118,7 @@ export const GRAPH_PROFILES: Record<GraphBackground, GraphVisualProfile> = {
     linkWidth: { default: 0.9, connected: 1.8, highlighted: 3.75, arrowLength: 4, arrowOpacity: 0.30 },
   },
 
-  /* ── Sky blue: #87CEEB background, black links and labels ── */
+  /* ── Sky blue: #87CEEB background, clinical blue links and labels ── */
   skyblue: {
     backgroundColor: "#87ceeb",
     node: {
