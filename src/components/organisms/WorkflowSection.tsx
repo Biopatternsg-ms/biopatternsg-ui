@@ -47,7 +47,7 @@ export const WorkflowSection = () => {
           <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-ambient-md border border-outline-variant/20 bg-surface-container-highest">
             <iframe
               className="w-full h-full border-0"
-              src="https://www.youtube-nocookie.com/embed/U7t_uounHcU"
+              src="https://www.youtube-nocookie.com/embed/GqdWABGKLnE"
               title="Biopatterns: Hybrid Artificial Intelligence for Modeling Biological Networks"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
