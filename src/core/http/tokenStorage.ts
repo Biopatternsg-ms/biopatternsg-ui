@@ -31,24 +31,33 @@ import type { TokenPair } from "@/domain/models/Auth";
 const ACCESS_TOKEN_KEY = "access_token";
 const REFRESH_TOKEN_KEY = "refresh_token";
 
+function isStorageAvailable(): boolean {
+  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+}
+
 export function getAccessToken(): string | null {
+  if (!isStorageAvailable()) return null;
   return localStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
 export function getRefreshToken(): string | null {
+  if (!isStorageAvailable()) return null;
   return localStorage.getItem(REFRESH_TOKEN_KEY);
 }
 
 export function setTokens(pair: TokenPair): void {
+  if (!isStorageAvailable()) return;
   localStorage.setItem(ACCESS_TOKEN_KEY, pair.access_token);
   localStorage.setItem(REFRESH_TOKEN_KEY, pair.refresh_token);
 }
 
 export function setAccessToken(token: string): void {
+  if (!isStorageAvailable()) return;
   localStorage.setItem(ACCESS_TOKEN_KEY, token);
 }
 
 export function clearTokens(): void {
+  if (!isStorageAvailable()) return;
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
 }

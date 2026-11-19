@@ -30,9 +30,12 @@
  *   - In PROD → reads VITE_API_URL from the environment (e.g. https://api.biopatternsg.com).
  */
 
+const prodApiUrl: string =
+  import.meta.env.VITE_API_URL?.trim().replace(/\/+$/, "") || "/api";
+
 export const CONFIG_AND_CONTROL: string = import.meta.env.DEV
   ? ""
-  : (import.meta.env.VITE_API_URL ?? "http://localhost:8008/api");
+  : prodApiUrl;
 
 /** Endpoint path for users (do NOT include a leading slash — it's added below). */
 export const REGISTER_PATH = "config-and-control/users";

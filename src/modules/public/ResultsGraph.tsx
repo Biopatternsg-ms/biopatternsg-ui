@@ -119,6 +119,7 @@ import {
   parseGraphNodesTxt,
   parseGraphLinksTxt,
 } from "@/utils/graphDataParser";
+import { loadExampleGraphTemplates } from "@/services/templateGraphService";
 
 export interface ResultsGraphLocationState {
   title?: string;
@@ -169,17 +170,8 @@ const ResultsGraph = () => {
 
   useEffect(() => {
     if (!hasInitialData) {
-      Promise.all([
-        fetch("/templates/graph-nodes-example.txt").then((res) => {
-          if (!res.ok) throw new Error("Failed to load graph-nodes-example.txt");
-          return res.text();
-        }),
-        fetch("/templates/graph-links-example.txt").then((res) => {
-          if (!res.ok) throw new Error("Failed to load graph-links-example.txt");
-          return res.text();
-        }),
-      ])
-        .then(([nodesTxt, linksTxt]) => {
+      loadExampleGraphTemplates()
+        .then(({ nodesTxt, linksTxt }) => {
           const parsedNodes = parseGraphNodesTxt(nodesTxt);
           const parsedLinks = parseGraphLinksTxt(linksTxt);
           setArrayNodes(parsedNodes);
