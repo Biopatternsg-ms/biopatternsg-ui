@@ -43,7 +43,7 @@ import { RolePillBadge } from "@/components/atoms/RolePillBadge";
 import { ManualStepHeader } from "@/components/molecules/ManualStepHeader";
 import { StepStatsBar } from "@/components/molecules/StepStatsBar";
 import { experimentService } from "@/services/experimentService";
-import type { BiologicalObjectItem } from "@/services/models/Experiment";
+import type { BiologicalObjectItem } from "@/domain/models/Experiment";
 import { SuccessModal } from "@/components/molecules/SuccessModal";
 import { ErrorModal } from "@/components/molecules/ErrorModal";
 import { CATEGORIES_LIST } from "@/config/biologicalCategories";

@@ -46,7 +46,12 @@ import {
 import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
 import { experimentService } from "@/services/experimentService";
 import { networkService } from "@/services/networkService";
-import type { ExperimentExecution, MetricCard, PipelineStepExecution } from "@/services/models/Experiment";
+import type {
+  ExperimentExecution,
+  ExperimentMetric,
+  ManualStepMetadata,
+  PipelineStepExecution,
+} from "@/domain/models/Experiment";
 import { Button } from "@/components/atoms/Button";
 import { Breadcrumb } from "@/components/molecules/Breadcrumb";
 import { Badge } from "@/components/atoms/Badge";
@@ -68,13 +73,11 @@ function StepIcon({ name, className }: { name: string; className?: string }) {
   return <IconComponent className={className} />;
 }
 
-interface ManualStepDefinition {
-  routeSegment: string;
-  buttonLabel: string;
+interface ManualStepPresentation extends ManualStepMetadata {
   buttonIcon: LucideIcon;
 }
 
-const MANUAL_STEP_CONFIG: Record<string, ManualStepDefinition> = {
+const MANUAL_STEP_CONFIG: Record<string, ManualStepPresentation> = {
   // Update Aligned Objects
   "step-update_aligned_objects": {
     routeSegment: "aligned-objects",
@@ -185,7 +188,7 @@ export function isManualStep(step: PipelineStepExecution): boolean {
   );
 }
 
-function getManualStepConfig(step: PipelineStepExecution): ManualStepDefinition | null {
+function getManualStepConfig(step: PipelineStepExecution): ManualStepPresentation | null {
   if (MANUAL_STEP_CONFIG[step.id]) return MANUAL_STEP_CONFIG[step.id];
   if (MANUAL_STEP_CONFIG[step.name]) return MANUAL_STEP_CONFIG[step.name];
   const stepKey = (step as { step?: string }).step;
@@ -303,17 +306,11 @@ function formatMetricValue(value: string): string {
   return value;
 }
 
-interface ParsedMetricItem {
-  label: string;
-  value: string;
+interface ParsedMetricItem extends ExperimentMetric {
   isLongText?: boolean;
-  hasWarnings?: boolean;
-  subLabel?: string;
-  subLabelColor?: string;
-  progress?: number;
 }
 
-type RawMetricInput = MetricCard[] | Record<string, string | number | boolean | null | undefined>;
+type RawMetricInput = ExperimentMetric[] | Record<string, string | number | boolean | null | undefined>;
 
 function parseRawMetrics(rawMetrics?: RawMetricInput): ParsedMetricItem[] {
   if (!rawMetrics) return [];

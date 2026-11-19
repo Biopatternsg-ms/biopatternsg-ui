@@ -49,15 +49,8 @@ import { SynonymChip } from "@/components/atoms/SynonymChip";
 import { ManualStepHeader } from "@/components/molecules/ManualStepHeader";
 import { StepStatsBar } from "@/components/molecules/StepStatsBar";
 import { experimentService } from "@/services/experimentService";
-import type { ExperimentExecution } from "@/services/models/Experiment";
+import type { AlignedObjectItem, ExperimentExecution } from "@/domain/models/Experiment";
 import { SuccessModal } from "@/components/molecules/SuccessModal";
-
-interface AlignedObjectItem {
-  id: string;
-  symbol: string;
-  status: "ALIGNED" | "ALIGNED_AS" | "NO_ALIGNED" | "NEW" | "MODIFIED" | "CUSTOM_SYNONYMS";
-  synonyms: string[];
-}
 
 const INITIAL_ALIGNED_OBJECTS: AlignedObjectItem[] = [
   {

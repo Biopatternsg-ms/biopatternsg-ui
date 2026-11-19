@@ -22,12 +22,14 @@ import { Microscope, Pencil, Trash2, Plus, Play, Eye } from "lucide-react";
 import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
 import { PipelineStatus, getFriendlyStepLabel } from "@/components/molecules/PipelineStatus";
 import { experimentService } from "@/services/experimentService";
-import type { Experiment } from "@/services/models/Experiment";
+import type { Experiment } from "@/domain/models/Experiment";
 import { Button } from "@/components/atoms/Button";
 import { Breadcrumb } from "@/components/molecules/Breadcrumb";
 
-const formatUnixTime = (unixSeconds: number) => {
-  const date = new Date(unixSeconds * 1000);
+const formatDate = (dateStr?: string) => {
+  if (!dateStr) return "-";
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
   const day = date.getDate().toString().padStart(2, "0");
   const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const year = date.getFullYear();
@@ -136,7 +138,7 @@ const Experiments = () => {
     {
       header: "Created At",
       className: "col-span-1 text-on-surface-variant whitespace-nowrap",
-      render: (item) => formatUnixTime(item.createdAt ?? 0),
+      render: (item) => formatDate(item.createdAt),
     },
     {
       header: "Options",

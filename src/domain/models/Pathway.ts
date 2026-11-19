@@ -18,10 +18,47 @@
  */
 
 /**
- * Pure domain definitions for biological pathways and grouped pathway sequences.
+ * Pure domain definitions for biological pathways, graph topologies, and grouped sequences.
  *
  * Adheres to BioPatternSG UI Constitution Principle III (Pure Domain Modeling).
+ * ZERO imports from React, Lucide, components, services, or adapters.
  */
+
+export interface PathwayGraphNode {
+  name: string;
+  role?: string;
+  type?: string;
+}
+
+export interface PathwayGraphEdge {
+  first: string;
+  relation: string;
+  second: string;
+  pathwayCount?: number;
+}
+
+export interface PathwayEvent {
+  first: string;
+  relation: string;
+  second: string;
+  pubmedIds?: string[];
+}
+
+export interface PathwayObjectStep {
+  name: string;
+  roles: string[];
+}
+
+export interface BiologicalPathway {
+  id?: string;
+  pipelineId: string;
+  pathwayIndex: number;
+  length: number;
+  startObject: string;
+  endObject: string;
+  events: PathwayEvent[];
+  objects: PathwayObjectStep[];
+}
 
 export interface GroupedPathwayObject {
   name: string;
@@ -57,8 +94,25 @@ export interface GroupedPathway {
   favorite?: boolean;
 }
 
-export interface PathwayDetailModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  pathway: GroupedPathway | null;
+export interface Pathway {
+  id: string;
+  name: string;
+  score?: number;
+  length?: number;
+  nodes?: PathwayGraphNode[];
+  edges?: PathwayGraphEdge[];
+  events?: PathwayEvent[];
+  isExpanded?: boolean;
+}
+
+export interface GroupedPathwaysResult {
+  pipelineId: string;
+  totalRawPathways: number;
+  totalGroups: number;
+  availableLengths?: number[];
+  availableStartObjects?: string[];
+  availableEndObjects?: string[];
+  page: number;
+  size: number;
+  groups: GroupedPathway[];
 }

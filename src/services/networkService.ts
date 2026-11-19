@@ -19,33 +19,26 @@
 
 import { authFetch } from "@/core/http/httpClient";
 import { NETWORKS_ENDPOINT } from "./apiConfig";
-
-export interface Network {
-  id: string;
-  userId: string;
-  name: string;
-  description: string;
-  createdAt: number;
-}
-
-export interface PaginatedResponse<T> {
-  count: number;
-  list: T[];
-}
+import type { NetworkDto, PaginatedResponseDto } from "./models/NetworkDto";
+import type { Network } from "@/domain/models/Network";
+import type { PaginatedResult } from "@/domain/models/Common";
+import { networkAdapter } from "@/adapters/networkAdapter";
 
 export const networkService = {
   /**
    * Retrieves the list of networks using authFetch, which automatically
    * injects the Authorization: Bearer token into the headers.
+   * Returns a domain PaginatedResult<Network> mediated by networkAdapter.
    */
-  async getNetworks(page: number = 0, size: number = 10): Promise<PaginatedResponse<Network>> {
+  async getNetworks(page: number = 0, size: number = 10): Promise<PaginatedResult<Network>> {
     const response = await authFetch(`${NETWORKS_ENDPOINT}?page=${page}&size=${size}`);
 
     if (!response.ok) {
       throw new Error("Failed to fetch networks");
     }
 
-    return response.json();
+    const dto: PaginatedResponseDto<NetworkDto> = await response.json();
+    return networkAdapter.toPaginatedDomain(dto);
   },
 
   /**

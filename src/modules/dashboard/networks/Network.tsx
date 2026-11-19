@@ -21,11 +21,13 @@ import { Network as NetworkIcon, Plus, FolderOpen, Pencil, Trash2 } from "lucide
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/atoms/Button";
 import { DataTable, type ColumnDef } from "@/components/organisms/DataTable";
-import { networkService, type Network as NetworkModel } from "@/services/networkService";
+import { networkService } from "@/services/networkService";
+import type { Network as NetworkModel } from "@/domain/models/Network";
 import { cn } from "@/lib/utils";
 
-const formatUnixTime = (unixSeconds: number) => {
-  const date = new Date(unixSeconds * 1000);
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return dateString;
   const day = date.getDate().toString().padStart(2, "0");
   const month = (date.getMonth() + 1).toString().padStart(2, "0");
   const year = date.getFullYear();
@@ -90,7 +92,7 @@ const Network = () => {
     {
       header: "Creation Date",
       className: "col-span-3 text-on-surface-variant whitespace-nowrap",
-      render: (item) => formatUnixTime(item.createdAt),
+      render: (item) => formatDate(item.createdAt),
     },
     {
       header: "Options",

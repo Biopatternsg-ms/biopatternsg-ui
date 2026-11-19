@@ -46,7 +46,7 @@ import { StepStatsBar } from "@/components/molecules/StepStatsBar";
 import { PathwayDetailModal } from "@/components/molecules/PathwayDetailModal";
 import { cn } from "@/lib/utils";
 import { experimentService } from "@/services/experimentService";
-import type { GroupedPathway, GroupedPathwaysResponse } from "@/services/models/Pathway";
+import type { GroupedPathway, GroupedPathwaysResult } from "@/domain/models/Pathway";
 
 const ROLE_COLORS: Record<string, string> = {
   ligand: "#0066ff",
@@ -93,7 +93,7 @@ export const PathwayListView = () => {
   const [experimentName, setExperimentName] = useState<string>("Experiment Execution");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const [data, setData] = useState<GroupedPathwaysResponse | null>(null);
+  const [data, setData] = useState<GroupedPathwaysResult | null>(null);
   const [unfilteredTotalGroups, setUnfilteredTotalGroups] = useState<number | null>(null);
   const [page, setPage] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(15);
