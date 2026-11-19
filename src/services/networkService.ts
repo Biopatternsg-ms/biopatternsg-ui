@@ -22,7 +22,7 @@ import { NETWORKS_ENDPOINT } from "./apiConfig";
 import type { NetworkDto, PaginatedResponseDto } from "./models/NetworkDto";
 import type { Network } from "@/domain/models/Network";
 import type { PaginatedResult } from "@/domain/models/Common";
-import { networkAdapter } from "@/adapters/networkAdapter";
+import { networkAdapter, type CreateNetworkPayload } from "@/adapters/networkAdapter";
 
 export const networkService = {
   /**
@@ -38,17 +38,26 @@ export const networkService = {
     }
 
     const dto: PaginatedResponseDto<NetworkDto> = await response.json();
-    return networkAdapter.toPaginatedDomain(dto);
+    return networkAdapter.toPaginatedNetworksDomain(dto);
   },
 
   /**
    * Creates a new network configuration by sending a POST request.
+   * Mediated by networkAdapter.toCreateNetworkPayload.
    * Returns the raw Response so callers can inspect the status code.
    */
-  async createNetwork(name: string, description: string): Promise<Response> {
+  async createNetwork(
+    nameOrPayload: string | CreateNetworkPayload,
+    description?: string
+  ): Promise<Response> {
+    const payload =
+      typeof nameOrPayload === "string"
+        ? networkAdapter.toCreateNetworkPayload({ name: nameOrPayload, description: description || "" })
+        : networkAdapter.toCreateNetworkPayload(nameOrPayload);
+
     return authFetch(NETWORKS_ENDPOINT, {
       method: "POST",
-      body: JSON.stringify({ name, description }),
+      body: JSON.stringify(payload),
     });
   },
 };

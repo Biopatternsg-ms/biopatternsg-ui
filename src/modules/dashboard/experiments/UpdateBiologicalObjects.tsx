@@ -43,6 +43,7 @@ import { RolePillBadge } from "@/components/atoms/RolePillBadge";
 import { ManualStepHeader } from "@/components/molecules/ManualStepHeader";
 import { StepStatsBar } from "@/components/molecules/StepStatsBar";
 import { experimentService } from "@/services/experimentService";
+import { toSaveBiologicalRolesPayload } from "@/adapters/experimentAdapter";
 import type {
   BiologicalObjectItem,
   RestrictionLevel,
@@ -281,12 +282,8 @@ export const UpdateBiologicalObjects = () => {
     try {
       const pipeId = experimentId || "pipeline-demo-123";
 
-      // Build the roles dictionary: { [symbol]: string[] }
-      const rolesMap: Record<string, string[]> = {};
-      objects.forEach((obj) => {
-        const key = obj.symbol || obj.name;
-        rolesMap[key] = obj.roles;
-      });
+      // Build the roles dictionary via experimentAdapter
+      const rolesMap = toSaveBiologicalRolesPayload(objects);
 
       const response = await experimentService.saveBiologicalObjectsRoles(pipeId, rolesMap);
 

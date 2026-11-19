@@ -43,6 +43,7 @@ import { Breadcrumb } from "@/components/molecules/Breadcrumb";
 import { Badge } from "@/components/atoms/Badge";
 import { Input } from "@/components/atoms/Input";
 import { experimentService } from "@/services/experimentService";
+import { toInferenceConfigPayload } from "@/adapters/experimentAdapter";
 import type {
   ExperimentExecution,
   RestrictionLevel,
@@ -241,8 +242,8 @@ export default function ConfigureInferences() {
     try {
       const pipeId = experimentId || "pipeline-demo-123";
 
-      // Save Inference Configuration (inferences service updates the pipeline step)
-      await experimentService.saveInferenceConfig(pipeId, {
+      // Save Inference Configuration via adapter (inferences service updates the pipeline step)
+      await experimentService.saveInferenceConfig(pipeId, toInferenceConfigPayload({
         restrictionLevel,
         summarizeKb,
         maxDepth,
@@ -252,7 +253,7 @@ export default function ConfigureInferences() {
         intermediateSecondRoles,
         endFirstRoles,
         endSecondRoles,
-      });
+      }));
 
       // Delete prior pathways to prevent stale results
       try {

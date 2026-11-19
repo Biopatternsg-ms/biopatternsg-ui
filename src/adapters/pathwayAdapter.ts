@@ -23,6 +23,7 @@ import type {
   BiologicalPathwayDto,
   PathwayGraphNodeDto,
   PathwayGraphEdgeDto,
+  PathwayGraphDto,
 } from "@/services/models/Pathway";
 import type {
   GroupedPathway,
@@ -31,9 +32,10 @@ import type {
   PathwayGraphNode,
   PathwayGraphEdge,
 } from "@/domain/models/Pathway";
+import type { GraphNodeInput, GraphLinkInput } from "@/domain/models/Graph";
 
 /**
- * Adapter to translate backend pathway DTOs to pure domain models.
+ * Adapter to translate backend pathway DTOs to pure domain models and graph visualization inputs.
  * Adheres to BioPatternSG UI Constitution Principle IV (Mandatory Adapter Pattern).
  */
 
@@ -118,6 +120,107 @@ export function toGroupedPathwaysResult(dto: GroupedPathwaysResponseDto): Groupe
     availableEndObjects: dto.availableEndObjects ? [...dto.availableEndObjects] : undefined,
     page: dto.page,
     size: dto.size,
-    groups: (dto.groups || []).map(toGroupedPathway),
+    groups: toGroupedPathwayList(dto.groups || []),
   };
 }
+
+export function formatPathwayRoleLabel(rawRole?: string): string {
+  if (!rawRole || !rawRole.trim()) return "Protein";
+  const normalized = rawRole.toLowerCase().trim().replace(/-/g, "_").replace(/\s+/g, "_");
+  switch (normalized) {
+    case "protein":
+      return "Protein";
+    case "gene":
+      return "Gene";
+    case "enzyme":
+      return "Enzyme";
+    case "receptor":
+      return "Receptor";
+    case "ligand":
+      return "Ligand";
+    case "transcription_factor":
+    case "tf":
+      return "Transcription Factor";
+    case "adaptor_protein":
+      return "Adaptor Protein";
+    case "disease":
+      return "Disease";
+    case "variant":
+      return "Variant";
+    default:
+      return normalized
+        .split("_")
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" ");
+  }
+}
+
+export function filterLinksByValidNodes(
+  nodes: GraphNodeInput[],
+  rawLinks: GraphLinkInput[]
+): GraphLinkInput[] {
+  const nodeSet = new Set(nodes.map((n) => n.name));
+  return rawLinks.filter((link) => nodeSet.has(link.object1) && nodeSet.has(link.object2));
+}
+
+export interface PathwayGraphForceData {
+  nodes: GraphNodeInput[];
+  links: GraphLinkInput[];
+  totalPathways: number;
+  executionTimeMs: number;
+}
+
+/**
+ * Transforms raw PathwayGraphDto responses into ForceGraphData (nodes and links)
+ * suitable for 2D/3D force graph visualization engines, with role normalization
+ * and link validation.
+ */
+export function toPathwayGraphForceData(
+  dto?: PathwayGraphDto | null
+): PathwayGraphForceData {
+  if (!dto || !Array.isArray(dto.nodes) || dto.nodes.length === 0) {
+    return {
+      nodes: [],
+      links: [],
+      totalPathways: dto?.totalPathways ?? 0,
+      executionTimeMs: dto?.executionTimeMs ?? 0,
+    };
+  }
+
+  const mappedNodes: GraphNodeInput[] = dto.nodes
+    .filter((n) => n && n.name)
+    .map((n) => ({
+      name: n.name.trim(),
+      type: formatPathwayRoleLabel(n.type || n.role),
+    }));
+
+  const rawLinks: GraphLinkInput[] = (dto.edges || [])
+    .filter((e) => e && (e.object1 || e.first) && (e.object2 || e.second))
+    .map((e) => ({
+      object1: (e.object1 || e.first).trim(),
+      interaction: (e.interaction || e.relation || "association").trim(),
+      object2: (e.object2 || e.second).trim(),
+      pathwayCount: e.pathwayCount,
+    }));
+
+  const validLinks = filterLinksByValidNodes(mappedNodes, rawLinks);
+
+  return {
+    nodes: mappedNodes,
+    links: validLinks,
+    totalPathways: dto.totalPathways ?? 0,
+    executionTimeMs: dto.executionTimeMs ?? 0,
+  };
+}
+
+export const pathwayAdapter = {
+  toGroupedPathway,
+  toGroupedPathwayList,
+  toPathwayGraphNode,
+  toPathwayGraphEdge,
+  toBiologicalPathway,
+  toGroupedPathwaysResult,
+  formatPathwayRoleLabel,
+  toPathwayGraphForceData,
+};

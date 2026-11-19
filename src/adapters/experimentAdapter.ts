@@ -31,10 +31,12 @@ import type {
   InferenceRolesDomain,
   BiologicalObjectItem,
   AlignedObjectItem,
+  RestrictionLevel,
 } from "@/domain/models/Experiment";
 
 /**
- * Adapter to translate backend experiment, inference, and biological object DTOs to pure domain models.
+ * Adapter to translate backend experiment, inference, and biological object DTOs to pure domain models
+ * and map form/view contracts into backend wire payloads.
  * Adheres to BioPatternSG UI Constitution Principle IV (Mandatory Adapter Pattern).
  */
 
@@ -155,3 +157,89 @@ export function toBiologicalRoleList(dto?: InferenceResponseDto | null): Biologi
     };
   });
 }
+
+export interface CreateExperimentPayload {
+  networkId: string;
+  name: string;
+  description: string;
+}
+
+export function toCreateExperimentPayload(values: {
+  networkId: string;
+  name: string;
+  description: string;
+}): CreateExperimentPayload {
+  return {
+    networkId: values.networkId.trim(),
+    name: values.name.trim(),
+    description: values.description.trim(),
+  };
+}
+
+export function toSaveBiologicalRolesPayload(
+  objects: BiologicalObjectItem[]
+): Record<string, string[]> {
+  const rolesMap: Record<string, string[]> = {};
+  objects.forEach((obj) => {
+    const key = obj.symbol || obj.name;
+    if (key) {
+      rolesMap[key] = Array.isArray(obj.roles) ? [...obj.roles] : [];
+    }
+  });
+  return rolesMap;
+}
+
+export function toSaveAlignedObjectsPayload(
+  objects: AlignedObjectItem[]
+): string[] {
+  return objects.map((o) => o.symbol.trim()).filter(Boolean);
+}
+
+export interface InferenceConfigPayload {
+  restrictionLevel: RestrictionLevel;
+  summarizeKb?: boolean;
+  maxDepth?: number;
+  startFirstRoles?: string[];
+  startSecondRoles?: string[];
+  intermediateFirstRoles?: string[];
+  intermediateSecondRoles?: string[];
+  endFirstRoles?: string[];
+  endSecondRoles?: string[];
+}
+
+export function toInferenceConfigPayload(config: {
+  restrictionLevel: RestrictionLevel;
+  summarizeKb?: boolean;
+  maxDepth?: number;
+  startFirstRoles?: string[];
+  startSecondRoles?: string[];
+  intermediateFirstRoles?: string[];
+  intermediateSecondRoles?: string[];
+  endFirstRoles?: string[];
+  endSecondRoles?: string[];
+}): InferenceConfigPayload {
+  return {
+    restrictionLevel: config.restrictionLevel,
+    summarizeKb: config.summarizeKb ?? true,
+    maxDepth: config.maxDepth ?? 10,
+    startFirstRoles: config.startFirstRoles ?? ["LIGAND"],
+    startSecondRoles: config.startSecondRoles ?? ["PROTEIN"],
+    intermediateFirstRoles: config.intermediateFirstRoles ?? ["PROTEIN"],
+    intermediateSecondRoles: config.intermediateSecondRoles ?? ["PROTEIN"],
+    endFirstRoles: config.endFirstRoles ?? ["PROTEIN"],
+    endSecondRoles: config.endSecondRoles ?? ["PROTEIN"],
+  };
+}
+
+export const experimentAdapter = {
+  toPipelineStatus,
+  toExperimentDomain,
+  toBiologicalObjectDomain,
+  toAlignedObjectDomain,
+  toInferenceRolesDomain,
+  toBiologicalRoleList,
+  toCreateExperimentPayload,
+  toSaveBiologicalRolesPayload,
+  toSaveAlignedObjectsPayload,
+  toInferenceConfigPayload,
+};

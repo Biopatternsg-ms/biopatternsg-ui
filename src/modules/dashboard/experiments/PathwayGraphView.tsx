@@ -40,8 +40,8 @@ import {
   type GraphLinkInput,
 } from "@/domain/models/Graph";
 import type { GraphBackground } from "@/config/forceGraphProfiles";
-import { filterLinksByValidNodes } from "@/utils/graphDataParser";
 import { experimentService } from "@/services/experimentService";
+import { toPathwayGraphForceData } from "@/adapters/pathwayAdapter";
 import { cn } from "@/lib/utils";
 
 const BACKGROUND_OPTIONS: { value: GraphBackground; label: string; swatch: string }[] = [
@@ -49,38 +49,6 @@ const BACKGROUND_OPTIONS: { value: GraphBackground; label: string; swatch: strin
   { value: "white", label: "Light Canvas", swatch: "#ffffff" },
   { value: "skyblue", label: "Sky Blue", swatch: "#87ceeb" },
 ];
-
-function formatRoleLabel(rawRole?: string): string {
-  if (!rawRole || !rawRole.trim()) return "Protein";
-  const normalized = rawRole.toLowerCase().trim().replace(/-/g, "_").replace(/\s+/g, "_");
-  switch (normalized) {
-    case "protein":
-      return "Protein";
-    case "gene":
-      return "Gene";
-    case "enzyme":
-      return "Enzyme";
-    case "receptor":
-      return "Receptor";
-    case "ligand":
-      return "Ligand";
-    case "transcription_factor":
-    case "tf":
-      return "Transcription Factor";
-    case "adaptor_protein":
-      return "Adaptor Protein";
-    case "disease":
-      return "Disease";
-    case "variant":
-      return "Variant";
-    default:
-      return normalized
-        .split("_")
-        .filter(Boolean)
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(" ");
-  }
-}
 
 export const PathwayGraphView = () => {
   const { networkId, experimentId } = useParams<{ networkId: string; experimentId: string }>();
@@ -114,40 +82,19 @@ export const PathwayGraphView = () => {
           setExperimentName(pipelineRes.name);
         }
 
-        if (!graphRes || !Array.isArray(graphRes.nodes) || graphRes.nodes.length === 0) {
-          setNodes([]);
-          setLinks([]);
-          setTotalPathways(graphRes?.totalPathways ?? 0);
-          setExecutionTimeMs(graphRes?.executionTimeMs ?? 0);
+        const forceData = toPathwayGraphForceData(graphRes);
+        setNodes(forceData.nodes);
+        setLinks(forceData.links);
+        setTotalPathways(forceData.totalPathways);
+        setExecutionTimeMs(forceData.executionTimeMs);
+
+        if (forceData.nodes.length === 0) {
           setErrorMsg(
             "No consolidated pathway graph found in pathway_graphs for this experiment."
           );
-          return;
+        } else {
+          setErrorMsg(null);
         }
-
-        const mappedNodes: GraphNodeInput[] = graphRes.nodes
-          .filter((n) => n && n.name)
-          .map((n) => ({
-            name: n.name.trim(),
-            type: formatRoleLabel(n.type || n.role),
-          }));
-
-        const rawLinks: GraphLinkInput[] = (graphRes.edges || [])
-          .filter((e) => e && (e.object1 || e.first) && (e.object2 || e.second))
-          .map((e) => ({
-            object1: (e.object1 || e.first).trim(),
-            interaction: (e.interaction || e.relation || "association").trim(),
-            object2: (e.object2 || e.second).trim(),
-            pathwayCount: e.pathwayCount,
-          }));
-
-        const validLinks = filterLinksByValidNodes(mappedNodes, rawLinks);
-
-        setNodes(mappedNodes);
-        setLinks(validLinks);
-        setTotalPathways(graphRes.totalPathways ?? 0);
-        setExecutionTimeMs(graphRes.executionTimeMs ?? 0);
-        setErrorMsg(null);
       })
       .catch((err) => {
         if (isCancelled) return;
@@ -179,40 +126,19 @@ export const PathwayGraphView = () => {
         setExperimentName(pipelineRes.name);
       }
 
-      if (!graphRes || !Array.isArray(graphRes.nodes) || graphRes.nodes.length === 0) {
-        setNodes([]);
-        setLinks([]);
-        setTotalPathways(graphRes?.totalPathways ?? 0);
-        setExecutionTimeMs(graphRes?.executionTimeMs ?? 0);
+      const forceData = toPathwayGraphForceData(graphRes);
+      setNodes(forceData.nodes);
+      setLinks(forceData.links);
+      setTotalPathways(forceData.totalPathways);
+      setExecutionTimeMs(forceData.executionTimeMs);
+
+      if (forceData.nodes.length === 0) {
         setErrorMsg(
           "No consolidated pathway graph found in pathway_graphs for this experiment."
         );
-        return;
+      } else {
+        setErrorMsg(null);
       }
-
-      const mappedNodes: GraphNodeInput[] = graphRes.nodes
-        .filter((n) => n && n.name)
-        .map((n) => ({
-          name: n.name.trim(),
-          type: formatRoleLabel(n.type || n.role),
-        }));
-
-      const rawLinks: GraphLinkInput[] = (graphRes.edges || [])
-        .filter((e) => e && (e.object1 || e.first) && (e.object2 || e.second))
-        .map((e) => ({
-          object1: (e.object1 || e.first).trim(),
-          interaction: (e.interaction || e.relation || "association").trim(),
-          object2: (e.object2 || e.second).trim(),
-          pathwayCount: e.pathwayCount,
-        }));
-
-      const validLinks = filterLinksByValidNodes(mappedNodes, rawLinks);
-
-      setNodes(mappedNodes);
-      setLinks(validLinks);
-      setTotalPathways(graphRes.totalPathways ?? 0);
-      setExecutionTimeMs(graphRes.executionTimeMs ?? 0);
-      setErrorMsg(null);
     } catch (err) {
       console.error("Error loading pathway graph:", err);
       setErrorMsg("Failed to load the pathway graph from the inferences service.");
